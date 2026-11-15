@@ -116,9 +116,9 @@ test('ゲーム設定画面・公開設定・バージョン案内がSTEP 50に�
  assert.match(html,/phase50\.css/);
  assert.match(app,/serializePortableSave/);assert.match(app,/parsePortableSave/);
  assert.match(app,/window\.confirm/);assert.match(app,/window\.setTimeout/);
- assert.match(workflow,/npm test/);assert.match(workflow,/STEP (54|55|57)/);
- assert.match(read('package.json'),/"version": "5\.7\.0"/);
- assert.match(read('README.md'),/STEP 50/);
+ assert.match(workflow,/npm test/);assert.match(workflow,/STEP (54|55|57|58)/);
+ assert.match(read('package.json'),/"version": "6\.0\.0"/);
+ assert.match(read('CHANGELOG.md'),/STEP 50/);
 });
 
 test('病後の体力がゼロに固定されない・年齢が上がるほど自然回復は弱い',async()=>{

@@ -100,5 +100,5 @@ test('人生画面・履歴の振り返り・GitHub公開対象がつながっ�
  assert.match(topic,/screen\.category==='履歴'.*renderLifeReview/);
  assert.match(ui,/夢を変更/);assert.match(ui,/目標/);assert.match(ui,/人生の節目/);
  assert.match(read('index.html'),/phase49\.css/);
- assert.match(read('package.json'),/"version": "5\.7\.0"/);
+ assert.match(read('package.json'),/"version": "6\.0\.0"/);
 });

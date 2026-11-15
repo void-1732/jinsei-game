@@ -119,10 +119,10 @@ test('時間プランは通常の自由行動を省略する時間短縮でも�
 });
 test('画面はコンパクト・操作制限・レスポンシブ、公開に必要なファイルを含む',()=>{
  const html=read('index.html'),source=read('js/ui/dailySchedulePanel.js');
- assert.match(html,/phase54\.css/);assert.match(html,/第57段階/);
+ assert.match(html,/phase54\.css/);assert.match(html,/第58段階/);
  assert.match(source,/daily54-select/);assert.match(source,/planId/);assert.match(source,/onAction/);
  assert.match(source,/pending\|\|used/);
- assert.match(read('package.json'),/"version": "5\.7\.0"/);
+ assert.match(read('package.json'),/"version": "6\.0\.0"/);
  assert.match(read('.github/workflows/pages.yml'),/npm test/);
- assert.match(read('README.md'),/STEP 54/);
+ assert.match(read('CHANGELOG.md'),/STEP 54/);
 });

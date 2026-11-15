@@ -84,5 +84,5 @@ test('PC・スマホの操作改善、ダイアログエラー、保存互換性
   assert.match(css,/focus-visible/);
   assert.match(browser,/story-action-error/);
   assert.match(browser,/play-turn-recap/);
-  assert.match(read('package.json'),/"version": "5\.7\.0"/);
+  assert.match(read('package.json'),/"version": "6\.0\.0"/);
 });

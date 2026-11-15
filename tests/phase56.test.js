@@ -114,9 +114,9 @@ test('旧保存の項目を読み込んでも保存スキーマと一回行動�
  assert.equal(b.advanceTurn().ok,true);
 });
 test('STEP 56は追加パネルを増やさず既存のゲーム構成と公開検証を維持',()=>{
- assert.match(read('package.json'),/"version": "5\.7\.0"/);
+ assert.match(read('package.json'),/"version": "6\.0\.0"/);
  const w=read('.github/workflows/pages.yml');
  assert.match(w,/npm test/);assert.match(w,/scripts\/qa-browser\.mjs/);
- assert.match(read('README.md'),/STEP 56/);
- assert.match(read('index.html'),/第57段階/);
+ assert.match(read('CHANGELOG.md'),/STEP 56/);
+ assert.match(read('index.html'),/第58段階/);
 });
