@@ -29,6 +29,12 @@ export function nextRandom(seed) {
   const nextSeed = (Math.imul(1664525, validateSeed(seed)) + 1013904223) >>> 0;
   return Object.freeze({ seed: nextSeed, value: nextSeed / 4294967296 });
 }
+// Reuse the same progression limit for optional development actions.
+function modestProgress(value, amount) {
+  if (amount <= 0) return Math.max(0,Math.min(100,value+amount));
+  const gain=value>=90?1:value>=80?Math.max(1,Math.ceil(amount*.4)):value>=65?Math.max(1,Math.ceil(amount*.65)):amount;
+  return Math.min(95,value+gain);
+}
 function yearsOld(year, month, birth) {
   return year - birth.year - (month < birth.month ? 1 : 0);
 }
@@ -40,6 +46,7 @@ export const initialGameState = freezeSnapshot({
   player: { id: null, name: null, birth: null },
   household: null, finances: null, health: null, world: null, people: [], relationships: [], education: null,
   pendingEvents: [], eventHistory: [],
+  turnActions: {turn: 0, used: 0, lastAction: null},
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
@@ -155,6 +162,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     }
     for(const event of advanceFamily(state,{year,month}))newEvents.push(makeEvent(event.type,event.title,event.description));
     state.timeline = { year, month, ageYears: age, turnsElapsed: turn, monthsElapsed: t.monthsElapsed + months };
+    state.turnActions = {turn,used:0,lastAction:null};
     // 40歳以降は健康・年齢に応じた死亡リスク。110歳時点で寿命終了。
     if(age>=40){
       const mortality=nextRandom(state.random.seed);
@@ -195,6 +203,16 @@ export function createGameStore({interactiveChoices=false} = {}) {
   function performAction(action, payload={}) {
     if (!state.initialized) return {ok:false,reason:'人生を開始してください。'};
     if(state.ending.dead)return {ok:false,reason:'人生終了後は操作できません。'};
+    // One optional manual decision per turn, in addition to the mandatory story choice.
+    // Enforced in the store, not just by disabling UI controls: cannot be bypassed by clicks.
+    if (interactiveChoices && action !== 'resolveChoice') {
+      if (state.pendingEvents.some(e => e.type === 'choice'))
+        return {ok:false,reason:'先に今の出来事を選んでください。'};
+      if ((state.turnActions?.turn === state.timeline.turnsElapsed ? state.turnActions.used : 0) >= 1)
+        return {ok:false,reason:'このターンの自由行動は終了しました。次のターンで再び行動できます。'};
+    }
+    const beforeDevelopment = interactiveChoices && action !== 'resolveChoice'
+      ? {scores:{...state.education.scores},skills:{...state.education.skills},relations:Object.fromEntries(state.people.map(p=>[p.id,p.relationship]))} : null;
     let result;
     switch(action){
       case 'enableAccurateMortgage': case 'requestPensionExemption': case 'setInsuranceClaimCap': case 'setPensionMode': case 'backPayPension': case 'moveHome': case 'clearMortgageArrears': case 'repayMortgage': case 'setInsurance': case 'claimInsurance': case 'repairHome':
@@ -224,6 +242,22 @@ export function createGameStore({interactiveChoices=false} = {}) {
       default: result={ok:false,reason:'未対応の操作です。'};
     }
     if(result.ok){
+      if (interactiveChoices && action !== 'resolveChoice') {
+        // Less growth as proficiency rises; routine actions don't create perfect scores.
+        for (const [key,oldValue] of Object.entries(beforeDevelopment.scores)) {
+          const value=state.education.scores[key];
+          if (Number.isFinite(value) && value > oldValue) state.education.scores[key] = modestProgress(oldValue,value-oldValue);
+        }
+        for (const [key,value] of Object.entries(state.education.skills)) {
+          const oldValue=beforeDevelopment.skills[key]??0;
+          if (Number.isFinite(value) && value>oldValue) state.education.skills[key] = modestProgress(oldValue,value-oldValue);
+        }
+        for (const person of state.people) {
+          const oldValue=beforeDevelopment.relations[person.id];
+          if (Number.isFinite(oldValue) && person.relationship > oldValue) person.relationship=modestProgress(oldValue,person.relationship-oldValue);
+        }
+        state.turnActions={turn:state.timeline.turnsElapsed,used:1,lastAction:action};
+      }
       if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='habit'?'生活習慣':action==='treatment'?'治療':action==='resolveChoice'?'人生選択':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
       if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
       emit();
@@ -233,6 +267,8 @@ export function createGameStore({interactiveChoices=false} = {}) {
   function loadState(snapshot) {
     if(!validateGameState(snapshot))return {ok:false,reason:'保存データの形式が不正です。'};
     state=clone(snapshot);
+    // Older v4.3.0 saves predate the action budget; migrate without wiping progress.
+    if (!state.turnActions) state.turnActions={turn:state.timeline.turnsElapsed,used:0,lastAction:null};
     if(state.finances){
       const c=state.finances.career,b=state.finances.business;
       for(const [key,val] of Object.entries({unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,insuredMonths:0,benefitEligible:true}))if(c[key]===undefined)c[key]=val;

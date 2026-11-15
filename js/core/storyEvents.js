@@ -3,6 +3,11 @@
  * This is an original, fictional choice system; it does not replicate any branded board game.
  */
 const clamp = value => Math.min(100, Math.max(0, Math.round(value)));
+export function develop(value, delta) {
+  if (!Number.isFinite(delta) || delta<=0) return clamp(value+delta);
+  const step=value>=90?1:value>=80?Math.max(1,Math.ceil(delta*.4)):value>=65?Math.max(1,Math.ceil(delta*.65)):Math.round(delta);
+  return Math.min(95,value+step);
+}
 const choice = (label, hint, result, impact) => ({label,hint,result,impact});
 const scene = (title, description, options) => ({title,description,options: options.map((item,i)=>({...item,id:String(i+1)}))});
 const pools = [
@@ -153,17 +158,24 @@ export function resolveStoryChoice(state, id, choiceId) {
     if(delta)changes.push(`${name}${delta>0?'+':''}${delta}`);
   }
   if(Number.isFinite(impacts.study)){
-    for(const key of Object.keys(state.education.scores))state.education.scores[key]=clamp(state.education.scores[key]+impacts.study);
-    changes.push(`学力${impacts.study>0?'+':''}${impacts.study}`);
+    const before=Object.values(state.education.scores).reduce((a,b)=>a+b,0);
+    for(const key of Object.keys(state.education.scores))state.education.scores[key]=develop(state.education.scores[key],impacts.study);
+    const delta=Math.round((Object.values(state.education.scores).reduce((a,b)=>a+b,0)-before)/Object.keys(state.education.scores).length);
+    if(delta)changes.push(`学力${delta>0?'+':''}${delta}`);
   }
   if(impacts.skill && Number.isFinite(impacts.skillValue)){
     const name=impacts.skill;
-    state.education.skills[name]=clamp((state.education.skills[name]??0)+impacts.skillValue);
-    changes.push(`${name}${impacts.skillValue>0?'+':''}${impacts.skillValue}`);
+    const was=state.education.skills[name]??0;
+    state.education.skills[name]=develop(was,impacts.skillValue);
+    const delta=state.education.skills[name]-was;
+    if(delta)changes.push(`${name}${delta>0?'+':''}${delta}`);
   }
   if(Number.isFinite(impacts.social)){
-    for(const person of state.people.filter(p=>p.role!=='本人'))person.relationship=clamp(person.relationship+impacts.social);
-    changes.push(`人間関係${impacts.social>0?'+':''}${impacts.social}`);
+    const targets=state.people.filter(p=>p.role!=='本人');
+    const before=targets.reduce((sum,p)=>sum+p.relationship,0);
+    for(const person of targets)person.relationship=develop(person.relationship,impacts.social);
+    const delta=targets.length?Math.round((targets.reduce((sum,p)=>sum+p.relationship,0)-before)/targets.length):0;
+    if(delta)changes.push(`人間関係${delta>0?'+':''}${delta}`);
   }
   if(Number.isFinite(impacts.cash)){
     const previous=state.finances.cash;
@@ -173,8 +185,14 @@ export function resolveStoryChoice(state, id, choiceId) {
   }
   if(Number.isFinite(impacts.work)){
     const career=state.finances.career;
-    if(Number.isFinite(career.performance)){career.performance=clamp(career.performance+impacts.work);changes.push(`仕事評価+${impacts.work}`);}
-    else {state.education.skills.パソコン=clamp((state.education.skills.パソコン??0)+impacts.work);changes.push(`仕事スキル+${impacts.work}`);}
+    if(Number.isFinite(career.performance)){
+      const was=career.performance; career.performance=develop(was,impacts.work);
+      const delta=career.performance-was;if(delta)changes.push(`仕事評価${delta>0?'+':''}${delta}`);
+    } else {
+      const was=state.education.skills.パソコン??0;
+      state.education.skills.パソコン=develop(was,impacts.work);
+      const delta=state.education.skills.パソコン-was;if(delta)changes.push(`仕事スキル${delta>0?'+':''}${delta}`);
+    }
   }
   state.pendingEvents=state.pendingEvents.filter(e=>e.id!==id);
   const detail=changes.length?changes.join(' / '):'新しい経験を得た';

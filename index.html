@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="css/phase27.css">
   <link rel="stylesheet" href="css/phase37.css">
   <link rel="stylesheet" href="css/phase42.css">
+  <link rel="stylesheet" href="css/phase43.css">
 </head>
 <body>
   <a class="skip-navigation" href="#main-content">本文へ移動</a>
@@ -42,7 +43,6 @@
         <button class="button button-secondary" id="toggle-nav" type="button" aria-controls="sidebar" aria-expanded="false">メニュー</button>
         <button class="button button-secondary" id="open-settings" type="button">設定・保存</button>
         <span class="save-indicator" id="save-status">保存待ち</span>
-        <button class="icon-button notifications" id="notification-button" type="button" aria-label="通知状態を確認">通知 <span class="notification-count">0</span></button>
       </div>
     </header>
 
@@ -82,27 +82,25 @@
           </div>
           <button class="button button-primary hub-button" id="advance-turn" type="button" disabled>次のターンへ進む <span aria-hidden="true">→</span></button>
           <p id="turn-length" class="hub-turn-help">人生を開始すると進行できます。</p>
-          <p class="hub-tip">毎ターン、出来事が発生します。選んだ行動は能力や人生記録に反映されます。</p>
+          <p id="action-budget" class="hub-turn-help">自由行動：未開始</p>
+          <p id="choice-feedback" class="hub-choice-feedback" role="status" aria-live="polite">出来事の結果はここに表示されます。</p>
         </section>
-        <section class="hub-sidecard" aria-label="選択待ちの出来事">
-          <div class="hub-sidecard-header"><strong>今のイベント</strong><span class="notification-count" id="event-count">0</span></div>
+        <details class="hub-sidecard hub-notices" aria-label="お知らせ">
+          <summary>お知らせ・通知 <span class="notification-count" id="event-count">0</span></summary>
           <p class="muted small" id="hub-event-message">まずは人生を始めてみましょう。</p>
-          <button class="button button-secondary hub-button" id="open-event" type="button" disabled>イベントを見る</button>
-          <details class="hub-notifications"><summary>過去の通知を確認</summary><div id="pending-event-list" class="phase3-event-list"></div></details>
-        </section>
-        <button id="hub-settings" class="button button-secondary hub-settings" type="button">保存・読込・新しい人生の設定</button>
-        <div class="rail-bottom">保存データはこのブラウザに保存されます。</div>
+          <div id="pending-event-list" class="phase3-event-list"></div>
+        </details>
       </aside>
     </div>
 
-    <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第42段階 · 選択で進む人生ゲーム</span></footer>
+    <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第43段階 · 1ターン1行動</span></footer>
   </div>
 
   <dialog id="help-dialog" class="modal" aria-labelledby="help-title">
     <div class="modal-header"><h2 id="help-title">画面ガイド</h2><button class="icon-button" id="close-help" type="button">閉じる</button></div>
     <p>9カテゴリ・61画面を切り替えられます。左メニューからカテゴリを開くか、検索欄で画面名・画面IDを検索してください。</p>
     <p>「←」「→」は閲覧した画面の履歴操作です。キーボードの コントロール＋オルト＋左右矢印でも操作できます。ゲームの時間は「次のターンへ進む」でのみ進みます。</p>
-    <p class="muted small">0～14歳は3か月、15歳以降は1か月ずつ進みます。早送りはありません。次のターンへ進むには表示された人生の選択を決めてください。</p>
+    <p class="muted small">0～14歳は3か月、15歳以降は1か月ずつ進みます。「次のターンへ進む」を押すと出来事が開き、選択後は画面に戻ります。自由行動は各ターンで1回までです。</p>
   </dialog>
 
   <dialog id="story-dialog" class="modal story-dialog" aria-labelledby="story-title" aria-describedby="story-description">

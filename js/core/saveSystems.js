@@ -13,6 +13,12 @@ export function validateGameState(s) {
   if(!s || typeof s!=='object' || Array.isArray(s) || s.schemaVersion!==7 || typeof s.initialized!=='boolean') return false;
   const t=s.timeline;
   if(!t || !Number.isInteger(t.year) || t.year<2000 || t.year>2200 || !Number.isInteger(t.month) || t.month<1 || t.month>12 || !Number.isInteger(t.turnsElapsed) || t.turnsElapsed<0 || !Number.isInteger(t.ageYears) || t.ageYears<0 || t.ageYears>200) return false;
+  if (s.turnActions !== undefined) {
+    const a=s.turnActions;
+    if (!a || !Number.isInteger(a.turn) || a.turn<0 || a.turn>t.turnsElapsed ||
+        !Number.isInteger(a.used) || a.used<0 || a.used>1 ||
+        !(a.lastAction===null || typeof a.lastAction==='string' && a.lastAction.length<=40)) return false;
+  }
   if(!s.initialized) return true;
   if(!s.player || typeof s.player.name!=='string' || !s.player.name.trim() || s.player.name.length>30 || s.player.birth?.year!==2000 || !Number.isInteger(s.player.birth?.month) || s.player.birth.month<1 || s.player.birth.month>12 || !Number.isInteger(s.player.birth?.day) || s.player.birth.day<1 || s.player.birth.day>new Date(Date.UTC(2000,s.player.birth.month,0)).getUTCDate() || !s.finances || !s.health || !s.world || !s.education || !Array.isArray(s.people) || !Array.isArray(s.pendingEvents) || !Array.isArray(s.eventHistory)) return false;
   if(!s.random || !Number.isSafeInteger(s.random.seed) || s.random.seed<0 || s.random.seed>0xffffffff) return false;

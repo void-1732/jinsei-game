@@ -1,3 +1,4 @@
+import {renderTurnActivity} from './turnActivities.js';
 const el=(tag,klass='',text='')=>{
   const node=document.createElement(tag);if(klass)node.className=klass;
   if(text!==undefined&&text!==null)node.textContent=text;
@@ -31,7 +32,8 @@ export function renderPlayDashboard(container,state,handlers={}){
     el('h2','',started?`${state.player.name}の、次の物語。`:'人生は、選択で変わる。'),
     el('p','',started?`現在${state.timeline.ageYears}歳。${state.timeline.year}年${state.timeline.month}月。今、何を大切に生きますか？`:'誕生日も、選ぶ道も、人それぞれ。ひとつの正解のない人生を始めよう。'));
   const action=primaryAction(started?(queued?'今の出来事を選ぶ →':'次のターンへ進む →'):'プレイヤー名を入力してはじめる →',()=>handlers.onPlay?.());
-  intro.append(action);
+  if(!started)intro.append(action);
+  else intro.append(el('p','play-next-hint','右側の「次のターンへ進む」を押すと、出来事が表示されます。'));
   const ring=el('div','play-hero-ring');ring.append(el('span','','LIFE'),el('strong','',String(state?.timeline?.ageYears??0)),el('small','','years old'));
   hero.append(intro,ring);root.append(hero);
   if(!started){
@@ -57,6 +59,7 @@ export function renderPlayDashboard(container,state,handlers={}){
     card.append(top,track,el('small','',description));metrics.append(card);
   }
   root.append(metrics);
+  root.append(renderTurnActivity(state,handlers.onAction));
   const lower=el('div','play-lower');
   const storyCard=el('section','play-card play-story-card');
   const heading=el('div','play-card-heading');heading.append(el('h3','','人生の記録'),el('span','','最新の4件'));storyCard.append(heading);
@@ -67,7 +70,8 @@ export function renderPlayDashboard(container,state,handlers={}){
     item.append(el('span','play-history-date',`${event.year}年${event.month}月`),el('strong','',event.title),el('p','',event.description));
     storyCard.append(item);
   }
-  storyCard.append(quickButton('人生タイムラインを見る',()=>handlers.onNavigate?.('HISTORY-01')));
+  const details=el('details','play-history-detail');const summary=el('summary','','過去の出来事を詳しく見る');details.append(summary);
+  const link=quickButton('人生タイムラインを見る',()=>handlers.onNavigate?.('HISTORY-01'));details.append(link);storyCard.append(details);
   const side=el('div','play-lower-side');
   const goals=goalFor(state.timeline.ageYears,education,finance);
   const focus=el('section','play-card play-focus');focus.append(el('span','play-eyebrow','いまの人生のテーマ'),el('h3','',goals[0]),el('p','',goals[1]));
@@ -76,9 +80,10 @@ export function renderPlayDashboard(container,state,handlers={}){
   for(const name of ['読書','パソコン','運動'])skills.append(el('span','',`${name} ${education.skills[name]??0}`));
   skill.append(skills);
   const money=el('section','play-card play-money');money.append(el('h3','','くらしのお金'),el('p','',`現金：${fmt(finance.cash)} 円`));
-  const shortcuts=el('div','play-shortcuts');
-  shortcuts.append(quickButton('学業',()=>handlers.onNavigate?.('EDU-01')),quickButton('仕事',()=>handlers.onNavigate?.('WORK-01')),quickButton('健康',()=>handlers.onNavigate?.('HEALTH-01')));
-  money.append(shortcuts);
+  const shortcuts=el('details','play-shortcuts');shortcuts.append(el('summary','','詳しい状況を見る'));
+  const links=el('div','play-shortcut-links');
+  links.append(quickButton('学業',()=>handlers.onNavigate?.('EDU-01')),quickButton('仕事',()=>handlers.onNavigate?.('WORK-01')),quickButton('健康',()=>handlers.onNavigate?.('HEALTH-01')));
+  shortcuts.append(links);money.append(shortcuts);
   side.append(focus,skill,money);lower.append(storyCard,side);root.append(lower);
   container.replaceChildren(root);
 }

@@ -1,0 +1,48 @@
+/* STEP 43: explicit turn choices, optional one-action budget and compact sections. */
+.nav-screen-picker{display:block;padding:6px 8px 12px}
+.nav-picker-label{display:block;font-size:11px;color:#d3e2f0;line-height:1.6}
+.nav-screen-select{display:block;margin-top:5px;width:100%;min-width:0;border:1px solid #7496b5;border-radius:8px;background:#193650;color:#f4f9ff;padding:9px 7px;font-size:11px;line-height:1.35;cursor:pointer}
+.nav-screen-select:focus-visible{outline:2px solid #f2bf8c;outline-offset:2px}
+#main-navigation .nav-group{margin-bottom:4px}
+.hub-choice-feedback{margin:10px 0 0;background:#152f49;border:1px solid #6485a0;border-left:3px solid #e9b27a;border-radius:8px;padding:11px 10px;font-size:11px;line-height:1.7;color:#eff6ff;text-align:left;overflow-wrap:anywhere}
+#action-budget{margin:9px 0 0;font-weight:700;color:#e9f5ff}
+.hub-notices{padding:0;overflow:hidden}
+.hub-notices summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:9px;padding:11px 14px;font-size:11px;font-weight:650;color:#deedfd}
+.hub-notices summary::-webkit-details-marker{display:none}
+.hub-notices summary:after{content:'▾';color:#e9c19d}
+.hub-notices[open] summary:after{content:'▴'}
+.hub-notices>p,.hub-notices>.phase3-event-list{margin:0 13px 12px}
+.hub-notices>.phase3-event-list{max-height:220px;overflow:auto}
+.story-defer{display:block;margin:15px auto 0;background:transparent;color:#d6e5f4;border:0;text-decoration:underline;cursor:pointer;padding:8px;font-size:12px}
+.story-option:disabled{opacity:.55;cursor:not-allowed}
+.play-next-hint{background:#1235515e;padding:11px 13px;border-left:3px solid #eaba89;border-radius:7px;margin-bottom:0!important}
+.turn-activity{padding:14px 19px}
+.turn-activity-form{display:flex;align-items:flex-end;gap:11px;flex-wrap:wrap}
+.turn-activity-form label{display:block;flex:1 1 250px;font-size:11px;color:#dceaf5}
+.turn-activity-select{display:block;margin-top:6px;background:#162f49;color:#f8fcff;border:1px solid #6582a2;border-radius:9px;padding:12px;max-width:100%;width:100%;font-size:13px}
+.turn-activity-form>.button{min-width:116px;padding:12px;font-size:12px;white-space:nowrap}
+.turn-activity-note{font-size:11px!important;color:#bed4e9!important;line-height:1.6;margin:9px 0 0!important}
+.play-shortcuts>summary,.play-history-detail>summary{font-size:11px;color:#d5e7f7;cursor:pointer;padding:8px 0}
+.play-shortcut-links{display:flex;flex-wrap:wrap;gap:4px}
+.quick-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;margin-bottom:11px}
+.quick-overview>h3{grid-column:1/-1;margin:0;font-size:14px}
+.quick-overview-line{display:flex;flex-direction:column;gap:3px;min-width:0;padding:8px 10px;background:#1a3450;border-radius:9px}
+.quick-overview-line span{font-size:10px;color:#bfd5e9}
+.quick-overview-line strong{font-size:12px;color:#fff;overflow-wrap:anywhere}
+.operations-directory{border:1px solid #557592;border-radius:12px;background:#213b56;padding:0 12px;margin:0 0 12px;min-width:0}
+.operations-directory>summary{padding:13px 7px;color:#f2f7fc;font-size:13px;font-weight:700;cursor:pointer}
+.operations-directory[open]{padding-bottom:15px}
+.operations-directory>.content-card{margin:10px 0;padding:14px}
+.operations-directory>.content-card:first-of-type{margin-top:0}
+.operations-directory .phase4-actions{display:flex;flex-wrap:wrap;gap:7px;margin-block:9px}
+.operations-directory .phase4-actions>.button{white-space:normal}
+@media(max-width:760px){
+ .player-hub #action-budget,.player-hub #choice-feedback{grid-column:1/-1}
+ .hub-notices{flex:1 1 100%;}
+ .turn-activity{padding:13px}
+ .quick-overview{gap:8px}
+}
+@media(max-width:460px){.turn-activity-form>.button{width:100%}.quick-overview{grid-template-columns:1fr}}
+
+/* One concise summary per detail page instead of repeated headings. */
+.page-body>.feature-intro{display:none}

@@ -1,6 +1,6 @@
 /** Backward-compatible signature with optional PHASE 1 category/search options. */
 export function renderNavigation(container, groups, activeId, onNavigate, options = {}) {
-  const activeCategory = options.activeCategory ?? groups.find(g => g.screens.some(s => s.id === activeId))?.category;
+  const activeCategory = Object.hasOwn(options, 'activeCategory') ? options.activeCategory : groups.find(g => g.screens.some(s => s.id === activeId))?.category;
   const searchQuery = (options.searchQuery ?? '').trim().toLocaleLowerCase('ja');
   const fragment = document.createDocumentFragment();
 
@@ -50,9 +50,26 @@ export function renderNavigation(container, groups, activeId, onNavigate, option
     });
     section.append(categoryButton);
     if (expanded) {
+      // Compact category selector: one control instead of a wall of navigation buttons.
       const groupItems = document.createElement('div');
-      groupItems.className = 'nav-screen-list';
-      for (const screen of group.screens) groupItems.append(makeScreenButton(screen, activeId, onNavigate));
+      groupItems.className = 'nav-screen-list nav-screen-picker';
+      const pickLabel = document.createElement('label');
+      pickLabel.className = 'nav-picker-label';
+      pickLabel.textContent = '表示する画面';
+      const select = document.createElement('select');
+      select.className = 'nav-screen-select';
+      select.setAttribute('aria-label', `${group.category}の画面を選択`);
+      const placeholder = document.createElement('option');
+      placeholder.value = ''; placeholder.textContent = '画面を選択';
+      select.append(placeholder);
+      for (const screen of group.screens) {
+        const item = document.createElement('option');
+        item.value = screen.id; item.textContent = screen.title;
+        select.append(item);
+      }
+      select.value = group.screens.some(screen => screen.id === activeId) ? activeId : '';
+      select.addEventListener('change', () => { if (select.value) onNavigate(select.value); });
+      pickLabel.append(select); groupItems.append(pickLabel);
       section.append(groupItems);
     }
     fragment.append(section);

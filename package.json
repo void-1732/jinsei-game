@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "4.3.0",
+  "version": "4.4.0",
   "type": "module",
-  "description": "人生シミュレーション 第42段階 選択イベント・UI刷新",
+  "description": "人生シミュレーション 第43段階 ターン進行・カテゴリ改善",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "check": "npm test",

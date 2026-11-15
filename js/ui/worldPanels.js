@@ -43,7 +43,13 @@ export function renderWorldPanel(container,screen,game,handlers={}){
  if(events){
    const pending=game.pendingEvents.filter(x=>x.type==='choice');line(section,'未回答の選択イベント',`${pending.length}件`);
    for(const e of pending){const wrap=node('div','phase6-choice');wrap.append(node('h3','',e.title),node('p','',e.description));const controls=node('div','phase4-actions');
-     for(const option of e.options)button(controls,option.label,()=>handlers.onAction?.('resolveChoice',{eventId:e.id,choice:option.id}));wrap.append(controls);section.append(wrap);
+     if(e.story){
+       wrap.append(node('p','muted small','この出来事の選択は、右側の「次のターンへ進む」から行います。'));
+     } else {
+       for(const option of e.options)button(controls,option.label,()=>handlers.onAction?.('resolveChoice',{eventId:e.id,choice:option.id}));
+       wrap.append(controls);
+     }
+     section.append(wrap);
    }
    section.append(node('h3','','最近の人生イベント'));
    for(const e of game.eventHistory.filter(x=>['choice','choice-result','illness','recovery','society'].includes(x.type)).slice(-12).reverse())line(section,`${e.year}年${e.month}月・${e.title}`,e.description);

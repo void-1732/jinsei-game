@@ -26,7 +26,7 @@ export function renderScreen(container, screen, gameState = null, handlers = {})
   const body = el('div', 'page-body');
   const intro = el('section', 'feature-intro');
   intro.append(el('span', 'feature-status', coverage.state), el('h2', '', screen.title),
-    el('p', '', `${coverage.connectedDescription}を表示します。下の「今後追加する予定の項目」は完成済みの機能ではありません。`));
+    el('p', '', '現在の状況を確認できます。細かな操作や履歴は、必要なときだけ開けます。'));
   const toolbar = el('div', 'detail-toolbar');
   const searchLabel = el('label', 'visually-hidden', '表示項目を絞り込む');
   const search = document.createElement('input');
@@ -125,6 +125,28 @@ export function renderScreen(container, screen, gameState = null, handlers = {})
   if(economyConnected){intro.querySelector('p').textContent='仕事・家計の基本データと操作は上部パネルにあります。下部の予定項目は将来の拡張対象です。';}
   if(livingConnected){intro.querySelector('p').textContent='住居・居住地域・任意保障の情報と操作を上部に表示します。';}
   if(worldConnected){intro.querySelector('p').textContent='健康・社会・イベントの基本データと操作を上部に表示します。下部の予定項目は今後の拡張対象です。';}
+  const extraPanels=[...container.children].filter(node=>node.tagName==='SECTION' && !node.classList.contains('quick-overview'));
+  if(extraPanels.length){
+    const detail=document.createElement('details');detail.className='operations-directory';
+    detail.append(el('summary','','詳しい情報・操作を開く'));
+    for(const node of extraPanels)detail.append(node);
+    const blocked=gameState?.initialized && (gameState?.pendingEvents?.some(e=>e.type==='choice') || (gameState?.turnActions?.turn===gameState?.timeline?.turnsElapsed && gameState?.turnActions?.used>=1));
+    if (blocked) {
+      const note=el('p','muted small',gameState.pendingEvents.some(e=>e.type==='choice')?'先に次のターンの出来事を選んでください。':'このターンの自由行動は使用済みです。');
+      detail.insertBefore(note,detail.children[1]??null);
+      for(const actionButton of detail.querySelectorAll('button')) {
+        if(!actionButton.disabled){actionButton.disabled=true;actionButton.title='今のターンは行動できません';}
+      }
+    }
+    container.prepend(detail);
+  }
+  const quick=el('section','content-card quick-overview');quick.append(el('h3','','現在の状況'));
+  const visible=Object.entries(fieldValues).filter(([key,value])=>value!==undefined&&value!==null).slice(0,5);
+  if(!visible.length)quick.append(el('p','muted small','状況を確認するには人生を開始してください。'));
+  for(const [key,value]of visible){
+    const field=el('div','quick-overview-line');field.append(el('span','',key),el('strong','',String(value)));quick.append(field);
+  }
+  container.prepend(quick);
   if (search.value) search.dispatchEvent(new Event('input'));
 }
 function screenDetailsForCategory(category, state) {
