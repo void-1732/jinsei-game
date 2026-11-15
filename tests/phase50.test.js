@@ -116,8 +116,8 @@ test('ゲーム設定画面・公開設定・バージョン案内がSTEP 50に�
  assert.match(html,/phase50\.css/);
  assert.match(app,/serializePortableSave/);assert.match(app,/parsePortableSave/);
  assert.match(app,/window\.confirm/);assert.match(app,/window\.setTimeout/);
- assert.match(workflow,/npm test/);assert.match(workflow,/STEP (54|55)/);
- assert.match(read('package.json'),/"version": "5\.6\.0"/);
+ assert.match(workflow,/npm test/);assert.match(workflow,/STEP (54|55|57)/);
+ assert.match(read('package.json'),/"version": "5\.7\.0"/);
  assert.match(read('README.md'),/STEP 50/);
 });
 

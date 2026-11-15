@@ -89,6 +89,6 @@ test('STEP 51の新しいUI・セーブ・テスト・Pages対象を確認',()=>
  assert.match(read('js/core/storyEvents.js'),/createConsequenceEvent/);
  assert.match(read('js/core/gameState.js'),/consequenceHiringBonus/);
  assert.match(read('js/core/saveSystems.js'),/validateConsequenceProgress/);
- assert.match(read('package.json'),/"version": "5\.6\.0"/);
+ assert.match(read('package.json'),/"version": "5\.7\.0"/);
  assert.match(read('README.md'),/STEP 51/);
 });

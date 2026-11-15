@@ -105,7 +105,7 @@ test('画面内の時間短縮UIは保存を邪魔せずブラウザ操作へ接
  const html=read('index.html'),app=read('js/app.js'),css=read('css/phase48.css');
  for(const id of ['fast-forward-focus','fast-forward-turn','fast-forward-feedback'])assert.match(html,new RegExp(`id="${id}"`));
  assert.match(app,/gameStore\.fastForward/);assert.match(css,/hub-fast-forward/);
- assert.match(read('package.json'),/"version": "5\.6\.0"/);
+ assert.match(read('package.json'),/"version": "5\.7\.0"/);
 });
 
 test('家計見通しは架空の追加収入を発生させず、学費と負債を判断する目安になる',()=>{
