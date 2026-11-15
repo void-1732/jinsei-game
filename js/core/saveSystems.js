@@ -14,7 +14,7 @@ export function validateGameState(s) {
   const t=s.timeline;
   if(!t || !Number.isInteger(t.year) || t.year<2000 || t.year>2200 || !Number.isInteger(t.month) || t.month<1 || t.month>12 || !Number.isInteger(t.turnsElapsed) || t.turnsElapsed<0 || !Number.isInteger(t.ageYears) || t.ageYears<0 || t.ageYears>200) return false;
   if(!s.initialized) return true;
-  if(!s.player || typeof s.player.name!=='string' || !s.player.name.trim() || s.player.name.length>30 || s.player.birth?.year!==2000 || s.player.birth?.month!==1 || !s.finances || !s.health || !s.world || !s.education || !Array.isArray(s.people) || !Array.isArray(s.pendingEvents) || !Array.isArray(s.eventHistory)) return false;
+  if(!s.player || typeof s.player.name!=='string' || !s.player.name.trim() || s.player.name.length>30 || s.player.birth?.year!==2000 || !Number.isInteger(s.player.birth?.month) || s.player.birth.month<1 || s.player.birth.month>12 || !Number.isInteger(s.player.birth?.day) || s.player.birth.day<1 || s.player.birth.day>new Date(Date.UTC(2000,s.player.birth.month,0)).getUTCDate() || !s.finances || !s.health || !s.world || !s.education || !Array.isArray(s.people) || !Array.isArray(s.pendingEvents) || !Array.isArray(s.eventHistory)) return false;
   if(!s.random || !Number.isSafeInteger(s.random.seed) || s.random.seed<0 || s.random.seed>0xffffffff) return false;
   const finite = value => typeof value==='number' && Number.isFinite(value);
   if(!['cash','investment','debt','monthlyBudget'].every(k=>finite(s.finances[k]) && s.finances[k]>=0)) return false;
@@ -100,7 +100,7 @@ export function validateGameState(s) {
   if(business.reputation!==undefined&&(!Number.isInteger(business.reputation)||business.reputation<0||business.reputation>100))return false;
   if(!['physical','mental','energy'].every(k=>finite(s.health[k]) && s.health[k]>=0 && s.health[k]<=100)) return false;
   if(!Number.isInteger(t.monthsElapsed) || t.monthsElapsed<0 || (t.year-2000)*12+t.month-1!==t.monthsElapsed) return false;
-  if(t.ageYears!==t.year-2000 || t.turnsElapsed>t.monthsElapsed) return false;
+  if(t.ageYears!==t.year-2000-(t.month<s.player.birth.month?1:0) || t.turnsElapsed>t.monthsElapsed) return false;
   if(!s.education.scores || !Array.isArray(s.education.history) || !Array.isArray(s.finances.ledger))return false;
   if(s.finances.ledger.length>600 || s.education.history.length>1000 || s.people.length>500) return false;
   if(!s.people.every(p=>p && typeof p.id==='string' && typeof p.name==='string' && p.name.length<=30 && typeof p.role==='string' && Number.isFinite(p.relationship) && p.relationship>=0 && p.relationship<=100 && Number.isInteger(p.birth?.year) && Number.isInteger(p.birth?.month) && p.birth.month>=1 && p.birth.month<=12))return false;

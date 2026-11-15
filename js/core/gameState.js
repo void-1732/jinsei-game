@@ -8,6 +8,7 @@ import {validateGameState} from './saveSystems.js';
 import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
 import {createChoiceEvent,resolveChoice} from './eventSystems.js';
+import {createStoryEvent,resolveStoryChoice} from './storyEvents.js';
 import { createEconomyData, advanceEconomy, economyAction } from './economySystems.js';
 import { createLifeData, advanceEducation, study, socialize, gainSkill, prepareExam, chooseSchool } from './lifeSystems.js';
 /** PHASE 3: game-domain store. Independent of presentation and navigation. */
@@ -43,32 +44,55 @@ export const initialGameState = freezeSnapshot({
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
 });
-export function createGameStore() {
+/** Browser game passes interactiveChoices:true; legacy scripted simulations stay compatible. */
+export function createRandomBirthday(seed) {
+  const a=nextRandom(seed), b=nextRandom(a.seed);
+  const month=1+Math.floor(a.value*12);
+  const days=new Date(Date.UTC(2000,month,0)).getUTCDate();
+  return {year:2000,month,day:1+Math.floor(b.value*days)};
+}
+function validBirth(birth) {
+  if(!birth || birth.year!==2000 || !Number.isInteger(birth.month) || birth.month<1 || birth.month>12 || !Number.isInteger(birth.day) || birth.day<1)return false;
+  return birth.day<=new Date(Date.UTC(2000,birth.month,0)).getUTCDate();
+}
+export function createGameStore({interactiveChoices=false} = {}) {
   let state = clone(initialGameState);
   const subscribers = new Set();
   function getState() { return freezeSnapshot(state); }
   function emit() { const snapshot = getState(); for (const listener of subscribers) listener(snapshot); }
-  function startNewGame({ name = 'プレイヤー', seed = 20000101 } = {}) {
+  function startNewGame({ name = 'プレイヤー', seed = 20000101, birth = null } = {}) {
     if (state.initialized) return { ok: false, reason: 'ゲームは開始済みです。' };
     if (typeof name !== 'string' || !name.trim() || name.trim().length > 30) return { ok: false, reason: '名前は1～30文字で入力してください。' };
     const randomSeed = validateSeed(seed);
+    if(birth !== null && !validBirth(birth))return {ok:false,reason:'誕生日は2000年の正しい日付で指定してください。'};
+    const birthday = birth ? {...birth} : {year:2000,month:1,day:1};
     state = clone(initialGameState);
     state.initialized = true;
-    state.player = { id: 'PLAYER-001', name: name.trim(), birth: { year: 2000, month: 1, day: 1 } };
+    state.player = { id: 'PLAYER-001', name: name.trim(), birth: birthday };
+    state.timeline.month=birthday.month;
+    state.timeline.monthsElapsed=birthday.month-1;
     state.random.seed = randomSeed;
     Object.assign(state,createLifeData(name.trim()));
+    state.people.find(person=>person.role==='本人').birth={...birthday};
     state.finances=createEconomyData();
     state.finances.living=createLivingData();
     ensureCompanyMarket(state.finances);
     state.health=createHealthData();
     state.world=createWorldData();
     state.household={memberIds:['PLAYER-001','FAMILY-001','FAMILY-002']};
+    if(interactiveChoices){
+      const draw=nextRandom(state.random.seed);
+      state.random.seed=draw.seed;state.random.draws++;
+      const intro=createStoryEvent({year:2000,month:birthday.month},0,0,draw.value);
+      state.pendingEvents.push(intro);state.eventHistory.push(intro);
+    }
     emit();
     return { ok: true, snapshot: getState() };
   }
   function advanceTurn() {
     if (!state.initialized) return { ok: false, reason: '最初に人生を開始してください。' };
     if (state.ending.dead) return {ok:false,reason:'人生が終了しています。人生記録を確認してください。'};
+    if(interactiveChoices && state.pendingEvents.some(event=>event.type==='choice'))return {ok:false,reason:'次へ進む前に、出来事の選択肢を選んでください。'};
     if (state.timeline.year >= MAX_YEAR) return { ok: false, reason: '時間進行の上限に達しました。' };
     const t = state.timeline;
     const months = t.ageYears < 15 ? 3 : 1;
@@ -123,8 +147,10 @@ export function createGameStore() {
         for(const item of financeEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
         const choiceDraw=nextRandom(state.random.seed);
         state.random.seed=choiceDraw.seed;state.random.draws++;
-        const choice=createChoiceEvent(date,turn,monthAge,choiceDraw.value);
-        if(choice)newEvents.push(choice);
+        if(!interactiveChoices){
+          const choice=createChoiceEvent(date,turn,monthAge,choiceDraw.value);
+          if(choice)newEvents.push(choice);
+        }
       }
     }
     for(const event of advanceFamily(state,{year,month}))newEvents.push(makeEvent(event.type,event.title,event.description));
@@ -142,6 +168,13 @@ export function createGameStore() {
         state.ending={dead:true,date:{year,month,age},cause,score,inheritance,legacy:[{year,month,title:`${state.player.name}の人生記録`,description:`${age}歳で人生を終えました。人生評価：${score}点。`}]};
         newEvents.push(makeEvent('death','人生の終了',`${age}歳で人生を終えました。人生記録と相続結果を確認できます。`));
       }
+    }
+    if(interactiveChoices && !state.ending.dead){
+      const draw=nextRandom(state.random.seed);
+      state.random.seed=draw.seed;state.random.draws++;
+      newEvents.push(createStoryEvent({year,month},turn,age,draw.value));
+      // Passive notifications remain in history but do not clutter the next turn.
+      state.pendingEvents=state.pendingEvents.filter(event=>event.type==='choice');
     }
     // イベント生成順序と乱数状態を保存・再現します。
     state.pendingEvents.push(...newEvents);
@@ -175,7 +208,7 @@ export function createGameStore() {
       case 'setLoanRepayment': case 'settleBusinessPayable': case 'businessLoan': case 'repayBusinessLoan': case 'purchaseEquipment': case 'sellEquipment': case 'findJob': case 'resign': case 'sideJob': case 'startBusiness': case 'closeBusiness': case 'businessFunding': case 'ownerDraw': case 'jobSearch': case 'restartBusiness': case 'setBudget': case 'buyInvestment': case 'sellInvestment': case 'repayDebt':
         result=economyAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline});break;
       case 'habit': case 'treatment': result=healthAction(state.health,action,payload,state.timeline,state.finances);break;
-      case 'resolveChoice': result=resolveChoice(state,payload.eventId,payload.choice);break;
+      case 'resolveChoice': result=state.pendingEvents.some(e=>e.id===payload.eventId && e.story) ? resolveStoryChoice(state,payload.eventId,payload.choice) : resolveChoice(state,payload.eventId,payload.choice);break;
       case 'meetFriend':case 'date':case 'marry':case 'haveChild':case 'familyCare': result=socialAction(state,action,payload);break;
       case 'prepareExam': result=prepareExam(state.education);break;
       case 'chooseSchool': result=chooseSchool(state.education,payload.stage,payload.school);break;
@@ -191,7 +224,7 @@ export function createGameStore() {
       default: result={ok:false,reason:'未対応の操作です。'};
     }
     if(result.ok){
-      state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='habit'?'生活習慣':action==='treatment'?'治療':action==='resolveChoice'?'人生選択':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
+      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='habit'?'生活習慣':action==='treatment'?'治療':action==='resolveChoice'?'人生選択':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
       if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
       emit();
     }

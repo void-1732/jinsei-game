@@ -1,3 +1,4 @@
+import {renderPlayDashboard} from './playDashboard.js';
 import {renderLivingPanel} from './livingPanel.js';
 import {getScreenFieldValues} from '../core/screenFieldValues.js';
 import {renderHistoryPanel} from './historyPanels.js';
@@ -9,6 +10,14 @@ import { findScreen } from '../core/screenCatalog.js';
 import {getScreenCoverage,createCoverageReport} from '../core/screenCoverage.js';
 /** Render only domain snapshots; all interactive filters are UI-local. */
 export function renderScreen(container, screen, gameState = null, handlers = {}) {
+  if(screen.id==='LIFE-01')return renderPlayDashboard(container,gameState,handlers);
+  if(screen.id==='SETTING-01'){
+    const box=document.createElement('section');box.className='play-card settings-screen';
+    const title=document.createElement('h2');title.textContent='保存・読み込み・新しい人生';
+    const info=document.createElement('p');info.textContent='セーブ・ロードと新しい人生の開始は、設定ウィンドウにまとめました。';
+    const btn=document.createElement('button');btn.type='button';btn.className='button button-primary';btn.textContent='ゲーム設定を開く';btn.addEventListener('click',()=>handlers.onSettings?.());
+    box.append(title,info,btn);container.replaceChildren(box);return;
+  }
   const detail = screenDetails[screen.id];
   const fieldValues = getScreenFieldValues(screen.id, gameState);
   const connectedFields = detail.fields.filter(field => Object.hasOwn(fieldValues, field)).length;
@@ -75,7 +84,10 @@ export function renderScreen(container, screen, gameState = null, handlers = {})
     el('p', 'muted small', `現在のプレイヤー: ${gameState?.initialized ? `${gameState.player.name}（${gameState.timeline.ageYears}歳 / ${gameState.timeline.year}年${gameState.timeline.month}月 / ${gameState.timeline.turnsElapsed}ターン）` : '未生成'}。接続済み：${coverage.connectedDescription}。画面別データ：${connectedFields}/${detail.fields.length}項目。予定操作：${coverage.plannedActions}件。`));
   side.append(links, actions, state);
   grid.append(information, side);
-  body.append(intro, toolbar, grid);
+  const advanced=document.createElement('details');advanced.className='advanced-details';
+  const summary=document.createElement('summary');summary.textContent='詳細データ・未接続の項目を表示';
+  advanced.append(summary, toolbar, grid);
+  body.append(intro, advanced);
   if(screen.id==='SETTING-06'){
     const audit=createCoverageReport();
     const panel=el('section','content-card phase25-audit');

@@ -34,14 +34,8 @@ export function createUiStore(initialScreenId = 'LIFE-01') {
   function openCategory(category) {
     const group = screenGroups.find(item => item.category === category);
     if (!group) return false;
-    const first = group.screens[0];
-    if (first.id === state.activeScreenId) {
-      if (state.searchQuery) update({ searchQuery: '' });
-      return true;
-    }
-    const history = [...state.history.slice(0, state.historyIndex + 1), first.id];
-    update({ activeScreenId: first.id, activeCategory: group.category, searchQuery: '',
-      history, historyIndex: history.length - 1 });
+    // Categories are independent accordion controls: clicking the opened one closes it.
+    update({activeCategory: state.activeCategory === category ? null : category, searchQuery: ''});
     return true;
   }
   function travelTo(index) {

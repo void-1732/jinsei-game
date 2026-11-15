@@ -44,9 +44,10 @@ test('UI navigation does not modify game-state snapshot', () => {
   assert.equal(store.forward(), true);
   assert.equal(store.getState().activeScreenId, 'EDU-03');
   assert.equal(store.openCategory('健康'), true);
-  assert.equal(store.getState().activeScreenId, 'HEALTH-01');
-  assert.equal(store.forward(), false); // forward history cleared after new navigation
-  assert.deepEqual(changes, ['EDU-03', 'LIFE-01', 'EDU-03', 'HEALTH-01']);
+  assert.equal(store.getState().activeScreenId, 'EDU-03');
+  assert.equal(store.getState().activeCategory, '健康');
+  assert.equal(store.forward(), false); // expanding a category does not change the current screen
+  assert.deepEqual(changes, ['EDU-03', 'LIFE-01', 'EDU-03', 'EDU-03']);
   stop();
   assert.equal(JSON.stringify(getGameSnapshot()), before);
   assert.equal(Object.isFrozen(getGameSnapshot().timeline), true);

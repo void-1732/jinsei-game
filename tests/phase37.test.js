@@ -19,8 +19,8 @@ test('第40段階：履歴操作と検索はゲーム状態と分離',()=>{
 });
 test('第40段階：画面操作の結果が再描画直後に消えない',()=>{
  const source=read('js/app.js');assert.match(source,/actionFeedback=result\.message/);
- assert.match(source,/actionFeedback \|\| `\$\{screen\.id\}/);
- assert.match(source,/if \(lastScreenId !== screen\.id\)/);
+ assert.match(source,/actionFeedback\|\|`\$\{screen\.id\}/);
+ assert.match(source,/if\(lastScreenId!==screen\.id\)/);
 });
 test('第40段階：表示項目の名称・値で絞り込み、接続数を保持',()=>{
  const source=read('js/ui/screenRenderer.js');
@@ -31,8 +31,8 @@ test('第40段階：表示項目の名称・値で絞り込み、接続数を保
 });
 test('第40段階：日本語表示・キーボード移動・視認性',()=>{
  const page=read('index.html');const css=read('css/phase37.css');
- assert.match(page,/lang="ja"/);assert.match(page,/本文へ移動/);assert.match(page,/第41段階/);
+ assert.match(page,/lang="ja"/);assert.match(page,/本文へ移動/);assert.match(page,/第42段階/);
  assert.match(page,/aria-atomic="true"/);assert.match(css,/:focus-visible/);
  assert.match(css,/prefers-reduced-motion/);
- assert.match(read('package.json'),/"version": "4\.2\.0"/);
+ assert.match(read('package.json'),/"version": "4\.3\.0"/);
 });

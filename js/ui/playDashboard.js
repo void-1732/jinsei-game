@@ -1,0 +1,84 @@
+const el=(tag,klass='',text='')=>{
+  const node=document.createElement(tag);if(klass)node.className=klass;
+  if(text!==undefined&&text!==null)node.textContent=text;
+  return node;
+};
+const average=values=>Math.round(values.reduce((sum,v)=>sum+v,0)/Math.max(1,values.length));
+const fmt=n=>Math.round(n||0).toLocaleString('ja-JP');
+function quickButton(label,callback){
+  const node=el('button','button button-secondary dashboard-shortcut',label+' →');
+  node.type='button';node.addEventListener('click',callback);return node;
+}
+function primaryAction(label,onClick){
+  const node=el('button','button button-primary dashboard-primary',label);
+  node.type='button';node.addEventListener('click',onClick);return node;
+}
+function goalFor(age,education,finance){
+  if(age<6)return ['家族との絆を育てる','絵本や遊びから、毎ターン少しずつ力を身につけよう。'];
+  if(age<15)return ['好きなことを見つける',`学力・友だち・体力のバランスを意識してみよう。現在は${education.stage}。`];
+  if(age<20)return ['未来の選択肢を増やす','勉強と技能を磨き、進路に備えよう。'];
+  if(age<65)return ['仕事と暮らしを築く',finance.career.job?'今の仕事と大切な人の時間、どちらも人生を形づくる。':'職業・転職の画面から仕事を探せます。'];
+  return ['これまでの経験を未来へつなぐ','健康・家族・趣味の中で、自分らしい時間を選ぼう。'];
+}
+/** Only the actual play hub is shown on the landing screen, not developer field lists. */
+export function renderPlayDashboard(container,state,handlers={}){
+  const root=el('div','play-dashboard');
+  const started=Boolean(state?.initialized);
+  const queued=state?.pendingEvents?.find(e=>e.type==='choice');
+  const hero=el('section','play-hero');
+  const intro=el('div','play-hero-content');
+  intro.append(el('span','play-eyebrow',started?'あなたの物語は続いている':'2000年、日本からはじまる'),
+    el('h2','',started?`${state.player.name}の、次の物語。`:'人生は、選択で変わる。'),
+    el('p','',started?`現在${state.timeline.ageYears}歳。${state.timeline.year}年${state.timeline.month}月。今、何を大切に生きますか？`:'誕生日も、選ぶ道も、人それぞれ。ひとつの正解のない人生を始めよう。'));
+  const action=primaryAction(started?(queued?'今の出来事を選ぶ →':'次のターンへ進む →'):'プレイヤー名を入力してはじめる →',()=>handlers.onPlay?.());
+  intro.append(action);
+  const ring=el('div','play-hero-ring');ring.append(el('span','','LIFE'),el('strong','',String(state?.timeline?.ageYears??0)),el('small','','years old'));
+  hero.append(intro,ring);root.append(hero);
+  if(!started){
+    const message=el('div','play-welcome');
+    message.append(el('h3','','このゲームでできること'),el('p','', '毎ターン現れる出来事から行動を選び、学力・技能・体力・心・人間関係を伸ばせます。選択は記録され、進学・仕事・家族・資産のシステムにもつながります。'));
+    root.append(message);container.replaceChildren(root);return;
+  }
+  const education=state.education;
+  const health=state.health;
+  const finance=state.finances;
+  const relations=state.people.filter(p=>p.role!=='本人').map(p=>p.relationship);
+  const knowledge=average(Object.values(education.scores));
+  const social=relations.length?average(relations):50;
+  const metrics=el('div','play-stats');
+  for(const [label,value,description,kind] of [
+    ['学力',knowledge,'勉強や経験で成長','knowledge'],
+    ['体力',health.physical,'無理はほどほどに','physical'],
+    ['こころ',health.mental,'気持ちの健康','mind'],
+    ['人とのつながり',social,'家族や友人との絆','relation']]){
+    const card=el('article',`play-stat play-stat-${kind}`);
+    const top=el('div','play-stat-top');top.append(el('span','',label),el('strong','',String(value)));
+    const track=el('div','play-meter');const fill=el('span');fill.style.width=`${Math.min(100,Math.max(0,value))}%`;track.append(fill);
+    card.append(top,track,el('small','',description));metrics.append(card);
+  }
+  root.append(metrics);
+  const lower=el('div','play-lower');
+  const storyCard=el('section','play-card play-story-card');
+  const heading=el('div','play-card-heading');heading.append(el('h3','','人生の記録'),el('span','','最新の4件'));storyCard.append(heading);
+  const recent=state.eventHistory.filter(e=>e.type==='choice-result'||['birthday','education','job-loss','death'].includes(e.type)).slice(-4).reverse();
+  if(!recent.length)storyCard.append(el('p','play-empty','最初の選択から、あなただけの人生記録が始まります。'));
+  for(const event of recent){
+    const item=el('article','play-history-item');
+    item.append(el('span','play-history-date',`${event.year}年${event.month}月`),el('strong','',event.title),el('p','',event.description));
+    storyCard.append(item);
+  }
+  storyCard.append(quickButton('人生タイムラインを見る',()=>handlers.onNavigate?.('HISTORY-01')));
+  const side=el('div','play-lower-side');
+  const goals=goalFor(state.timeline.ageYears,education,finance);
+  const focus=el('section','play-card play-focus');focus.append(el('span','play-eyebrow','いまの人生のテーマ'),el('h3','',goals[0]),el('p','',goals[1]));
+  const skill=el('section','play-card play-skills');skill.append(el('h3','','積み重ねた技能'));
+  const skills=el('div','play-skill-tags');
+  for(const name of ['読書','パソコン','運動'])skills.append(el('span','',`${name} ${education.skills[name]??0}`));
+  skill.append(skills);
+  const money=el('section','play-card play-money');money.append(el('h3','','くらしのお金'),el('p','',`現金：${fmt(finance.cash)} 円`));
+  const shortcuts=el('div','play-shortcuts');
+  shortcuts.append(quickButton('学業',()=>handlers.onNavigate?.('EDU-01')),quickButton('仕事',()=>handlers.onNavigate?.('WORK-01')),quickButton('健康',()=>handlers.onNavigate?.('HEALTH-01')));
+  money.append(shortcuts);
+  side.append(focus,skill,money);lower.append(storyCard,side);root.append(lower);
+  container.replaceChildren(root);
+}
