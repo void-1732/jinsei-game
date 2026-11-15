@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "4.9.0",
+  "version": "5.0.0",
   "type": "module",
-  "description": "人生シミュレーション 第48段階 長期バランス・重要イベントまでの時間進行",
+  "description": "人生シミュレーション 第49段階 人生の夢・実績・複数エンディング・振り返り",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "check": "npm test",

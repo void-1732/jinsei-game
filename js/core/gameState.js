@@ -1,4 +1,5 @@
 import {calculateInheritance} from './estateSystems.js';
+import {createLifeGoalProgress,ensureLifeGoalProgress,observeLifeGoals,chooseLifeDream,finalizeLifeGoals} from './lifeGoals.js';
 import {createLivingData, ensureLiving, ensureMortgage, livingAction, getHousingEquity} from './livingSystems.js';
 import {ensureCompanyMarket,advanceCompanyMarket,supportRebuilding} from './companySystems.js';
 import {ensureWorkplace,workplaceAction,advanceWorkplace} from './workplaceSystems.js';
@@ -53,6 +54,7 @@ export const initialGameState = freezeSnapshot({
   storyProgress: createStoryProgress(),
   opportunity47: createOpportunityProgress(),
   balance48: createBalanceProgress(),
+  lifeGoal49: createLifeGoalProgress(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
@@ -196,6 +198,10 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(state.pendingEvents.length>250)state.pendingEvents.splice(0,state.pendingEvents.length-250);
     state.eventHistory.push(...newEvents);
     if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
+    if(interactiveChoices){
+      observeLifeGoals(state,{events:newEvents});
+      if(state.ending.dead)finalizeLifeGoals(state);
+    }
     emit();
     return { ok: true, months, events: freezeSnapshot(newEvents), snapshot: getState() };
   }
@@ -250,7 +256,15 @@ export function createGameStore({interactiveChoices=false} = {}) {
   function performAction(action, payload={}) {
     if (!state.initialized) return {ok:false,reason:'人生を開始してください。'};
     if(state.ending.dead)return {ok:false,reason:'人生終了後は操作できません。'};
-    // One optional manual decision per turn, in addition to the mandatory story choice.
+    // Changing a life aspiration is a strategic setting, not a routine free action.
+    if(interactiveChoices && action==='setLifeDream'){
+      const changed=chooseLifeDream(state,payload.id);
+      if(changed.ok){observeLifeGoals(state);emit();}
+      return changed;
+    }
+    const choiceBeingResolved=action==='resolveChoice'
+      ? state.pendingEvents.find(e=>e.id===payload.eventId&&e.type==='choice') : null;
+    // One optional manual decision
     // Enforced in the store, not just by disabling UI controls: cannot be bypassed by clicks.
     if (interactiveChoices && action !== 'resolveChoice') {
       if (state.pendingEvents.some(e => e.type === 'choice'))
@@ -320,6 +334,20 @@ export function createGameStore({interactiveChoices=false} = {}) {
       }
       if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='habit'?'生活習慣':action==='treatment'?'治療':action==='resolveChoice'?'人生選択':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
       if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
+      if(interactiveChoices){
+        const highlight=choiceBeingResolved?.branch
+          ? {type:'choice',branch:true,title:choiceBeingResolved.title,label:result.message??choiceBeingResolved.title}
+          : action==='marry'||action==='haveChild'||action==='applyJob'||action==='startBusiness'||action==='promotionExam'
+          ? {type:'personal',name:action,title:'人生の選択',description:result.message??action} : null;
+        observeLifeGoals(state,{action:highlight});
+        // Keep the choice result as the most recent history item so the
+        // player sees what they selected before secondary achievement notices.
+        if(action==='resolveChoice'){
+          const idx=state.eventHistory.findLastIndex(e=>e.type==='choice-result');
+          if(idx>=0 && idx<state.eventHistory.length-1)
+            state.eventHistory.push(...state.eventHistory.splice(idx,1));
+        }
+      }
       emit();
     }
     return result;
@@ -332,6 +360,9 @@ export function createGameStore({interactiveChoices=false} = {}) {
     ensureStoryProgress(state);
     ensureOpportunityProgress(state);
     ensureBalanceProgress(state);
+    ensureLifeGoalProgress(state);
+    if(state.ending.dead&&interactiveChoices)finalizeLifeGoals(state);
+    else if(interactiveChoices)observeLifeGoals(state,{quiet:true});
     if(state.finances){
       const c=state.finances.career,b=state.finances.business;
       for(const [key,val] of Object.entries({unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,insuredMonths:0,benefitEligible:true}))if(c[key]===undefined)c[key]=val;

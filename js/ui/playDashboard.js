@@ -3,6 +3,7 @@ import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js
 import {renderTurnActivity} from './turnActivities.js';
 import {getLifeThreads} from '../core/branchingStories.js';
 import {createOpportunityProgress} from '../core/opportunitySystems.js';
+import {renderLifeGoalPanel,renderLifeReview} from './lifeGoalPanel.js';
 const el=(tag,klass='',text='')=>{
   const node=document.createElement(tag);if(klass)node.className=klass;
   if(text!==undefined&&text!==null)node.textContent=text;
@@ -63,6 +64,9 @@ export function renderPlayDashboard(container,state,handlers={}){
     card.append(top,track,el('small','',description));metrics.append(card);
   }
   root.append(metrics);
+  const personalGoal=renderLifeGoalPanel(state,handlers.onAction);
+  if(personalGoal)root.append(personalGoal);
+  if(state.ending?.dead){root.append(renderLifeReview(state,{expanded:true}));container.replaceChildren(root);return;}
   // Show playable destinations at first glance, not only a next-turn button.
   const opportunities=el('section','play-card play-opportunities');
   const ready=hasFreeAction(state);

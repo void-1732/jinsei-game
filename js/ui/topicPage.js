@@ -4,6 +4,7 @@ import {getScreenFieldValues} from '../core/screenFieldValues.js';
 import {findScreen} from '../core/screenCatalog.js';
 import {renderScreen} from './screenRenderer.js';
 import {renderOpportunityPanel} from './opportunityPanel.js';
+import {renderLifeReview} from './lifeGoalPanel.js';
 
 const el=(tag,klass='',text='')=>{const e=document.createElement(tag);if(klass)e.className=klass;e.textContent=text;return e;};
 
@@ -42,6 +43,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
     el('h2','',topic.title),
     el('p','',`関連する${topic.screenIds.length}項目を1ページにまとめました。必要な操作だけを開いて使えます。`));
   root.append(intro);
+  if(screen.category==='履歴'&&state?.initialized)root.append(renderLifeReview(state,{expanded:Boolean(state.ending?.dead)}));
   const action=state?.initialized?actionBox(state,screen.category,handlers.onAction):null;
   if(action)root.append(action);
   const featured=renderOpportunityPanel(state,screen.category,handlers.onAction);
