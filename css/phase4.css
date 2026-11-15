@@ -1,0 +1,6 @@
+.phase4-panel{margin:0 0 20px;border:1px solid #3b6682;background:linear-gradient(125deg,#182939,#10202e);padding:18px;display:grid;gap:10px}
+.phase4-panel h2{font-size:19px;margin:0}.phase4-panel h3{font-size:15px;margin:12px 0 2px;color:#c6e5f5}
+.phase4-panel .field-list-item{display:flex;justify-content:space-between;gap:18px;padding:9px 6px;border-bottom:1px solid #354554}
+.phase4-actions{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0}.phase4-select{min-height:36px;padding:5px 10px;background:#101d2b;color:#edf6ff;border:1px solid #4c6476;border-radius:6px}
+.phase4-panel .phase4-scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:8px}
+.phase4-panel .phase4-scores .field-list-item{background:#172b3c;border-radius:6px;padding:10px}

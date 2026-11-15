@@ -1,0 +1,4 @@
+/* 第11段階：従業員ごとの操作は横並びにせず読みやすさを優先 */
+.phase11-staff{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px;margin:9px 0;border:1px solid var(--border-color,#41516a);border-radius:9px;}
+.phase11-staff>span{flex:1 1 230px;}
+.phase11-staff>strong{flex:0 0 100%;}

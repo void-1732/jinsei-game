@@ -1,0 +1,5 @@
+/* 第10段階：求人表示のPC専用配置 */
+.phase10-job-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.phase10-job{min-width:0;border:1px solid var(--border,#334155);padding:12px;border-radius:10px;background:rgba(20,34,57,.35)}
+.phase10-job p{margin:7px 0 11px;line-height:1.5}
+@media(max-width:1250px){.phase10-job-grid{grid-template-columns:1fr}}

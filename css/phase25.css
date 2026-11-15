@@ -1,0 +1,8 @@
+.planned-actions-details summary{cursor:pointer;padding:10px 0;color:#c8daef;font-weight:600;list-style-position:inside}
+.planned-actions-details summary:focus-visible{outline:2px solid #73abff;outline-offset:3px}
+.planned-actions-details button{margin:6px 8px 4px 0}
+.phase25-audit{margin-top:16px;overflow-x:auto}
+.phase25-table{width:100%;border-collapse:collapse;font-size:12px;margin:14px 0}
+.phase25-table th,.phase25-table td{border-bottom:1px solid #314157;text-align:left;padding:10px 8px}
+.phase25-table th{color:#c3d7ed;font-weight:700}
+.phase25-table td{color:#a9bed4}

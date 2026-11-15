@@ -1,0 +1,8 @@
+/* 第6段階：健康・社会・選択イベント */
+.phase6-panel{margin-bottom:14px}
+.phase6-panel .field-list-item{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid rgba(150,175,200,.14)}
+.phase6-panel .field-list-item span{font-variant-numeric:tabular-nums}
+.phase6-choice,.phase6-news{border:1px solid rgba(150,175,200,.20);border-radius:10px;padding:13px;margin:10px 0}
+.phase6-choice .phase4-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.phase6-panel h3{margin-top:16px}
+.phase6-panel .phase6-action{margin:3px}

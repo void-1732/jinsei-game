@@ -1,0 +1,4 @@
+/* 第26段階：設計項目のうち実際に保存済みデータへ接続した項目 */
+.field-connected {font-variant-numeric:tabular-nums;color:#b8e7dc;text-align:right;max-width:60%;overflow-wrap:anywhere}
+.field-unavailable {font-size:.83em;color:#a9afbb}
+@media(max-width:1200px){.field-connected{max-width:55%}}

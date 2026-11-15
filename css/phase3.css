@@ -1,0 +1,15 @@
+.phase3-controls{background:linear-gradient(115deg,#13243a,#0f1a2a);border:1px solid #344962;border-radius:13px;padding:18px 22px;margin-bottom:18px;box-shadow:0 12px 30px #0002}
+.phase3-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#e7f0ff;margin-bottom:12px}
+.phase3-heading span,#turn-length{color:#a8bdd5;font-size:13px}
+.phase3-control-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.phase3-control-row label{color:#b5c8de;font-size:13px}
+.phase3-control-row input{border:1px solid #405571;background:#091522;color:#e8f3ff;border-radius:8px;padding:10px 12px;max-width:165px;font:inherit}
+.phase3-primary{border:1px solid #4b94da;background:#2160a4;color:#fff;border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:700}
+.phase3-primary:hover:not(:disabled){background:#3078c4}
+.phase3-primary:disabled{opacity:.45;cursor:not-allowed}
+.phase3-controls p{margin:12px 0 0}
+.phase3-event-list{display:grid;gap:10px;max-height:360px;overflow:auto}
+.phase3-event{border:1px solid #344962;border-radius:9px;padding:11px;background:#111f30}
+.phase3-event strong{color:#e7efff;font-size:13px}
+.phase3-event p{font-size:12px;margin:7px 0;color:#a9bed7}
+.phase3-event button{font-size:12px;padding:7px 10px}

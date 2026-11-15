@@ -1,0 +1,7 @@
+/* 第18段階：日本語の月次推移グラフ */
+.phase18-graph{padding:12px;margin:16px 0;border:1px solid #344456;border-radius:9px;overflow:hidden}
+.phase18-bars{height:126px;display:flex;align-items:flex-end;gap:5px;margin-top:12px}
+.phase18-column{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.phase18-bar{width:100%;max-width:36px;background:#5796c8;border-radius:3px 3px 0 0;min-height:3px}
+.phase18-negative{background:#c77b72}
+.phase18-column span{font-size:10px;color:#b2c1d0;white-space:nowrap}

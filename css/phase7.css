@@ -1,0 +1,7 @@
+.phase7-controls{margin:12px 0 22px;padding:18px;border:1px solid #354960;border-radius:12px;background:#152337;color:#e7eef8}
+.phase7-control-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.phase7-control-row select{min-width:150px;background:#0d1928;color:#f3f6fb;padding:9px;border:1px solid #58708c;border-radius:7px}
+.phase7-history{margin-bottom:20px;max-height:630px;overflow:auto}
+.phase7-history h3{margin-top:18px}
+.phase7-history-item{padding:10px 0;border-bottom:1px solid #31435b}
+.phase7-history-item p{margin:5px 0 0}

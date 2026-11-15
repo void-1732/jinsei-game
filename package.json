@@ -1,0 +1,15 @@
+{
+  "name": "grand-life-simulation",
+  "private": true,
+  "version": "4.2.0",
+  "type": "module",
+  "description": "人生シミュレーション 第41段階 GitHub Pages対応",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "npm test",
+    "test:integration": "node --test tests/phase38.test.js",
+    "test:quick": "node --test --test-concurrency=2 tests/catalog.test.js tests/details.test.js tests/economy.test.js tests/engine.test.js tests/integrationPhase8.test.js tests/lifeSystems.test.js tests/phase10.test.js tests/phase11.test.js tests/phase12.test.js tests/phase13.test.js tests/phase14.test.js tests/phase15.test.js tests/phase16.test.js tests/phase17.test.js tests/phase18.test.js tests/phase19.test.js tests/phase20.test.js tests/phase21.test.js tests/phase22.test.js tests/phase23.test.js tests/phase24.test.js tests/phase25.test.js tests/phase26.test.js tests/phase27.test.js tests/phase28.test.js tests/phase29.test.js tests/phase30.test.js tests/phase31.test.js tests/phase32.test.js tests/phase33.test.js tests/phase34.test.js tests/phase35.test.js tests/phase36.test.js tests/phase37.test.js tests/phase38.test.js tests/phase9.test.js tests/saveEnding.test.js tests/worldHealth.test.js",
+    "test:long": "node --test --test-concurrency=1 tests/integrationPhase8.test.js tests/phase36.test.js tests/phase38.test.js tests/saveEnding.test.js",
+    "check:pages": "node scripts/check-pages.mjs"
+  }
+}

@@ -1,0 +1,9 @@
+/* 第37段階: キーボードと検索結果の視認性を改善 */
+.skip-navigation{position:fixed;top:-80px;left:16px;z-index:10000;background:#213e65;color:#fff;padding:12px 20px;border:2px solid #a5cbff;border-radius:8px}
+.skip-navigation:focus{top:12px}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #9dc9ff;outline-offset:2px}
+.field-list-item[hidden],.nav-link[hidden],.nav-group[hidden]{display:none!important}
+.field-connected{overflow-wrap:anywhere;white-space:normal}
+.detail-toolbar{gap:12px;flex-wrap:wrap}
+.detail-link{min-height:36px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}

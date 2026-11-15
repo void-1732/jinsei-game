@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b111c">
+  <meta name="color-scheme" content="dark">
+  <title>人生シミュレーション</title>
+  <link rel="stylesheet" href="./css/common.css">
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/dark-layout.css">
+  <link rel="stylesheet" href="./css/phase2.css">
+  <link rel="stylesheet" href="./css/phase3.css">
+  <link rel="stylesheet" href="./css/phase4.css">
+  <link rel="stylesheet" href="./css/phase5.css">
+  <link rel="stylesheet" href="./css/phase6.css">
+  <link rel="stylesheet" href="./css/phase7.css">
+  <link rel="stylesheet" href="./css/phase10.css">
+  <link rel="stylesheet" href="./css/phase11.css">
+  <script type="module" src="./js/app.js"></script>
+  <link rel="stylesheet" href="./css/phase18.css">
+  <link rel="stylesheet" href="./css/phase25.css">
+  <link rel="stylesheet" href="css/phase26.css">
+  <link rel="stylesheet" href="css/phase27.css">
+  <link rel="stylesheet" href="css/phase37.css">
+</head>
+<body>
+  <a class="skip-navigation" href="#main-content">本文へ移動</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">GL</div>
+        <div><div class="brand-name">人生シミュレーション</div><div class="brand-subtitle">日本の人生シミュレーション</div></div>
+      </div>
+      <div class="world-status" aria-live="polite">
+        <div class="world-status-label">ゲーム内の日時 <span class="time-static">進行停止中</span></div>
+        <div class="world-status-line"><strong id="date-label">2000年1月</strong><span id="age-label">0歳</span><span class="world-status-separator"></span><span class="world-profile" id="profile-label">プレイヤー未作成</span></div>
+      </div>
+      <div class="topbar-actions">
+        <span class="save-indicator" id="save-status">保存待ち</span>
+        <button class="icon-button notifications" id="notification-button" type="button" aria-label="通知状態を確認">通知 <span class="notification-count">0</span></button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" id="sidebar" aria-label="画面メニュー">
+        <div class="sidebar-heading"><span>画面を選ぶ</span><span class="sidebar-heading-dot"></span></div>
+        <label class="visually-hidden" for="screen-search">画面を検索</label>
+        <input id="screen-search" class="nav-search" type="search" autocomplete="off" placeholder="画面名・識別番号を検索" aria-controls="main-navigation">
+        <div class="nav-label-row"><span>カテゴリ / 画面</span><span id="catalog-count">9カテゴリ / 61画面</span></div>
+        <nav id="main-navigation" aria-label="メインメニュー"></nav>
+        <div class="sidebar-footer"><span>ブラウザ版</span><span class="version" id="version-label">v4.2.0 · 第41段階</span></div>
+      </aside>
+
+      <main class="main-content" id="main-content" tabindex="-1">
+        <div class="breadcrumbs" id="breadcrumbs">画面一覧 / 人生 / 生活ダッシュボード</div>
+        <div class="page-heading">
+          <div class="page-title-block"><div class="page-kickers"><span class="category-tag" id="category-label">人生</span><span class="screen-code" id="screen-id">LIFE-01</span></div><h1 id="page-title">生活ダッシュボード</h1><p class="page-subtitle">人生の状態と選択を、ひとつの画面に。</p></div>
+          <div class="page-actions"><div class="history-actions"><button class="icon-button" id="nav-back" type="button" aria-label="直前に表示した画面へ" title="戻る（Ctrl+Alt+←）" disabled>←</button><button class="icon-button" id="nav-forward" type="button" aria-label="次に表示した画面へ" title="進む（Ctrl+Alt+→）" disabled>→</button></div><button class="button button-secondary" id="help-button" type="button">画面ガイド</button></div>
+        </div>
+        <section class="phase3-controls" aria-label="時間進行コントロール">
+          <div class="phase3-heading"><strong>人生シミュレーション</strong><span id="turn-count">0 ターン経過</span></div>
+          <div class="phase3-control-row"><label for="player-name">プレイヤー名</label><input id="player-name" maxlength="30" value="プレイヤー" aria-label="プレイヤー名"><button class="button button-secondary" id="start-game" type="button">人生を開始</button><button class="button phase3-primary" id="advance-turn" type="button" disabled>次のターンへ進む</button><span id="turn-length">開始後に時間進行できます</span></div>
+          <p class="muted small">2000年1月1日生まれ。0～14歳は3か月、15歳以降は1か月進行。学校は毎年4月に進級します。早送りはありません。保存データはこのブラウザ内に記録されます。別の端末やブラウザには自動共有されません。</p>
+        </section>
+        <section class="phase7-controls" aria-label="保存と再開">
+          <strong>保存・読込・人生の再挑戦</strong>
+          <div class="phase7-control-row"><label for="save-slot">保存枠</label><select id="save-slot"><option>手動保存1</option><option>手動保存2</option><option>手動保存3</option><option>自動保存</option><option>人生記録</option></select><button class="button button-secondary" id="save-game" type="button">保存</button><button class="button button-secondary" id="load-game" type="button">読み込む</button><button class="button button-secondary" id="restart-game" type="button">新しい人生</button></div>
+          <p class="muted small" id="save-details">ターン進行・操作ごとに自動保存します。既存データを上書きする前には予備を保管します。</p>
+        </section>
+        <section id="screen-root" aria-label="現在の画面" aria-live="polite"></section>
+      </main>
+
+      <aside class="event-rail" id="event-rail" aria-label="重要イベントと関連情報">
+        <div class="rail-heading"><span>ゲーム情報</span><span class="rail-heading-line"></span></div>
+        <section class="panel event-panel">
+          <div class="panel-heading"><div><p class="eyebrow">重要な出来事</p><h2>重要イベント</h2></div><span class="status-dot status-neutral" aria-label="イベントなし"></span></div>
+          <div id="pending-event-list" class="phase3-event-list"><p class="muted small">対応待ちの時間イベントはありません。</p></div>
+        </section>
+        <section class="panel related-panel">
+          <div class="panel-heading"><div><p class="eyebrow">現在の画面</p><h2>関連情報</h2></div></div>
+          <div class="related-screen"><span id="related-screen-id" class="screen-code">LIFE-01</span><strong id="related-screen-title">生活ダッシュボード</strong></div>
+          <p class="muted small" id="related-description">選択中の画面に関連する情報が表示されます。</p>
+        </section>
+        <section class="panel status-panel"><div class="panel-heading"><div><p class="eyebrow">実装状況</p><h2>実装ステータス</h2></div></div><div class="build-progress"><div><span>画面ID登録</span><strong>61 / 61</strong></div><div class="progress-track"><span></span></div></div><p class="muted small">61画面の個別表示・関連画面への移動が可能です。時間進行、学業、仕事、家計、健康、保存、人生履歴を基本実装済みです。詳細な未接続機能は各画面で確認できます。</p></section>
+        <div class="rail-bottom"><span class="rail-bottom-dot"></span> ブラウザで動作 / データはブラウザ内に保存</div>
+      </aside>
+    </div>
+
+    <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第41段階 · GitHub Pages対応版 · パソコン専用</span></footer>
+  </div>
+
+  <dialog id="help-dialog" class="modal" aria-labelledby="help-title">
+    <div class="modal-header"><h2 id="help-title">画面ガイド</h2><button class="icon-button" id="close-help" type="button">閉じる</button></div>
+    <p>9カテゴリ・61画面を切り替えられます。左メニューからカテゴリを開くか、検索欄で画面名・画面IDを検索してください。</p>
+    <p>「←」「→」は閲覧した画面の履歴操作です。キーボードの コントロール＋オルト＋左右矢印でも操作できます。ゲームの時間は「次のターンへ進む」でのみ進みます。</p>
+    <p class="muted small">現在は人生開始・時間進行・誕生日通知・人物・学業・仕事・家計を実装しています。仕事・家計の簡易処理は実装済みです。健康・社会・保存・読込・人生記録を実装しています。</p>
+  </dialog>
+</body>
+</html>
