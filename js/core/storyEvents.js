@@ -1,6 +1,7 @@
 import {balancedGrowth} from './balanceSystems.js';
 import {createBranchingEvent,recordBranchChoice} from './branchingStories.js';
 import {selectCatalogEvent} from './eventCatalog.js';
+import {createConsequenceEvent,rememberConsequence,resolveConsequence} from './consequenceSystems.js';
 import {selectOpportunityEvent,reflectOpportunityStoryChoice} from './opportunitySystems.js';
 /**
  * PHASE 42: player-led life scenes. All options are serializable so saves remain portable.
@@ -150,6 +151,8 @@ function impactHint(impact){
 export function createStoryEvent(date, turn, age, randomValue, storyProgress=null, gameState=null) {
   const branch=createBranchingEvent(storyProgress,date,turn,age);
   if(branch)return branch;
+  const echo=createConsequenceEvent(gameState,date,turn,age);
+  if(echo)return echo;
   const milestone=selectOpportunityEvent(gameState,age,turn,randomValue);
   if(milestone)return {id:`T${turn}-choice`,type:'choice',story:true,blocking:true,year:date.year,month:date.month,turn,...milestone,options:milestone.options.map(o=>({...o,hint:impactHint(o.impact)}))};
   const selected=selectCatalogEvent(gameState,age,randomValue);
@@ -233,6 +236,9 @@ export function resolveStoryChoice(state, id, choiceId) {
   }
   reflectOpportunityStoryChoice(state,event,option);
   if(event.branch)recordBranchChoice(state.storyProgress,event,option,state.timeline.ageYears);
+  const longEffects=event.consequence?resolveConsequence(state,event,option):null;
+  if(!event.consequence)rememberConsequence(state,event,option,{source:event.branch?'branch':'choice'});
+  if(longEffects?.length)changes.push(...longEffects);
   state.pendingEvents=state.pendingEvents.filter(e=>e.id!==id);
   const detail=changes.length?changes.join(' / '):'新しい経験を得た';
   state.eventHistory.push({id:`${id}-result`,type:'choice-result',title:`${event.title}：${option.label}`,description:`${option.result}（${detail}）`,year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});

@@ -2,7 +2,7 @@
 const healthClamp=(n,lower=0,upper=100)=>Math.max(lower,Math.min(upper,Math.round(n)));
 const HABITS=['運動','休養','食生活'];
 export function createHealthData(){return {physical:85,mental:80,energy:85,habits:{運動:0,休養:0,食生活:0},illness:null,medicalVisits:0,healthHistory:[],lastActionMonth:null};}
-export function advanceHealth(h,date,age,randomValue,{balanced=false,financialStress=false}={}){
+export function advanceHealth(h,date,age,randomValue,{balanced=false,financialStress=false,healthProtection=0}={}){
  const notes=[];
  const aging=age>=65?2:age>=45?1:0;
  // The original simulation stays unchanged. The playable mode ages gradually
@@ -16,7 +16,7 @@ export function advanceHealth(h,date,age,randomValue,{balanced=false,financialSt
  if(h.illness){h.illness.months++;h.physical=healthClamp(h.physical-3);h.energy=healthClamp(h.energy-3);
    // 自然治癒。治療により直ちに治すことも可能。
    if(h.illness.months>=3){notes.push({type:'recovery',title:'体調が回復',description:'病気から自然に回復しました。'});h.illness=null;}
- }else if(age>=5 && randomValue < (h.physical<45?0.055:0.012)){
+ }else if(age>=5 && randomValue < (h.physical<45?0.055:0.012)*(1-Math.max(0,Math.min(.35,healthProtection)))){
    h.illness={name:'体調不良',months:0};h.physical=healthClamp(h.physical-8);h.energy=healthClamp(h.energy-10);
    notes.push({type:'illness',title:'体調不良',description:'体調を崩しました。健康画面から治療できます。'});
  }

@@ -1,0 +1,6 @@
+/* STEP 51: compact long-term influence section */
+.consequence51-panel {margin-top:12px}
+.consequence51-panel>p {font-size:13px;opacity:.85;line-height:1.7;margin:10px 2px}
+.consequence51-panel li {overflow-wrap:anywhere}
+.consequence51-panel li span {display:block;font-size:12px;opacity:.78}
+@media(max-width:540px){.consequence51-panel{font-size:13px}}

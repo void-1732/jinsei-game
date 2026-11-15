@@ -58,7 +58,7 @@ export function chooseRoutineOption(event,state,focus='balanced'){
 }
 export function hasImportantTurnEvent(events){
  const serious=new Set(['birthday','education','job-loss','death','illness','health-warning','promotion','new-stage','entrance','graduation','retirement']);
- return events.some(e=>e?.branch||serious.has(e?.type)||e?.type==='choice'&&!e.catalogKey);
+  return events.some(e=>e?.branch||e?.consequence||serious.has(e?.type)||e?.type==='choice'&&!e.catalogKey);
 }
 
 /** A transparent forecast, not an invented gain of money. Housing/loans may add costs. */

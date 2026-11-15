@@ -2,6 +2,7 @@ import {screenGroups} from '../core/screenCatalog.js';
 import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js';
 import {renderTurnActivity} from './turnActivities.js';
 import {getLifeThreads} from '../core/branchingStories.js';
+import {getConsequenceSummary} from '../core/consequenceSystems.js';
 import {createOpportunityProgress} from '../core/opportunitySystems.js';
 import {renderLifeGoalPanel,renderLifeReview} from './lifeGoalPanel.js';
 const el=(tag,klass='',text='')=>{
@@ -122,6 +123,21 @@ export function renderPlayDashboard(container,state,handlers={}){
       list.append(item);
     }
     panel.append(list);
+    storyCard.append(panel);
+  }
+  const influence=getConsequenceSummary(state);
+  if(influence.memories.length){
+    const panel=el('details','play-life-paths consequence51-panel');
+    panel.append(el('summary','',`選択の長期的な影響：記憶${influence.memories.length}件・再会${influence.echoes.length}件`));
+    panel.append(el('p','', '昔の選択が5年後・15年後に新しい出来事として戻り、進学・採用・家計・健康にも影響します。'));
+    const list=el('ul','play-life-path-list');
+    for(const next of influence.upcoming.slice(0,5)){
+      const item=el('li','');
+      item.append(el('strong','',`${next.memory.age}歳：${next.memory.choice}`),el('span','',`${next.dueAge}歳頃に再び影響（${influence.labels[next.memory.domain]}）`));list.append(item);
+    }
+    if(!influence.upcoming.length)list.append(el('li','','予定されている続きはありません。'));
+    panel.append(list);
+    if(influence.echoes.length){const last=influence.echoes.at(-1);panel.append(el('p','',`直近の影響：${last.age}歳「${last.title}」で「${last.choice}」を選択`));}
     storyCard.append(panel);
   }
   const details=el('details','play-history-detail');const summary=el('summary','','過去の出来事を詳しく見る');details.append(summary);
