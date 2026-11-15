@@ -1,3 +1,4 @@
+import {createBranchingEvent,recordBranchChoice} from './branchingStories.js';
 /**
  * PHASE 42: player-led life scenes. All options are serializable so saves remain portable.
  * This is an original, fictional choice system; it does not replicate any branded board game.
@@ -131,7 +132,9 @@ const pools = [
   ]}
 ];
 
-export function createStoryEvent(date, turn, age, randomValue) {
+export function createStoryEvent(date, turn, age, randomValue, storyProgress=null) {
+  const branch=createBranchingEvent(storyProgress,date,turn,age);
+  if(branch)return branch;
   const group = pools.find(item => age <= item.max) ?? pools.at(-1);
   const pool = group.list;
   const item = pool[(turn + Math.floor(randomValue * pool.length)) % pool.length];
@@ -194,6 +197,7 @@ export function resolveStoryChoice(state, id, choiceId) {
       const delta=state.education.skills.パソコン-was;if(delta)changes.push(`仕事スキル${delta>0?'+':''}${delta}`);
     }
   }
+  if(event.branch)recordBranchChoice(state.storyProgress,event,option,state.timeline.ageYears);
   state.pendingEvents=state.pendingEvents.filter(e=>e.id!==id);
   const detail=changes.length?changes.join(' / '):'新しい経験を得た';
   state.eventHistory.push({id:`${id}-result`,type:'choice-result',title:`${event.title}：${option.label}`,description:`${option.result}（${detail}）`,year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});

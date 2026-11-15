@@ -46,9 +46,9 @@ test('上部カテゴリとまとめ画面はプルダウン不要、詳細は�
   assert.match(read('js/ui/categoryDock.js'),/aria-expanded/);
 });
 
-test('公開版数と操作案内をSTEP 44へ更新',()=>{
-  assert.match(read('package.json'),/"version": "4\.5\.0"/);
-  assert.match(read('README.md'),/STEP 44/);
+test('画面統合は最新版でも維持される',()=>{
+  assert.match(read('package.json'),/"version": "4\.6\.0"/);
+  assert.match(read('README.md'),/STEP 45/);
   assert.match(read('操作説明書.md'),/行動可/);
-  assert.match(read('index.html'),/第44段階/);
+  assert.match(read('index.html'),/第45段階/);
 });

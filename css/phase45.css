@@ -1,0 +1,8 @@
+/* STEP 45: compact memory and deferred-story preview inside the existing history card. */
+.play-life-paths { margin: 14px 0 10px; border: 1px solid rgba(94,168,211,.25); border-radius: 12px; background: rgba(33,62,86,.22); }
+.play-life-paths summary { display:list-item; cursor:pointer; padding: 12px 14px; font-weight: 700; color: #d7edfa; }
+.play-life-paths summary:focus-visible { outline: 2px solid #91d6fa; outline-offset: 2px; }
+.play-life-path-list { margin:0; padding:0 16px 12px 30px; display:grid; gap:9px; }
+.play-life-path-list li { line-height: 1.55; }
+.play-life-path-list strong { display:block; font-size:.91rem; }
+.play-life-path-list span { display:block; color: #b7cbd9; font-size:.79rem; }

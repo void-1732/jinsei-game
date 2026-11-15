@@ -1,6 +1,7 @@
 import {screenGroups} from '../core/screenCatalog.js';
 import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js';
 import {renderTurnActivity} from './turnActivities.js';
+import {getLifeThreads} from '../core/branchingStories.js';
 const el=(tag,klass='',text='')=>{
   const node=document.createElement(tag);if(klass)node.className=klass;
   if(text!==undefined&&text!==null)node.textContent=text;
@@ -85,6 +86,21 @@ export function renderPlayDashboard(container,state,handlers={}){
     const item=el('article','play-history-item');
     item.append(el('span','play-history-date',`${event.year}年${event.month}月`),el('strong','',event.title),el('p','',event.description));
     storyCard.append(item);
+  }
+  // Keep long-lived paths collapsed by default: visible feedback without adding a long action list.
+  const paths=getLifeThreads(state.storyProgress);
+  if(paths.length){
+    const panel=el('details','play-life-paths');
+    const active=paths.filter(p=>!p.completed).length;
+    panel.append(el('summary','',`過去の選択から続く物語：${paths.length}件（進行中${active}件）`));
+    const list=el('ul','play-life-path-list');
+    for(const path of paths){
+      const item=el('li','');
+      item.append(el('strong','',`${path.label}：${path.path}`),el('span','',path.completed?'物語の一区切りを迎えました':`${path.nextAge}歳頃に続きが訪れます`));
+      list.append(item);
+    }
+    panel.append(list);
+    storyCard.append(panel);
   }
   const details=el('details','play-history-detail');const summary=el('summary','','過去の出来事を詳しく見る');details.append(summary);
   const link=quickButton('人生タイムラインを見る',()=>handlers.onNavigate?.('HISTORY-01'));details.append(link);storyCard.append(details);

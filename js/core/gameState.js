@@ -9,6 +9,7 @@ import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
 import {createChoiceEvent,resolveChoice} from './eventSystems.js';
 import {createStoryEvent,resolveStoryChoice} from './storyEvents.js';
+import {createStoryProgress,ensureStoryProgress} from './branchingStories.js';
 import { createEconomyData, advanceEconomy, economyAction } from './economySystems.js';
 import { createLifeData, advanceEducation, study, socialize, gainSkill, prepareExam, chooseSchool } from './lifeSystems.js';
 /** PHASE 3: game-domain store. Independent of presentation and navigation. */
@@ -47,6 +48,7 @@ export const initialGameState = freezeSnapshot({
   household: null, finances: null, health: null, world: null, people: [], relationships: [], education: null,
   pendingEvents: [], eventHistory: [],
   turnActions: {turn: 0, used: 0, lastAction: null},
+  storyProgress: createStoryProgress(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
@@ -90,7 +92,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(interactiveChoices){
       const draw=nextRandom(state.random.seed);
       state.random.seed=draw.seed;state.random.draws++;
-      const intro=createStoryEvent({year:2000,month:birthday.month},0,0,draw.value);
+      const intro=createStoryEvent({year:2000,month:birthday.month},0,0,draw.value,state.storyProgress);
       state.pendingEvents.push(intro);state.eventHistory.push(intro);
     }
     emit();
@@ -180,7 +182,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(interactiveChoices && !state.ending.dead){
       const draw=nextRandom(state.random.seed);
       state.random.seed=draw.seed;state.random.draws++;
-      newEvents.push(createStoryEvent({year,month},turn,age,draw.value));
+      newEvents.push(createStoryEvent({year,month},turn,age,draw.value,state.storyProgress));
       // Passive notifications remain in history but do not clutter the next turn.
       state.pendingEvents=state.pendingEvents.filter(event=>event.type==='choice');
     }
@@ -269,6 +271,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     state=clone(snapshot);
     // Older v4.3.0 saves predate the action budget; migrate without wiping progress.
     if (!state.turnActions) state.turnActions={turn:state.timeline.turnsElapsed,used:0,lastAction:null};
+    ensureStoryProgress(state);
     if(state.finances){
       const c=state.finances.career,b=state.finances.business;
       for(const [key,val] of Object.entries({unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,insuredMonths:0,benefitEligible:true}))if(c[key]===undefined)c[key]=val;
