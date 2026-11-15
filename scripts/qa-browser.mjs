@@ -55,8 +55,17 @@ async function runViewport(binary,width){
   await until(async()=>get("document.querySelector('#start-game').disabled===true && document.querySelector('#advance-turn').disabled===false"),'new life started');
   await click("document.querySelector('#advance-turn')");
   await until(async()=>get("document.querySelector('#story-dialog').open && document.querySelectorAll('#story-content .story-choices button').length>=3"),'story popup opened');
+   const modalAccessible=await get("document.activeElement?.id==='story-title' && !!document.querySelector('#story-action-error[role=alert]')");
+   if(!modalAccessible)throw Error('Dialog heading focus / inline error status missing');
   await click("document.querySelector('#story-content .story-choices button')");
   await until(async()=>get("!document.querySelector('#story-dialog').open && document.querySelector('#choice-feedback').textContent.length>15"),'popup completed');
+   const summaryVisible=await get("!!document.querySelector('.play-turn-recap') && document.activeElement?.id==='choice-feedback'");
+   if(!summaryVisible)throw Error('Current-turn result card or accessible focus missing');
+   const clearable=await get("!!document.querySelector('#pending-event-list .hub-clear-notices')");
+   if(clearable){
+     await click("document.querySelector('#pending-event-list .hub-clear-notices')");
+     await until(async()=>get("document.querySelector('#event-count').textContent==='0'"),'notices acknowledged');
+   }
   await click("document.querySelector('#category-dock button:nth-child(4)')");
   const expanded=await get("document.querySelector('#category-dock button:nth-child(4)').getAttribute('aria-expanded')==='true'");
   if(!expanded)throw Error('Category failed to expand');
@@ -71,7 +80,7 @@ async function runViewport(binary,width){
   const final=await get("({width:document.documentElement.scrollWidth,viewport:innerWidth,turn:document.querySelector('#turn-count').textContent,started:document.querySelector('#start-game').disabled})");
   if(final.width>final.viewport+3||!final.started)throw Error('Layout or game state invalid '+JSON.stringify(final));
   if(client.exceptions.length)throw Error(`Browser errors: ${client.exceptions.join('; ')}`);
-  console.log(`PASS browser ${width}px: 9 categories; start; event choice; category open/close; settings; save controls; no overflow`);
+  console.log(`PASS browser ${width}px: 9 categories; focused event choice; result recap; notifications; category open/close; settings; save controls; no overflow`);
  }finally{
   client?.close();child.kill('SIGKILL');await rm(profile,{recursive:true,force:true,maxRetries:2,retryDelay:250});
  }

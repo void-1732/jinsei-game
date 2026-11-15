@@ -22,7 +22,7 @@ jobs:
           node-version: '22'
       - name: PC・スマートフォンのブラウザ操作検査（1440px / 390px）
         run: node scripts/qa-browser.mjs
-      - name: 全世代・全機能の回帰テスト（STEP 55）
+      - name: 全世代・操作性の回帰テスト（STEP 57）
         run: npm test
       - name: 公開対象と参照ファイルを検査
         run: node scripts/check-pages.mjs

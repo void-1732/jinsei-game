@@ -100,7 +100,9 @@ function renderStoryDialog(){
   eyebrow.textContent=`${event.year}年${event.month}月 · ${event.category??'人生の選択'} · TURN ${event.turn}`;
   const heading=document.createElement('h2');heading.id='story-title';heading.textContent=event.title;
   const description=document.createElement('p');description.id='story-description';description.className='story-prompt';description.textContent=event.description;
-  const hint=document.createElement('p');hint.className='story-hint';hint.textContent='行動を選ぶと画面に戻ります。結果は人生画面に表示します。高い能力ほど成長量は小さくなります。';
+  const hint=document.createElement('p');hint.className='story-hint';hint.textContent='いずれか1つを選ぶと画面に戻ります。選択結果はダッシュボードと人生の履歴に残ります。';
+  heading.tabIndex=-1;
+  const error=document.createElement('p');error.id='story-action-error';error.className='story-action-error';error.setAttribute('role','alert');
   const choices=document.createElement('div');choices.className='story-choices';
   for(const option of event.options??[]){
     const item=button('','story-option');
@@ -115,15 +117,17 @@ function renderStoryDialog(){
         storyResult={message:result.message??'人生の選択を記録しました。',changes:result.changes??[],title:event.title};
         if(dom.storyDialog.open)dom.storyDialog.close();
         renderGameStatus(gameStore.getState());
+        $('#choice-feedback').focus({preventScroll:true});
         dom.systemMessage.textContent=`選択完了：${storyResult.message}`;
-      }else{item.disabled=false;dom.systemMessage.textContent=result.reason;}
+      }else{item.disabled=false;error.textContent=result.reason;error.focus();dom.systemMessage.textContent=result.reason;}
     });
     choices.append(item);
   }
   const defer=button('今は閉じる（選択は後で）');
   defer.classList.add('story-defer');defer.addEventListener('click',()=>dom.storyDialog.close());
-  dom.storyContent.append(eyebrow,heading,description,hint,choices,defer);
+  dom.storyContent.append(eyebrow,heading,description,hint,choices,error,defer);
   if(!dom.storyDialog.open)dom.storyDialog.showModal();
+  heading.focus({preventScroll:true});
 }
 function renderGameStatus(snapshot){
   const t=snapshot.timeline;
@@ -151,7 +155,7 @@ function renderGameStatus(snapshot){
   $('#save-game').disabled=!saveRepository||!gameInProgress||($('#save-slot').value==='人生記録'&&!snapshot.ending?.dead);
   $('#load-game').disabled=!saveRepository;
   $('#save-details').textContent=saveFeedback||'ターン進行・選択のたびに自動保存します。';
-  $('#version-label').textContent='v5.6.0 · ゲームバランス調整版';
+  $('#version-label').textContent='v5.7.0 · 操作性と体験の改善版';
   $('#export-game').disabled=!gameInProgress;
   $('#catalog-count').textContent=`${screenGroups.length}カテゴリ / ${screenGroups.reduce((sum,g)=>sum+g.screens.length,0)}画面`;
   $('#event-count').textContent=String(snapshot.pendingEvents.length);
@@ -159,7 +163,14 @@ function renderGameStatus(snapshot){
   $('#action-budget').textContent=gameInProgress?`自由行動：${snapshot.turnActions?.turn===t.turnsElapsed&&snapshot.turnActions.used?'実行済み':'あと1回'}`:'自由行動：未開始';
   $('#choice-feedback').textContent=storyResult?`【${storyResult.title}】${storyResult.message}${storyResult.changes?.length?' ／ '+storyResult.changes.join('・'):''}`:queued?'今の出来事を選ぶと、結果をここで確認できます。':'出来事の結果はここに表示されます。';
   const eventContainer=$('#pending-event-list');eventContainer.replaceChildren();
-  const notices=snapshot.pendingEvents.filter(e=>e.type!=='choice').slice(-3).reverse();
+  const allNotices=snapshot.pendingEvents.filter(e=>e.type!=='choice');
+  const notices=allNotices.slice(-3).reverse();
+  if(allNotices.length){
+    const clear=button(`通知をすべて確認済みにする（${allNotices.length}件）`);
+    clear.classList.add('hub-clear-notices');
+    clear.addEventListener('click',()=>gameStore.acknowledgeNotifications());
+    eventContainer.append(clear);
+  }
   if(!notices.length){const p=document.createElement('p');p.className='muted small';p.textContent='未確認のお知らせはありません。';eventContainer.append(p);}
   for(const event of notices){
     const row=document.createElement('div');row.className='phase3-event';
@@ -168,7 +179,12 @@ function renderGameStatus(snapshot){
     const done=button('確認済みにする');done.addEventListener('click',()=>gameStore.acknowledgeEvent(event.id));
     row.append(heading,desc,done);eventContainer.append(row);
   }
-  $('#event-count').textContent=String(snapshot.pendingEvents.filter(e=>e.type!=='choice').length);
+  if(allNotices.length>3){
+    const older=document.createElement('p');older.className='hub-hidden-notices';
+    older.textContent=`さらに${allNotices.length-3}件の通知があります。上のボタンでまとめて確認できます。`;
+    eventContainer.append(older);
+  }
+  $('#event-count').textContent=String(allNotices.length);
   $('.time-static').textContent=gameInProgress?'手動進行':'進行停止中';
 }
 function advanceTurn(){

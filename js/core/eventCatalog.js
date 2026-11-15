@@ -225,19 +225,19 @@ export function isEventEligible(e,state,age){
    return false;
  }
 }
-/** Weighted selection: never repeat any of the most recent 12 eligible events when alternatives exist.
+/** Weighted selection: avoid the 20 most recent catalog events when alternatives exist.
  * Less-used events receive greater weight. All randomness comes from the supplied PRNG draw.
  */
 export function selectCatalogEvent(state,age,randomValue){
  const eligible=LIFE_EVENT_CATALOG.filter(e=>isEventEligible(e,state,age));
  if(!eligible.length)return null;
  const recent=(state?.eventHistory??[]).filter(x=>x.story===true&&typeof x.catalogKey==='string');
- const used=recent.slice(-14).map(x=>x.catalogKey);
+ const used=recent.slice(-20).map(x=>x.catalogKey);
  let candidates=eligible.filter(e=>!used.includes(e.id));
  if(!candidates.length)candidates=eligible.filter(e=>e.id!==used.at(-1));
  if(!candidates.length)candidates=eligible;
  const counts=new Map();for(const item of recent){counts.set(item.catalogKey,(counts.get(item.catalogKey)??0)+1);}
- const weighted=candidates.map(e=>({event:e,w:(e.when?2:1)/(1+(counts.get(e.id)??0)*1.5)}));
+ const weighted=candidates.map(e=>({event:e,w:(e.when?2:1)/(1+(counts.get(e.id)??0)*2)}));
  const total=weighted.reduce((s,x)=>s+x.w,0);
  let pick=Math.max(0,Math.min(.999999999,Number.isFinite(randomValue)?randomValue:0))*total;
  for(const row of weighted){pick-=row.w;if(pick<0)return row.event;}

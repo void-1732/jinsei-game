@@ -2,6 +2,7 @@ import {screenGroups} from '../core/screenCatalog.js';
 import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js';
 import {renderTurnActivity} from './turnActivities.js';
 import {renderDailySchedulePanel} from './dailySchedulePanel.js';
+import {latestTurnRecap} from './turnRecap.js';
 import {getLifeThreads} from '../core/branchingStories.js';
 import {getConsequenceSummary} from '../core/consequenceSystems.js';
 import {eraSummary} from '../core/eraSystems.js';
@@ -68,6 +69,15 @@ export function renderPlayDashboard(container,state,handlers={}){
     card.append(top,track,el('small','',description));metrics.append(card);
   }
   root.append(metrics);
+  const recap=latestTurnRecap(state);
+  if(recap){
+    const panel=el('section','play-card play-turn-recap');
+    panel.setAttribute('aria-label','このターンの選択結果');
+    panel.append(el('div','play-recap-kicker','✓ このターンの選択結果'),
+      el('h3','',recap.title),
+      el('p','',recap.description));
+    root.append(panel);
+  }
   root.append(renderDailySchedulePanel(state,handlers.onAction));
   // Keep the next concrete step visible during financially or medically hard periods.
   if(!state.ending?.dead){

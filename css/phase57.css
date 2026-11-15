@@ -1,0 +1,14 @@
+/* STEP 57 — presentation-only refinements; does not alter gameplay rules. */
+.play-turn-recap{padding:14px 17px;border-color:#598b9b;background:linear-gradient(130deg,#183d4d,#203e57)}
+.play-turn-recap .play-recap-kicker{font-size:11px;font-weight:750;letter-spacing:.06em;color:#aee6d3;margin:0 0 6px}
+.play-turn-recap h3{font-size:15px;line-height:1.5;margin:0 0 6px;color:#fff;overflow-wrap:anywhere}
+.play-turn-recap p{font-size:12px;line-height:1.75;margin:0;color:#e2eefc;overflow-wrap:anywhere}
+.hub-clear-notices{width:100%;font-size:12px;white-space:normal;min-height:39px;margin-bottom:9px}
+.hub-hidden-notices{font-size:11px;line-height:1.5;color:#c3d9ef;margin:10px 0 0}
+.story-action-error{font-size:13px;line-height:1.6;border:1px solid #e49b7b;background:#542c33;color:#fff4ee;border-radius:8px;padding:10px 12px;margin:10px 0}
+.story-action-error:empty{display:none}
+#choice-feedback:focus{outline:2px solid #d3eaff;outline-offset:3px;border-radius:5px}
+.story-dialog .story-option{min-height:66px;overflow-wrap:anywhere}
+.story-dialog .story-option:focus-visible,.hub-clear-notices:focus-visible,.daily54-summary:focus-visible,.topic-tab:focus-visible,.dock-category:focus-visible{outline:3px solid #f4d399;outline-offset:3px}
+@media(max-width:600px){.play-turn-recap{padding:12px}.story-dialog .story-option{min-height:74px;padding:14px 38px 14px 15px}.story-dialog .story-option strong{font-size:15px}.hub-clear-notices{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.story-option,.dock-category,.topic-tab,.button{transition:none!important;animation:none!important;transform:none!important}}

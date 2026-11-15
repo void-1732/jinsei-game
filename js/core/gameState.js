@@ -276,6 +276,13 @@ export function createGameStore({interactiveChoices=false} = {}) {
     emit();
     return true;
   }
+  /** Mark ordinary notices as read in one update. Blocking life choices remain untouched. */
+  function acknowledgeNotifications(){
+    const remaining=state.pendingEvents.filter(event=>event.type==='choice');
+    const count=state.pendingEvents.length-remaining.length;
+    if(count){state.pendingEvents=remaining;emit();}
+    return count;
+  }
   function performAction(action, payload={}) {
     if (!state.initialized) return {ok:false,reason:'人生を開始してください。'};
     if(state.ending.dead)return {ok:false,reason:'人生終了後は操作できません。'};
@@ -417,7 +424,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
   }
   function restart() {state=clone(initialGameState);emit();return {ok:true};}
   return Object.freeze({
-    loadState, restart, getState, startNewGame, advanceTurn, fastForward, acknowledgeEvent, performAction,
+    loadState, restart, getState, startNewGame, advanceTurn, fastForward, acknowledgeEvent, acknowledgeNotifications, performAction,
     subscribe(listener) { subscribers.add(listener); return () => subscribers.delete(listener); },
   });
 }
