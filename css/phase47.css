@@ -1,0 +1,12 @@
+/* STEP 47: compact economic/education/career status; no extra long button rows */
+.opportunity-panel{border:1px solid rgba(103,178,216,.36);background:linear-gradient(120deg,rgba(30,63,91,.85),rgba(22,41,64,.9));border-radius:16px;padding:16px 18px;margin:14px 0 18px;max-width:100%;box-sizing:border-box}
+.opportunity-panel .opportunity-eyebrow{font-size:.74rem;letter-spacing:.025em;color:#8fdef7;margin-bottom:7px;font-weight:700}
+.opportunity-panel h3{margin:0 0 12px;color:#f0f8ff;font-size:1.05rem}
+.opportunity-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:8px;margin:0}
+.opportunity-facts>div{min-width:0;padding:10px 12px;background:rgba(11,25,44,.58);border:1px solid rgba(125,169,201,.17);border-radius:10px}
+.opportunity-facts dt{font-size:.75rem;color:#a9c5dc;margin-bottom:5px}
+.opportunity-facts dd{font-size:.92rem;line-height:1.5;color:#f0f7ff;font-weight:650;overflow-wrap:anywhere;margin:0}
+.opportunity-guidance,.opportunity-last{font-size:.82rem;color:#c9dcec;line-height:1.6;margin:12px 0 0}
+.opportunity-last{color:#9ddab8;margin-top:6px}
+@media(max-width:600px){.opportunity-panel{padding:12px}.opportunity-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.opportunity-facts>div{padding:9px}}
+@media(max-width:370px){.opportunity-facts{grid-template-columns:1fr}}

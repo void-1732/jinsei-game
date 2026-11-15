@@ -146,7 +146,7 @@ function renderGameStatus(snapshot){
   $('#save-game').disabled=!saveRepository||!gameInProgress||($('#save-slot').value==='人生記録'&&!snapshot.ending?.dead);
   $('#load-game').disabled=!saveRepository;
   $('#save-details').textContent=saveFeedback||'ターン進行・選択のたびに自動保存します。';
-  $('#version-label').textContent='v4.7.0 · 多彩な人生イベント版';
+  $('#version-label').textContent='v4.8.0 · 進学・仕事・家計の連動版';
   $('#catalog-count').textContent=`${screenGroups.length}カテゴリ / ${screenGroups.reduce((sum,g)=>sum+g.screens.length,0)}画面`;
   $('#event-count').textContent=String(snapshot.pendingEvents.length);
   $('#hub-event-message').textContent=queued?queued.title:(gameInProgress?'次の出来事を待っています。':'まずは人生を始めてみましょう。');

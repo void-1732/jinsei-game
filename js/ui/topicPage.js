@@ -3,6 +3,7 @@ import {getTopic,categoryActivities,hasFreeAction} from './topicGroups.js';
 import {getScreenFieldValues} from '../core/screenFieldValues.js';
 import {findScreen} from '../core/screenCatalog.js';
 import {renderScreen} from './screenRenderer.js';
+import {renderOpportunityPanel} from './opportunityPanel.js';
 
 const el=(tag,klass='',text='')=>{const e=document.createElement(tag);if(klass)e.className=klass;e.textContent=text;return e;};
 
@@ -43,6 +44,8 @@ export function renderTopicPage(container,screen,state,handlers={}){
   root.append(intro);
   const action=state?.initialized?actionBox(state,screen.category,handlers.onAction):null;
   if(action)root.append(action);
+  const featured=renderOpportunityPanel(state,screen.category,handlers.onAction);
+  if(featured)root.append(featured);
   if(screen.category==='設定'){
     const settings=el('button','button button-primary topic-settings-button','保存・読み込み・新しい人生');
     settings.type='button';settings.addEventListener('click',()=>handlers.onSettings?.());root.append(settings);

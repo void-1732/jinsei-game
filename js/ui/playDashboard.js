@@ -2,6 +2,7 @@ import {screenGroups} from '../core/screenCatalog.js';
 import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js';
 import {renderTurnActivity} from './turnActivities.js';
 import {getLifeThreads} from '../core/branchingStories.js';
+import {createOpportunityProgress} from '../core/opportunitySystems.js';
 const el=(tag,klass='',text='')=>{
   const node=document.createElement(tag);if(klass)node.className=klass;
   if(text!==undefined&&text!==null)node.textContent=text;
@@ -112,6 +113,10 @@ export function renderPlayDashboard(container,state,handlers={}){
   for(const name of ['読書','パソコン','運動'])skills.append(el('span','',`${name} ${education.skills[name]??0}`));
   skill.append(skills);
   const money=el('section','play-card play-money');money.append(el('h3','','くらしのお金'),el('p','',`現金：${fmt(finance.cash)} 円`));
+  const op=state.opportunity47??createOpportunityProgress();
+  if(op.education.loanBalance+op.education.unpaidTuition>0)money.append(el('p','',`教育費の残債：${fmt(op.education.loanBalance+op.education.unpaidTuition)}円`));
+  if(education.stage==='大学')money.append(el('p','',`学費：月36,000円 ／ 奨学金：${fmt(op.education.grantMonthly)}円`));
+  if(finance.career.job)money.append(el('p','',`月給：${fmt(finance.career.monthlySalary)}円`));
   const shortcuts=el('details','play-shortcuts');shortcuts.append(el('summary','','詳しい状況を見る'));
   const links=el('div','play-shortcut-links');
   links.append(quickButton('学業',()=>handlers.onNavigate?.('EDU-01')),quickButton('仕事',()=>handlers.onNavigate?.('WORK-01')),quickButton('健康',()=>handlers.onNavigate?.('HEALTH-01')));

@@ -2,13 +2,14 @@ import {calculateInheritance} from './estateSystems.js';
 import {createLivingData, ensureLiving, ensureMortgage, livingAction, getHousingEquity} from './livingSystems.js';
 import {ensureCompanyMarket,advanceCompanyMarket,supportRebuilding} from './companySystems.js';
 import {ensureWorkplace,workplaceAction,advanceWorkplace} from './workplaceSystems.js';
-import {careerAction} from './careerSystems.js';
+import {careerAction,JOB_POSTINGS} from './careerSystems.js';
 import {socialAction,advanceFamily,familyActivity} from './socialSystems.js';
 import {validateGameState} from './saveSystems.js';
 import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
 import {createChoiceEvent,resolveChoice} from './eventSystems.js';
 import {createStoryEvent,resolveStoryChoice} from './storyEvents.js';
+import {createOpportunityProgress,ensureOpportunityProgress,advanceOpportunityMonth,opportunityAction,interviewBonus,afterJobApplication,reconcileGenericDebtPayment} from './opportunitySystems.js';
 import {createStoryProgress,ensureStoryProgress} from './branchingStories.js';
 import { createEconomyData, advanceEconomy, economyAction } from './economySystems.js';
 import { createLifeData, advanceEducation, study, socialize, gainSkill, prepareExam, chooseSchool } from './lifeSystems.js';
@@ -49,6 +50,7 @@ export const initialGameState = freezeSnapshot({
   pendingEvents: [], eventHistory: [],
   turnActions: {turn: 0, used: 0, lastAction: null},
   storyProgress: createStoryProgress(),
+  opportunity47: createOpportunityProgress(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
@@ -138,6 +140,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         for(const item of healthEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
         const prior={year:date.month===1?date.year-1:date.year,month:date.month===1?12:date.month-1};
         const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world);
+        if(interactiveChoices)advanceOpportunityMonth(state,date);
         advanceWorkplace(state.finances,date);
         advanceCompanyMarket(state.finances,date,state.world?.phase);
         const jobNews=updateLaborMarket(state.world,state.finances.companyMarket,date);
@@ -222,11 +225,24 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'employmentSupport': result=requestEmploymentSupport(state.world,state.finances.career,state.timeline,state.timeline.ageYears);break;
       case 'supportRebuilding': result=supportRebuilding(state.finances,payload.companyId,state.timeline);break;
       case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
-        result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world});break;
+        result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interactiveChoices?interviewBonus(state):0});
+        if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
+      case 'applyScholarship': case 'setEducationFunding': case 'repayEducation': case 'prepareInterview': case 'careerCertification': case 'salaryNegotiation': case 'reviewBudget':
+        result=opportunityAction(state,action,payload);break;
       case 'interactCoworker': case 'resolveWorkIncident': case 'workHard': case 'helpColleague': case 'talkSupervisor': case 'reviewPerformance': case 'trainStaff': case 'dismissStaff': case 'staffCare':
         result=workplaceAction(state.finances,action,payload,state.timeline);break;
       case 'setLoanRepayment': case 'settleBusinessPayable': case 'businessLoan': case 'repayBusinessLoan': case 'purchaseEquipment': case 'sellEquipment': case 'findJob': case 'resign': case 'sideJob': case 'startBusiness': case 'closeBusiness': case 'businessFunding': case 'ownerDraw': case 'jobSearch': case 'restartBusiness': case 'setBudget': case 'buyInvestment': case 'sellInvestment': case 'repayDebt':
-        result=economyAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline});break;
+        if(interactiveChoices&&action==='setBudget'&&payload.amount<60_000){result={ok:false,reason:'生活費は最低60,000円を確保してください。'};break;}
+        if(interactiveChoices&&action==='findJob'){
+          const posting=JOB_POSTINGS.find(p=>p.job===payload.job);
+          result=posting?careerAction(state.finances,'applyJob',{postingId:posting.id},{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interviewBonus(state)}):{ok:false,reason:'求人が見つかりません。'};
+          if(result.ok)afterJobApplication(state,result.passed);
+          break;
+        }
+        const debtBefore=state.finances.debt;
+        result=economyAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline});
+        if(result.ok&&action==='repayDebt'&&interactiveChoices)reconcileGenericDebtPayment(state,payload.amount,debtBefore);
+        break;
       case 'habit': case 'treatment': result=healthAction(state.health,action,payload,state.timeline,state.finances);break;
       case 'resolveChoice': result=state.pendingEvents.some(e=>e.id===payload.eventId && e.story) ? resolveStoryChoice(state,payload.eventId,payload.choice) : resolveChoice(state,payload.eventId,payload.choice);break;
       case 'meetFriend':case 'date':case 'marry':case 'haveChild':case 'familyCare': result=socialAction(state,action,payload);break;
@@ -272,6 +288,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     // Older v4.3.0 saves predate the action budget; migrate without wiping progress.
     if (!state.turnActions) state.turnActions={turn:state.timeline.turnsElapsed,used:0,lastAction:null};
     ensureStoryProgress(state);
+    ensureOpportunityProgress(state);
     if(state.finances){
       const c=state.finances.career,b=state.finances.business;
       for(const [key,val] of Object.entries({unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,insuredMonths:0,benefitEligible:true}))if(c[key]===undefined)c[key]=val;

@@ -1,5 +1,6 @@
 import {createBranchingEvent,recordBranchChoice} from './branchingStories.js';
 import {selectCatalogEvent} from './eventCatalog.js';
+import {selectOpportunityEvent,reflectOpportunityStoryChoice} from './opportunitySystems.js';
 /**
  * PHASE 42: player-led life scenes. All options are serializable so saves remain portable.
  * This is an original, fictional choice system; it does not replicate any branded board game.
@@ -135,7 +136,7 @@ const pools = [
 
 /** STEP 46: context-sensitive encounter first, but a scheduled STEP 45 continuation wins. */
 function impactHint(impact){
-  const labels={study:'学力',physical:'体力',mental:'心',energy:'元気',social:'人間関係',cash:'お金',work:'仕事評価'};
+  const labels={study:'学力',physical:'体力',mental:'心',energy:'元気',social:'人間関係',cash:'お金',work:'仕事評価',interviewPrep:'面接準備',careerPortfolio:'職業実績',budgetHabit:'家計習慣'};
   const text=[];
   for(const [key,label] of Object.entries(labels)){
     const value=impact[key];if(typeof value!=='number'||!value)continue;
@@ -148,6 +149,8 @@ function impactHint(impact){
 export function createStoryEvent(date, turn, age, randomValue, storyProgress=null, gameState=null) {
   const branch=createBranchingEvent(storyProgress,date,turn,age);
   if(branch)return branch;
+  const milestone=selectOpportunityEvent(gameState,age,turn,randomValue);
+  if(milestone)return {id:`T${turn}-choice`,type:'choice',story:true,blocking:true,year:date.year,month:date.month,turn,...milestone,options:milestone.options.map(o=>({...o,hint:impactHint(o.impact)}))};
   const selected=selectCatalogEvent(gameState,age,randomValue);
   if(selected){
     return {
@@ -227,6 +230,7 @@ export function resolveStoryChoice(state, id, choiceId) {
       const delta=state.education.skills.パソコン-was;if(delta)changes.push(`仕事スキル${delta>0?'+':''}${delta}`);
     }
   }
+  reflectOpportunityStoryChoice(state,event,option);
   if(event.branch)recordBranchChoice(state.storyProgress,event,option,state.timeline.ageYears);
   state.pendingEvents=state.pendingEvents.filter(e=>e.id!==id);
   const detail=changes.length?changes.join(' / '):'新しい経験を得た';

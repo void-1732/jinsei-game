@@ -32,7 +32,7 @@ export function careerAction(finances,action,payload,context){
   if(context.age<post.minAge)return {ok:false,reason:`${post.minAge}歳から応募できます。`};
   if(post.university&&!(context.education?.graduated&&context.education?.universityChoice==='進学'))return {ok:false,reason:'大学卒業が必要です。'};
   const regionalScore= Math.round(((REGIONAL_FACTORS[finances.living?.region]?.jobs??1)-1)*20);
-  const score=Math.max(0,Math.min(100,employmentScore(context.education,post,career.experience)+(career.searchEffort??0)*3+regionalScore+jobMarketAdjustment(context.world)));
+  const score=Math.max(0,Math.min(100,employmentScore(context.education,post,career.experience)+(career.searchEffort??0)*3+regionalScore+jobMarketAdjustment(context.world)+(context.interviewBonus??0)));
   career.applications=Array.isArray(career.applications)?career.applications:[];
   const passed=score>=post.threshold+(employer?.performance<40?3:0);
   career.applications.push({year:date.year,month:date.month,company:post.company,job:post.job,score,passed});
