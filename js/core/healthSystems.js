@@ -20,6 +20,14 @@ export function advanceHealth(h,date,age,randomValue,{balanced=false,financialSt
    h.illness={name:'体調不良',months:0};h.physical=healthClamp(h.physical-8);h.energy=healthClamp(h.energy-10);
    notes.push({type:'illness',title:'体調不良',description:'体調を崩しました。健康画面から治療できます。'});
  }
+ // Playable-mode quality fix: illness should not make lifelong physical decline
+ // irreversible, especially during childhood. Recovery has an age-dependent
+ // ceiling; daily actions and treatment still matter for reaching higher values.
+ if(balanced && !h.illness){
+   const recoveryLimit=age<18?85:age<65?70:age<80?55:40;
+   const recovery=age<18?2:age<65?1:(date.month%2===0?1:0);
+   if(h.physical<recoveryLimit)h.physical=healthClamp(Math.min(recoveryLimit,h.physical+recovery));
+ }
  if(h.physical<=30||h.mental<=25)notes.push({type:'health-warning',title:'健康状態に注意',description:'体調や精神状態が低下しています。生活習慣を見直してください。'});
  h.healthHistory.push({year:date.year,month:date.month,physical:h.physical,mental:h.mental,energy:h.energy,illness:h.illness?.name??null});
  if(h.healthHistory.length>240)h.healthHistory.shift();

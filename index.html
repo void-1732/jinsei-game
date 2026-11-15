@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b111c">
   <meta name="color-scheme" content="dark">
-  <title>人生シミュレーション — STEP 49</title>
+  <title>人生シミュレーション — STEP 50</title>
   <link rel="stylesheet" href="./css/common.css">
   <link rel="stylesheet" href="./css/layout.css">
   <link rel="stylesheet" href="./css/components.css">
@@ -31,6 +31,7 @@
 <link rel="stylesheet" href="css/phase47.css">
 <link rel="stylesheet" href="css/phase48.css">
   <link rel="stylesheet" href="css/phase49.css">
+  <link rel="stylesheet" href="css/phase50.css">
 </head>
 <body>
   <a class="skip-navigation" href="#main-content">本文へ移動</a>
@@ -58,7 +59,7 @@
         <input id="screen-search" class="nav-search" type="search" autocomplete="off" placeholder="画面名・識別番号を検索" aria-controls="main-navigation">
         <div class="nav-label-row"><span>カテゴリ / 画面</span><span id="catalog-count">9カテゴリ / 61画面</span></div>
         <nav id="main-navigation" aria-label="メインメニュー"></nav>
-        <div class="sidebar-footer"><span>ブラウザ版</span><span class="version" id="version-label">v4.9.0 · 第49段階</span></div>
+        <div class="sidebar-footer"><span>ブラウザ版</span><span class="version" id="version-label">v5.1.0 · 第50段階</span></div>
       </aside>
 
       <main class="main-content" id="main-content" tabindex="-1">
@@ -114,7 +115,7 @@
       </aside>
     </div>
 
-    <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第49段階 · 能力・健康・進行速度の改善</span></footer>
+    <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第50段階 · 長期プレイ・保存の安定化</span></footer>
   </div>
 
   <dialog id="help-dialog" class="modal" aria-labelledby="help-title">
@@ -130,13 +131,24 @@
 
   <dialog id="settings-dialog" class="modal settings-dialog" aria-labelledby="settings-title">
     <div class="modal-header"><h2 id="settings-title">ゲーム設定・保存</h2><button class="icon-button" id="close-settings" type="button">閉じる</button></div>
-    <p>セーブ・ロード、新しい人生の開始はここから操作できます。保存データはこのブラウザのみに残ります。</p>
+    <p>セーブ・ロード、新しい人生の開始はここから操作できます。ブラウザ内の保存に加え、ファイルへのバックアップ・復元にも対応しています。</p>
     <section class="settings-save-card">
       <label for="save-slot">保存枠</label>
       <select id="save-slot"><option>手動保存1</option><option>手動保存2</option><option>手動保存3</option><option>自動保存</option><option>人生記録</option></select>
       <div class="settings-button-row"><button class="button button-secondary" id="save-game" type="button">保存する</button><button class="button button-secondary" id="load-game" type="button">読み込む</button></div>
       <p class="muted small" id="save-details">ターンごとに自動保存します。</p>
     </section>
+    <details class="settings-portable">
+      <summary>保存ファイルのバックアップ・復元</summary>
+      <p>ブラウザの保存データが消えても、書き出したJSONファイルから人生を復元できます。個人情報を含む場合があるため、ファイルの保管場所に注意してください。</p>
+      <div class="settings-portable-actions">
+        <button class="button button-secondary" id="export-game" type="button" disabled>保存ファイルを書き出す</button>
+        <label for="import-game-file" class="settings-file-label">保存ファイルを読み込む（JSON）
+          <input id="import-game-file" type="file" accept=".json,application/json" aria-label="保存データファイルを選択">
+        </label>
+      </div>
+      <p class="muted small">読み込み時に現在の人生を置き換える場合は、事前に確認します。壊れたファイルは反映しません。</p>
+    </details>
     <section class="settings-danger"><h3>人生をやり直す</h3><p>現在の自動保存を削除し、別の誕生日・人生を最初から始めます。</p><button class="button button-secondary" id="restart-game" type="button">新しい人生を始める</button></section>
   </dialog>
 </body>

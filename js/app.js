@@ -1,4 +1,5 @@
 import {createSaveRepository} from './core/saveSystems.js';
+import {serializePortableSave,parsePortableSave,MAX_PORTABLE_CHARS} from './core/portableSaves.js';
 import { screenGroups, findScreen } from './core/screenCatalog.js';
 import { createGameStore, createRandomBirthday } from './core/gameState.js';
 import { createUiStore } from './ui/uiState.js';
@@ -150,7 +151,8 @@ function renderGameStatus(snapshot){
   $('#save-game').disabled=!saveRepository||!gameInProgress||($('#save-slot').value==='人生記録'&&!snapshot.ending?.dead);
   $('#load-game').disabled=!saveRepository;
   $('#save-details').textContent=saveFeedback||'ターン進行・選択のたびに自動保存します。';
-  $('#version-label').textContent='v5.0.0 · 人生の夢・実績・エンディング版';
+  $('#version-label').textContent='v5.1.0 · 品質改善・バックアップ対応版';
+  $('#export-game').disabled=!gameInProgress;
   $('#catalog-count').textContent=`${screenGroups.length}カテゴリ / ${screenGroups.reduce((sum,g)=>sum+g.screens.length,0)}画面`;
   $('#event-count').textContent=String(snapshot.pendingEvents.length);
   $('#hub-event-message').textContent=queued?queued.title:(gameInProgress?'次の出来事を待っています。':'まずは人生を始めてみましょう。');
@@ -204,6 +206,44 @@ $('#load-game').addEventListener('click',()=>{
   if(!result.ok)saveFeedback=result.reason;
   else {storyResult=null;gameStore.loadState(result.state);saveFeedback=result.recovered?'予備から復旧しました。':'保存データを読み込みました。';}
   dom.settingsDialog.close();renderGameStatus(gameStore.getState());dom.systemMessage.textContent=saveFeedback;
+});
+// File backups are optional; they also work when localStorage is disabled.
+$('#export-game').addEventListener('click',()=>{
+  const backup=serializePortableSave(gameStore.getState());
+  if(!backup.ok){dom.systemMessage.textContent=backup.reason;return;}
+  const blob=new Blob([backup.text],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;link.download=`jinsei-save-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.append(link);link.click();link.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),2000);
+  saveFeedback='保存ファイルを書き出しました。';
+  renderGameStatus(gameStore.getState());
+});
+$('#import-game-file').addEventListener('change',async event=>{
+  const input=event.currentTarget;
+  const file=input.files?.[0];
+  if(!file)return;
+  try{
+    if(file.size>MAX_PORTABLE_CHARS*4){saveFeedback='保存ファイルが大きすぎます。';return;}
+    const parsed=parsePortableSave(await file.text());
+    if(!parsed.ok){saveFeedback=parsed.reason;return;}
+    const current=gameStore.getState();
+    const person=parsed.state.player.name;
+    if(current.initialized&&!window.confirm(`現在の人生を「${person}」の保存データに置き換えますか？\n現在の進行を残したい場合は先にバックアップしてください。`)){
+      saveFeedback='読み込みをキャンセルしました。';return;
+    }
+    const loaded=gameStore.loadState(parsed.state);
+    if(!loaded.ok){saveFeedback=loaded.reason;return;}
+    storyResult=null;
+    saveFeedback=saveRepository?'ファイルから復元しました。自動保存も更新されました。':'ファイルから復元しました。ブラウザ保存は利用できません。';
+    dom.settingsDialog.close();navigateTo('LIFE-01');
+  }catch{saveFeedback='保存ファイルを読み込めませんでした。';}
+  finally{
+    input.value='';
+    renderGameStatus(gameStore.getState());
+    dom.systemMessage.textContent=saveFeedback;
+  }
 });
 $('#restart-game').addEventListener('click',()=>{
   if(gameStore.getState().initialized&&!window.confirm('現在の人生を終了し、新しい人生を始めますか？ 自動保存の進行は失われます。'))return;

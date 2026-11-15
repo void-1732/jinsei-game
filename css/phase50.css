@@ -1,0 +1,17 @@
+/* STEP 50: simple, accessible local backup controls in settings. */
+.settings-portable {margin:14px 0;padding:14px;border:1px solid rgba(159,184,219,.2);border-radius:12px;background:rgba(38,56,77,.42);}
+.settings-portable summary {font-weight:700;cursor:pointer;line-height:1.5;}
+.settings-portable p {font-size:13px;line-height:1.65;}
+.settings-portable-actions {display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;}
+.settings-portable-actions .button {flex:1 1 175px;}
+.settings-file-label {display:flex;align-items:center;justify-content:center;gap:8px;flex:1 1 185px;border:1px dashed #7895b8;border-radius:9px;padding:10px 12px;text-align:center;font-size:13px;cursor:pointer;background:rgba(84,127,172,.1);}
+.settings-file-label:focus-within {outline:2px solid #8fc2ff;outline-offset:2px;}
+.settings-file-label input {position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;}
+.settings-file-label:hover {background:rgba(84,127,172,.24);}
+@media (max-width:600px){.settings-portable-actions{flex-direction:column}.settings-portable-actions .button,.settings-file-label{flex:auto;width:100%}}
+
+.play-attention{border-left:3px solid #e9ad63;margin:12px 0;}
+.play-attention h3{margin:0 0 8px;}
+.play-attention-item{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:7px 0;}
+.play-attention-item p{flex:1 1 270px;margin:0;line-height:1.55;}
+.play-attention-item .button{flex:0 0 auto;}

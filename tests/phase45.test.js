@@ -112,7 +112,7 @@ test('コンパクトな人生の記録に分岐情報を表示し、従来の�
   assert.match(src('js/ui/playDashboard.js'),/過去の選択から続く物語/);
   assert.match(src('js/ui/playDashboard.js'),/play-life-paths/);
   assert.match(src('index.html'),/phase45\.css/);
-  assert.match(src('package.json'),/"version": "5\.0\.0"/);
+  assert.match(src('package.json'),/"version": "5\.1\.0"/);
   assert.match(src('README.md'),/STEP 49/);
   assert.match(src('js/app.js'),/$('#' + 'advance-turn')|#advance-turn/);
 });

@@ -64,6 +64,23 @@ export function renderPlayDashboard(container,state,handlers={}){
     card.append(top,track,el('small','',description));metrics.append(card);
   }
   root.append(metrics);
+  // Keep the next concrete step visible during financially or medically hard periods.
+  if(!state.ending?.dead){
+    const warnings=[];
+    if(state.timeline.ageYears>=18&&!finance.career.job&&finance.debt>=150_000)
+      warnings.push({message:`現在の負債は${fmt(finance.debt)}円です。収入を確保するため、求人や就職活動を確認してください。`,title:'仕事・経営を確認',destination:'WORK-01'});
+    if(health.physical<=35)
+      warnings.push({message:`体力が${health.physical}です。休養・治療などの選択を優先してください。`,title:'健康を確認',destination:'HEALTH-01'});
+    if(warnings.length){
+      const attention=el('section','play-card play-attention');attention.append(el('h3','','いま確認したいこと'));
+      for(const note of warnings){
+        const item=el('div','play-attention-item');
+        item.append(el('p','',note.message),quickButton(note.title,()=>handlers.onNavigate?.(note.destination)));
+        attention.append(item);
+      }
+      root.append(attention);
+    }
+  }
   const personalGoal=renderLifeGoalPanel(state,handlers.onAction);
   if(personalGoal)root.append(personalGoal);
   if(state.ending?.dead){root.append(renderLifeReview(state,{expanded:true}));container.replaceChildren(root);return;}
