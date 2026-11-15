@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "5.3.0",
+  "version": "5.4.0",
   "type": "module",
-  "description": "人生シミュレーション 第52段階 架空の社会情勢・技術革新・家計と雇用への影響",
+  "description": "人生シミュレーション 第53段階 事件・事故・災害・幸運・過去の備えの効果",
   "scripts": {
     "test": "node --test --test-concurrency=4 tests/*.test.js",
     "check": "npm test",

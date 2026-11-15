@@ -4,6 +4,7 @@ import {renderTurnActivity} from './turnActivities.js';
 import {getLifeThreads} from '../core/branchingStories.js';
 import {getConsequenceSummary} from '../core/consequenceSystems.js';
 import {eraSummary} from '../core/eraSystems.js';
+import {surpriseSummary,PREPARATION_LABELS} from '../core/surpriseSystems.js';
 import {createOpportunityProgress} from '../core/opportunitySystems.js';
 import {renderLifeGoalPanel,renderLifeReview} from './lifeGoalPanel.js';
 const el=(tag,klass='',text='')=>{
@@ -95,6 +96,19 @@ export function renderPlayDashboard(container,state,handlers={}){
     panel.append(quickButton('社会・ニュースを詳しく見る',()=>handlers.onNavigate?.('SOCIETY-01')));
     root.append(panel);
   }
+  // A compact safety overview: preparation changes future results, without adding a wall of buttons.
+  const safety=surpriseSummary(state);
+  const safetyPanel=el('details','play-card play-safety53');
+  safetyPanel.append(el('summary','','もしもの備えと人生の転機'));
+  const safetyBody=el('div','safety53-body');
+  const measures=el('div','safety53-measures');
+  for(const [key,label] of Object.entries(PREPARATION_LABELS)){
+    const item=el('div','');item.append(el('small','',label),el('strong','',`${safety.prepared[key]} / 5`));measures.append(item);
+  }
+  safetyBody.append(measures,el('p','',`経験した出来事：${safety.events}件 ／ 合計支出：${fmt(safety.totalLoss)}円 ／ 謝礼：${fmt(safety.totalGains)}円`));
+  if(safety.latest)safetyBody.append(el('p','',`最近の出来事：${safety.latest.title} ― ${safety.latest.choice}（備えによる軽減 ${fmt(safety.latest.prevented)}円）`));
+  safetyBody.append(el('p','', '備えは自由行動から選択できます。事故や詐欺の被害額は選択・過去の判断により変わります。架空のゲームモデルです。'));
+  safetyPanel.append(safetyBody);root.append(safetyPanel);
   const personalGoal=renderLifeGoalPanel(state,handlers.onAction);
   if(personalGoal)root.append(personalGoal);
   if(state.ending?.dead){root.append(renderLifeReview(state,{expanded:true}));container.replaceChildren(root);return;}

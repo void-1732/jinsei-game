@@ -4,6 +4,7 @@ import {selectCatalogEvent} from './eventCatalog.js';
 import {createConsequenceEvent,rememberConsequence,resolveConsequence} from './consequenceSystems.js';
 import {selectOpportunityEvent,reflectOpportunityStoryChoice} from './opportunitySystems.js';
 import {createEraChoiceEvent,recordEraChoice} from './eraSystems.js';
+import {createSurpriseEvent,resolveSurpriseChoice} from './surpriseSystems.js';
 /**
  * PHASE 42: player-led life scenes. All options are serializable so saves remain portable.
  * This is an original, fictional choice system; it does not replicate any branded board game.
@@ -156,6 +157,8 @@ export function createStoryEvent(date, turn, age, randomValue, storyProgress=nul
   if(echo)return echo;
   const milestone=selectOpportunityEvent(gameState,age,turn,randomValue);
   if(milestone)return {id:`T${turn}-choice`,type:'choice',story:true,blocking:true,year:date.year,month:date.month,turn,...milestone,options:milestone.options.map(o=>({...o,hint:impactHint(o.impact)}))};
+  const surprise=createSurpriseEvent(gameState,date,turn,age,randomValue);
+  if(surprise)return surprise;
   const era=createEraChoiceEvent(gameState,date,turn,age);
   if(era)return era;
   const selected=selectCatalogEvent(gameState,age,randomValue);
@@ -239,9 +242,10 @@ export function resolveStoryChoice(state, id, choiceId) {
   }
   reflectOpportunityStoryChoice(state,event,option);
   recordEraChoice(state,event,option);
+  if(event.surprise53)changes.push(...resolveSurpriseChoice(state,event,option));
   if(event.branch)recordBranchChoice(state.storyProgress,event,option,state.timeline.ageYears);
   const longEffects=event.consequence?resolveConsequence(state,event,option):null;
-  if(!event.consequence)rememberConsequence(state,event,option,{source:event.branch?'branch':'choice'});
+  if(!event.consequence&&!event.surprise53)rememberConsequence(state,event,option,{source:event.branch?'branch':'choice'});
   if(longEffects?.length)changes.push(...longEffects);
   state.pendingEvents=state.pendingEvents.filter(e=>e.id!==id);
   const detail=changes.length?changes.join(' / '):'新しい経験を得た';

@@ -20,7 +20,7 @@ export function validateConsequenceProgress(x){
  if(!all.every(key=>int(x.influence[key],0,20)))return false;
  const ids=new Set();
  for(const m of x.memories){
-  if(!record(m)||!int(m.id,1,9999)||ids.has(m.id)||!all.includes(m.domain)||!int(m.age,6,100)||!int(m.year,2000,2200)||!int(m.month,1,12)||!text(m.title,120)||!text(m.choice,140)||!['choice','branch','action'].includes(m.source))return false;
+  if(!record(m)||!int(m.id,1,9999)||ids.has(m.id)||!all.includes(m.domain)||!int(m.age,6,100)||!int(m.year,2000,2200)||!int(m.month,1,12)||!text(m.title,120)||!text(m.choice,140)||!['choice','branch','action','surprise'].includes(m.source))return false;
   ids.add(m.id);
  }
  if(x.memories.length && Math.max(...ids)>=x.nextId)return false;

@@ -1,0 +1,8 @@
+/* STEP 53: compact safety history, collapsed until needed. */
+.play-safety53{padding:15px 18px}
+.play-safety53>summary{font-size:14px;font-weight:750;cursor:pointer;list-style-position:inside}
+.safety53-body{padding-top:12px;color:var(--text-main,#eef5ff);font-size:13px;line-height:1.7}
+.safety53-measures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.safety53-measures>div{border:1px solid rgba(145,174,207,.23);border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:2px}
+.safety53-measures small{opacity:.8;font-size:11px}.safety53-measures strong{font-size:16px}
+@media(max-width:480px){.safety53-measures{grid-template-columns:repeat(3,minmax(0,1fr))}.play-safety53{padding:12px}}

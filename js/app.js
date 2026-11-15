@@ -151,7 +151,7 @@ function renderGameStatus(snapshot){
   $('#save-game').disabled=!saveRepository||!gameInProgress||($('#save-slot').value==='人生記録'&&!snapshot.ending?.dead);
   $('#load-game').disabled=!saveRepository;
   $('#save-details').textContent=saveFeedback||'ターン進行・選択のたびに自動保存します。';
-  $('#version-label').textContent='v5.3.0 · 社会情勢と時代の変化版';
+  $('#version-label').textContent='v5.4.0 · 事故・災害・予期せぬ転機版';
   $('#export-game').disabled=!gameInProgress;
   $('#catalog-count').textContent=`${screenGroups.length}カテゴリ / ${screenGroups.reduce((sum,g)=>sum+g.screens.length,0)}画面`;
   $('#event-count').textContent=String(snapshot.pendingEvents.length);

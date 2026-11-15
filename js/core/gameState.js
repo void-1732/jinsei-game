@@ -9,6 +9,7 @@ import {validateGameState} from './saveSystems.js';
 import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
 import {ensureEraProgress,advanceEra,eraEconomicEffects} from './eraSystems.js';
+import {createSurpriseProgress,ensureSurpriseProgress,prepareForSurprise} from './surpriseSystems.js';
 import {createChoiceEvent,resolveChoice} from './eventSystems.js';
 import {createStoryEvent,resolveStoryChoice} from './storyEvents.js';
 import {createBalanceProgress,ensureBalanceProgress,chooseRoutineOption,hasImportantTurnEvent,TIME_FOCUSES,balancedGrowth} from './balanceSystems.js';
@@ -58,6 +59,7 @@ export const initialGameState = freezeSnapshot({
   balance48: createBalanceProgress(),
   lifeGoal49: createLifeGoalProgress(),
   legacy51: createConsequenceProgress(),
+  surprise53: createSurpriseProgress(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
@@ -291,6 +293,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
         result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
         if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
+      case 'safetyPrep': result=prepareForSurprise(state,payload.area);break;
       case 'applyScholarship': case 'setEducationFunding': case 'repayEducation': case 'prepareInterview': case 'careerCertification': case 'salaryNegotiation': case 'reviewBudget':
         result=opportunityAction(state,action,payload);break;
       case 'interactCoworker': case 'resolveWorkIncident': case 'workHard': case 'helpColleague': case 'talkSupervisor': case 'reviewPerformance': case 'trainStaff': case 'dismissStaff': case 'staffCare':
@@ -374,6 +377,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     ensureBalanceProgress(state);
     ensureLifeGoalProgress(state);
     ensureConsequenceProgress(state);
+    ensureSurpriseProgress(state);
     if(state.ending.dead&&interactiveChoices)finalizeLifeGoals(state);
     else if(interactiveChoices)observeLifeGoals(state,{quiet:true});
     if(state.finances){

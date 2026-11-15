@@ -55,11 +55,12 @@ export const getTopic=id=>index.get(id)??null;
 export const categoryLanding=category=>topicGroups[category]?.[0]?.screenIds[0]??'LIFE-01';
 // The short action list is shared across the dashboard and every related category.
 const actionCategory={
-  study:'学業',skill:null,habit:'健康',treatment:'健康',socialize:'人物・家族',jobSearch:'仕事・経営',
+  study:'学業',skill:null,habit:'健康',treatment:'健康',socialize:'人物・家族',jobSearch:'仕事・経営',safetyPrep:null,
 };
 export function categoryActivities(state,category){
   const options=[...turnActivityOptions(state),...opportunityOptions(state,category).map(x=>({title:x.label,action:x.action,payload:x.payload}))];
   return options.filter(item=>{
+    if(item.action==='safetyPrep')return item.payload.area==='health'?category==='健康':category==='生活・資産';
     if(item.action==='skill'){
       if(item.payload.skill==='運動')return category==='健康';
       if(item.payload.skill==='パソコン')return category==='仕事・経営'||category==='学業';
