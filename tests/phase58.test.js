@@ -27,6 +27,7 @@ test('正式版の画面、アプリ、説明書、CIで版数が一貫する',(
  const pkg=JSON.parse(read('package.json'));
  assert.equal(pkg.version,'6.0.0');
  assert.match(read('index.html'),/v6\.0\.0 · 第58段階/);
+ assert.match(read('index.html'),/<title>人生シミュレーション v6\.0\.0 — 正式版<\/title>/);
  assert.match(read('js/app.js'),/v6\.0\.0/);
  assert.match(read('README.md'),/正式版 v6\.0\.0/);
  assert.match(read('CHANGELOG.md'),/v6\.0\.0 — 正式版/);
