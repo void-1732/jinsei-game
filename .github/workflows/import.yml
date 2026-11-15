@@ -1,0 +1,70 @@
+name: Import STEP 41 game and deploy to Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: jinsei-game-initial-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extract the STEP 41 project into repository root
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f .import/phase41-source.tar.xz ]]; then
+            tar -xJf .import/phase41-source.tar.xz
+            rm -rf .import
+            rm -f .github/workflows/import.yml
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            if ! git diff --cached --quiet; then
+              git commit -m "Import STEP 41 game source and docs"
+              git push origin HEAD:main
+            fi
+          fi
+      - name: Check playable files
+        run: node scripts/check-pages.mjs
+
+  deploy:
+    needs: import
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout imported game
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Check playable files
+        run: node scripts/check-pages.mjs
+      - name: Package static site
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp -R css js _site/
+          touch _site/.nojekyll
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
