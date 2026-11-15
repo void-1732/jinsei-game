@@ -190,7 +190,7 @@ test('社会UIは操作を増やし過ぎず、社会指数と生活・給与の
  assert.match(read('js/ui/playDashboard.js'),/時代の変化と暮らし/);
  assert.match(read('js/core/gameState.js'),/advanceEra/);
  assert.match(read('js/core/saveSystems.js'),/validateEraProgress/);
- assert.match(read('package.json'),/"version": "5\.5\.0"/);
+ assert.match(read('package.json'),/"version": "5\.6\.0"/);
  assert.match(read('.github/workflows/pages.yml'),/npm test/);
  assert.match(read('README.md'),/STEP 52/);
 });

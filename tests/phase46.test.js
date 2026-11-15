@@ -148,7 +148,7 @@ test('上限付近の能力を鍛えても逆に能力が低下しない',()=>{
 test('表示文言とバージョンをSTEP 47へ更新',()=>{
  const root=p=>readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
  assert.match(root('README.md'),/STEP 49/);assert.match(root('README.md'),/152/);
- assert.match(root('index.html'),/第54段階/);
- assert.match(root('package.json'),/"version": "5\.5\.0"/);
- assert.match(root('js/app.js'),/v5\.5\.0/);
+ assert.match(root('index.html'),/第56段階/);
+ assert.match(root('package.json'),/"version": "5\.6\.0"/);
+ assert.match(root('js/app.js'),/v5\.6\.0/);
 });
