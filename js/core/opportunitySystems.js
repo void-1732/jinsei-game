@@ -3,6 +3,7 @@
  * Persistent data is optional, so a STEP 46 save can be loaded without resetting a life.
  */
 import {JOB_POSTINGS} from './careerSystems.js';
+import {eraEconomicEffects,eraScholarshipAdjustment} from './eraSystems.js';
 const integer=(x,max=1_000_000_000)=>Number.isSafeInteger(x)&&x>=0&&x<=max;
 const monthIndex=date=>date.year*12+date.month-1;
 const avg=scores=>Math.round(Object.values(scores).reduce((a,b)=>a+b,0)/Math.max(1,Object.keys(scores).length));
@@ -31,15 +32,16 @@ const addHistory=(state,title)=>{
  const p=ensureOpportunityProgress(state);p.history.push({title,year:state.timeline.year,month:state.timeline.month});
  if(p.history.length>80)p.history.shift();
 };
-const eligibleScholarship=s=>avg(s.education.scores)+(branch(s,'spark','research')?10:0)+Math.min(8,(s.education.examPreparation??0)*2)>=68;
+const eligibleScholarship=s=>avg(s.education.scores)+(branch(s,'spark','research')?10:0)+Math.min(8,(s.education.examPreparation??0)*2)+eraScholarshipAdjustment(s.world)>=68;
 export const TUITION_PER_MONTH=36_000;
 export const SCHOLARSHIP_PER_MONTH=18_000;
 /** Monthly tuition and repayment are additional to the existing household cashflow. */
 export function advanceOpportunityMonth(state,date){
  const p=ensureOpportunityProgress(state),e=p.education,f=state.finances;
  if(state.education.stage==='大学'){
-   const charged=Math.max(0,TUITION_PER_MONTH-e.grantMonthly);
-   p.education.tuitionCharged+=TUITION_PER_MONTH;
+   const tuition=Math.round(TUITION_PER_MONTH*eraEconomicEffects(state.world).tuition);
+   const charged=Math.max(0,tuition-e.grantMonthly);
+   p.education.tuitionCharged+=tuition;
    if(e.grantMonthly){e.scholarshipPaid+=e.grantMonthly;record(state,date,'給付奨学金を学費に直接充当',0,'記録');}
    if(charged){
      let paidThisMonth=0;

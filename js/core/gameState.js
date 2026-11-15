@@ -8,6 +8,7 @@ import {socialAction,advanceFamily,familyActivity} from './socialSystems.js';
 import {validateGameState} from './saveSystems.js';
 import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
+import {ensureEraProgress,advanceEra,eraEconomicEffects} from './eraSystems.js';
 import {createChoiceEvent,resolveChoice} from './eventSystems.js';
 import {createStoryEvent,resolveStoryChoice} from './storyEvents.js';
 import {createBalanceProgress,ensureBalanceProgress,chooseRoutineOption,hasImportantTurnEvent,TIME_FOCUSES,balancedGrowth} from './balanceSystems.js';
@@ -96,6 +97,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     ensureCompanyMarket(state.finances);
     state.health=createHealthData();
     state.world=createWorldData();
+    if(interactiveChoices)ensureEraProgress(state.world);
     state.household={memberIds:['PLAYER-001','FAMILY-001','FAMILY-002']};
     if(interactiveChoices){
       const draw=nextRandom(state.random.seed);
@@ -140,15 +142,19 @@ export function createGameStore({interactiveChoices=false} = {}) {
         state.random.seed=worldDraw.seed;state.random.draws++;
         const worldEvents=updateWorld(state.world,date,worldDraw.value);
         for(const item of worldEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
+        if(interactiveChoices){
+          const eraNews=advanceEra(state.world,date,worldDraw.value);
+          for(const item of eraNews)newEvents.push(makeEvent(item.type,item.title,item.description));
+        }
         const healthDraw=nextRandom(state.random.seed);
         state.random.seed=healthDraw.seed;state.random.draws++;
-        const healthEvents=advanceHealth(state.health,date,monthAge,healthDraw.value,{balanced:interactiveChoices,financialStress:state.finances.debt>100000 && state.finances.career.monthlySalary < state.finances.monthlyBudget,healthProtection:consequenceHealthProtection(state)});
+        const healthEvents=advanceHealth(state.health,date,monthAge,healthDraw.value,{balanced:interactiveChoices,financialStress:state.finances.debt>100000 && state.finances.career.monthlySalary < state.finances.monthlyBudget*eraEconomicEffects(state.world).living,healthProtection:consequenceHealthProtection(state)});
         for(const item of healthEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
         const prior={year:date.month===1?date.year-1:date.year,month:date.month===1?12:date.month-1};
         const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world);
         if(interactiveChoices)advanceOpportunityMonth(state,date);
         advanceWorkplace(state.finances,date);
-        advanceCompanyMarket(state.finances,date,state.world?.phase);
+        advanceCompanyMarket(state.finances,date,state.world);
         const jobNews=updateLaborMarket(state.world,state.finances.companyMarket,date);
         if(jobNews)newEvents.push(makeEvent(jobNews.type,jobNews.title,jobNews.description));
         const career=state.finances.career;
@@ -385,6 +391,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(state.world){
       state.world.employmentSupport??={lastIndex:-1,sessions:0};
       state.world.laborMarket??={openings:0,previousOpenings:null};
+      if(interactiveChoices)ensureEraProgress(state.world);
     }
     if(state.finances)ensureMortgage(ensureLiving(state.finances));
     if(state.finances)ensureWorkplace(state.finances);if(state.finances)ensureCompanyMarket(state.finances);emit();return {ok:true,snapshot:getState()};

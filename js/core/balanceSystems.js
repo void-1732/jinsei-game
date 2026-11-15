@@ -1,6 +1,7 @@
 /** STEP 48: slower skill growth and intentional, bounded time advancement.
  * Saves remain schema v7. Unattended progress never commits a milestone choice.
  */
+import {eraEconomicEffects} from './eraSystems.js';
 export const TIME_FOCUSES=Object.freeze(['balanced','health','learning','relationships','finances']);
 export const FOCUS_LABELS=Object.freeze({balanced:'バランス重視',health:'健康・休養重視',learning:'勉強・技能重視',relationships:'人間関係重視',finances:'家計・仕事重視'});
 export function createBalanceProgress(){return {focus:'balanced',skippedChoices:0,fastRuns:0,lastSummary:null,practice:{}};}
@@ -65,12 +66,14 @@ export function hasImportantTurnEvent(events){
 export function estimateMonthlyBudget(state){
  if(!state?.initialized)return null;
  const f=state.finances,p=state.opportunity47;
- const gross=Math.max(0,(f.career.job?f.career.monthlySalary:0)+(f.sideJob?.active?f.sideJob.monthlyIncome:0));
+ const era=eraEconomicEffects(state.world);
+ const gross=Math.max(0,Math.round((f.career.job?f.career.monthlySalary:0)*era.wage)+(f.sideJob?.active?f.sideJob.monthlyIncome:0));
  const tax=Math.floor(gross*.10);
- const tuition=state.education.stage==='大学'?Math.max(0,36000-(p?.education.grantMonthly??0)):0;
+ const tuition=state.education.stage==='大学'?Math.max(0,Math.round(36000*era.tuition)-(p?.education.grantMonthly??0)):0;
  const borrowing=state.education.stage==='大学'&&p?.education.funding==='loan'?tuition:0;
- const outflow=f.monthlyBudget+tuition-borrowing;
+ const livingBudget=Math.round(f.monthlyBudget*era.living);
+ const outflow=livingBudget+tuition-borrowing;
  const balance=gross-tax-outflow;
- return {gross,tax,monthlyBudget:f.monthlyBudget,tuition,borrowing,balance,debt:f.debt,
+ return {gross,tax,monthlyBudget:livingBudget,tuition,borrowing,balance,debt:f.debt,
    warning:f.debt>0&&balance<0?'赤字と負債が重なる見込みです。仕事・家計・奨学金を確認してください。':balance<0?'生活費が収入を上回る見込みです。':null};
 }

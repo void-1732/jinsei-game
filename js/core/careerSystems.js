@@ -1,6 +1,7 @@
 import {REGIONAL_FACTORS} from './livingSystems.js';
 import {getCompany} from './companySystems.js';
 import {jobMarketAdjustment} from './worldSystems.js';
+import {eraHiringAdjustment} from './eraSystems.js';
 import {ensureWorkplace,staffProductivity,resetWorkplacePeople} from './workplaceSystems.js';
 /** 第10段階：求人・採用・企業経営のゲーム専用モデル。実在企業・賃金を表さない。 */
 export const JOB_POSTINGS=Object.freeze([
@@ -32,7 +33,7 @@ export function careerAction(finances,action,payload,context){
   if(context.age<post.minAge)return {ok:false,reason:`${post.minAge}歳から応募できます。`};
   if(post.university&&!(context.education?.graduated&&context.education?.universityChoice==='進学'))return {ok:false,reason:'大学卒業が必要です。'};
   const regionalScore= Math.round(((REGIONAL_FACTORS[finances.living?.region]?.jobs??1)-1)*20);
-  const score=Math.max(0,Math.min(100,employmentScore(context.education,post,career.experience)+(career.searchEffort??0)*3+regionalScore+jobMarketAdjustment(context.world)+(context.interviewBonus??0)));
+  const score=Math.max(0,Math.min(100,employmentScore(context.education,post,career.experience)+(career.searchEffort??0)*3+regionalScore+jobMarketAdjustment(context.world)+eraHiringAdjustment(context.world,post.id)+(context.interviewBonus??0)));
   career.applications=Array.isArray(career.applications)?career.applications:[];
   const passed=score>=post.threshold+(employer?.performance<40?3:0);
   career.applications.push({year:date.year,month:date.month,company:post.company,job:post.job,score,passed});

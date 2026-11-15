@@ -1,3 +1,4 @@
+import {eraEconomicEffects} from './eraSystems.js';
 /** 第13段階：6社の独立業績。架空・決定論的なゲームモデル。 */
 export const COMPANY_DEFINITIONS=Object.freeze([
  {id:'shop',name:'みらい販売',sector:'小売'}, {id:'office',name:'さくら事務サービス',sector:'事務'},
@@ -19,8 +20,10 @@ export function ensureCompanyMarket(finances){
  finances.companyMarket.forEach(ensureCompanyFinance);
  return finances.companyMarket;
 }
-export function advanceCompanyMarket(finances,date,phase='通常'){
+export function advanceCompanyMarket(finances,date,world='通常'){
  const companies=ensureCompanyMarket(finances);
+ const phase=typeof world==='string'?world:world?.phase??'通常';
+ const era=eraEconomicEffects(typeof world==='string'?null:world);
  const phaseEffect=phase==='好況'?3:phase==='不況'?-4:0;
  for(let i=0;i<companies.length;i++){
   const c=companies[i];
@@ -34,8 +37,10 @@ export function advanceCompanyMarket(finances,date,phase='通常'){
   // 売上は業績と景気、人件費は雇用人数に依存。赤字時は現金を取り崩す。
   if(c.status!=='営業停止'){
    const demand=phase==='好況'?1.12:phase==='不況'?.86:1;
-   c.revenue=money((9000000+c.performance*160000+i*360000)*demand);
-   c.costs=money(2800000+c.staffCount*240000+i*120000);
+   // The existing boom/recession modifier is applied once; technology and prices are separate pressures.
+   const sectorTech=(c.sector==='技術'||c.sector==='開発')?era.businessTech:1;
+   c.revenue=money((9000000+c.performance*160000+i*360000)*demand*sectorTech);
+   c.costs=money((2800000+c.staffCount*240000+i*120000)*era.businessCost);
    c.profit=c.revenue-c.costs;
    c.cash=money(c.cash+c.profit);
    c.distressMonths=c.profit<0&&c.cash<4000000?c.distressMonths+1:Math.max(0,c.distressMonths-1);

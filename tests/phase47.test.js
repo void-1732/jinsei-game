@@ -5,6 +5,7 @@ import {createGameStore} from '../js/core/gameState.js';
 import {createEconomyData} from '../js/core/economySystems.js';
 import {ensureCompanyMarket} from '../js/core/companySystems.js';
 import {createWorldData} from '../js/core/worldSystems.js';
+import {eraEconomicEffects} from '../js/core/eraSystems.js';
 import {careerAction} from '../js/core/careerSystems.js';
 import {validateGameState} from '../js/core/saveSystems.js';
 import {
@@ -169,7 +170,7 @@ test('進学・就職・資産は同じカテゴリに集約され、自由行�
 
 test('STEP47のUI・版数・公開用ファイルが揃っている',()=>{
  const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
- assert.match(read('package.json'),/"version": "5\.2\.0"/);
+ assert.match(read('package.json'),/"version": "5\.3\.0"/);
  assert.match(read('README.md'),/STEP 49/);
  assert.match(read('index.html'),/phase47\.css/);
  assert.match(read('js/ui/topicPage.js'),/renderOpportunityPanel/);
@@ -212,7 +213,7 @@ test('実際のターン進行に学費の月次請求が連動し、既存の�
  const g=game(),s=stateOf(19,'大学');s.finances.cash=250000;
  assert.equal(g.loadState(s).ok,true);
  const r=g.advanceTurn();assert.equal(r.ok,true);
- assert.equal(g.getState().opportunity47.education.tuitionCharged,36000);
+ assert.equal(g.getState().opportunity47.education.tuitionCharged,Math.round(36000*eraEconomicEffects(g.getState().world).tuition));
  assert.ok(g.getState().pendingEvents.some(e=>e.type==='choice'));
  assert.equal(g.getState().pendingEvents.filter(e=>e.type==='choice').length,1);
  const ev=g.getState().pendingEvents.find(e=>e.type==='choice');

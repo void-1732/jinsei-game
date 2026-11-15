@@ -2,6 +2,7 @@ import {estateBreakdown} from './estateSystems.js';
 import {getHousingEquity} from './livingSystems.js';
 import {advanceLiving} from './livingSystems.js';
 import {businessMonthlyFigures} from './careerSystems.js';
+import {eraEconomicEffects} from './eraSystems.js';
 /** 第5段階：すべて整数円で扱う簡易経済システム。現実の税制・相場を再現しない。 */
 const JOBS=Object.freeze({
   '販売スタッフ':{salary:195000,age:18,academic:'不問'},
@@ -318,6 +319,7 @@ export function advanceEconomy(e,from,months,playerBirth,world=null){
     const date={year:Math.floor(index/12),month:index%12+1};
     const age=date.year-playerBirth.year-(date.month<playerBirth.month?1:0);
     if(age<18)continue; // 未成年の生活費は保護者負担とする
+    const era=eraEconomicEffects(world);
     let gross=0;
     if(!e.career.job){
       e.career.unemploymentMonths=(e.career.unemploymentMonths??0)+1;
@@ -330,7 +332,8 @@ export function advanceEconomy(e,from,months,playerBirth,world=null){
       }
     }
     if(e.career.job){e.career.unemploymentMonths=0;e.career.insuredMonths=(e.career.insuredMonths??0)+1;if(e.career.insuredMonths>=12)e.career.benefitEligible=true;e.career.experience++;if(e.career.experience%36===0){e.career.promotions++;e.career.monthlySalary+=15000;notices.push({type:'promotion',title:'昇給',description:`月額給与が${e.career.monthlySalary.toLocaleString('ja-JP')}円になりました。`});}
-      gross+=e.career.monthlySalary;credit(e,date,'給与',e.career.monthlySalary);}
+      const pay=Math.max(0,Math.round(e.career.monthlySalary*era.wage));
+      gross+=pay;credit(e,date,'給与',pay);}
     if(e.sideJob.active){gross+=e.sideJob.monthlyIncome;credit(e,date,'副業収入',e.sideJob.monthlyIncome);}
     if(e.business.active){
       const b=e.business;
@@ -431,8 +434,8 @@ export function advanceEconomy(e,from,months,playerBirth,world=null){
         const reliability=assets.length?Math.max(.4,1-(assets.length-operational)*.15):1;
         const avgCondition=assets.length?assets.reduce((sum,item)=>sum+(item.broken?0:(item.condition??100)),0)/assets.length:0;
         const productivity=assets.length?1+Math.min(.12,avgCondition/100*.12):1;
-        const revenue=Math.floor(baseFigures.revenue*reliability*productivity);
-        const costs=baseFigures.costs;
+        const revenue=Math.floor(baseFigures.revenue*reliability*productivity*era.businessTech);
+        const costs=Math.floor(baseFigures.costs*era.businessCost);
         // 事業売上・経費は事業口座だけで精算し、個人収支には加算しない。
         log(e,date,'事業記録','事業売上',revenue);businessLog(b,date,'事業売上',revenue);
         log(e,date,'事業記録','事業経費',-costs);businessLog(b,date,'事業経費',-costs);
@@ -449,7 +452,7 @@ export function advanceEconomy(e,from,months,playerBirth,world=null){
       if(b.cashFlowHistory.length>24)b.cashFlowHistory.shift();
     }
     const tax=Math.floor(gross*0.10);if(tax){debit(e,date,'簡易税金・社会保険',tax);e.totals.tax+=tax;}
-    debit(e,date,'生活費',e.monthlyBudget);
+    debit(e,date,'生活費',Math.round(e.monthlyBudget*era.living));
     advanceLiving(e,date,age);
     if(e.investment>0){const gain=Math.floor(e.investment*0.002);if(gain){e.investment+=gain;log(e,date,'評価増減','投資評価額の増加',gain);}}
   }

@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "5.2.0",
+  "version": "5.3.0",
   "type": "module",
-  "description": "人生シミュレーション 第51段階 人生の選択の長期的な影響を強化",
+  "description": "人生シミュレーション 第52段階 架空の社会情勢・技術革新・家計と雇用への影響",
   "scripts": {
     "test": "node --test --test-concurrency=4 tests/*.test.js",
     "check": "npm test",

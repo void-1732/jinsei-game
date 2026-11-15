@@ -1,3 +1,4 @@
+import {eraSummary,eraEconomicEffects} from '../core/eraSystems.js';
 /** 第6段階の状態・操作パネル。ゲーム状態はhandlers経由でのみ更新。 */
 const node=(tag,cls='',label='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=label;return n;};
 function line(root,k,v){const r=node('div','field-list-item');r.append(node('strong','',k),node('span','',String(v)));root.append(r);}
@@ -24,6 +25,18 @@ export function renderWorldPanel(container,screen,game,handlers={}){
  if(society||screen.id==='LIFE-01'){
    line(section,'景気の状態',w.phase);line(section,'景気指数',w.economyIndex);line(section,'雇用指数',w.employmentIndex);line(section,'物価指数',w.priceIndex);
    if(society){
+     const era=eraSummary(w);
+     if(era){
+       section.append(node('h3','','いまの社会の変化と生活への影響'));
+       line(section,'技術の広がり',`${era.tech}/100 ・ ${era.techLabel}`);
+       line(section,'社会のつながり',`${era.social}/100`);
+       line(section,'暮らしの価格環境',era.price);
+       line(section,'雇用の状況',era.labor);
+       line(section,'月額生活費の変化',`${era.livingImpact>=0?'+':''}${era.livingImpact}%（家計予算比）`);
+       line(section,'月額給与の変化',`${era.wageImpact>=0?'+':''}${era.wageImpact}%（基本給比）`);
+       if(era.latest)section.append(node('p','muted small',`社会ニュース：${era.latest.title}`));
+       line(section,'社会への対応',`学び${era.choices.learning} / 助け合い${era.choices.community} / 節約${era.choices.frugality}`);
+     }
      const companies=game.finances?.companyMarket??[];
      if(companies.length){
        line(section,'企業6社の求人枠合計',`${companies.reduce((sum,c)=>sum+(c.status==='営業停止'?0:c.openings),0)}枠`);

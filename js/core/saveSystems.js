@@ -5,6 +5,7 @@ import {validateOpportunityProgress} from './opportunitySystems.js';
 import {validateBalanceProgress} from './balanceSystems.js';
 import {validateLifeGoalProgress} from './lifeGoals.js';
 import {validateConsequenceProgress} from './consequenceSystems.js';
+import {validateEraProgress} from './eraSystems.js';
 /** 第7段階：ローカル保存。外部送信なし。保存データは実行可能コードとして扱わない。 */
 export const SAVE_PREFIX = 'gls:v7:';
 export const SLOT_IDS = Object.freeze(['自動保存','手動保存1','手動保存2','手動保存3','人生記録']);
@@ -35,6 +36,7 @@ export function validateGameState(s) {
   const finite = value => typeof value==='number' && Number.isFinite(value);
   if(!['cash','investment','debt','monthlyBudget'].every(k=>finite(s.finances[k]) && s.finances[k]>=0)) return false;
   if(!validateLiving(s.finances.living))return false;
+  if(s.world.era52!==undefined&&!validateEraProgress(s.world.era52))return false;
   if(s.world.employmentSupport!==undefined){
     const x=s.world.employmentSupport;
     if(!x||!Number.isSafeInteger(x.lastIndex)||x.lastIndex< -1||x.lastIndex>26412||!Number.isSafeInteger(x.sessions)||x.sessions<0||x.sessions>10000)return false;

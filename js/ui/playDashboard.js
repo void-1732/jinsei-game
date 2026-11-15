@@ -3,6 +3,7 @@ import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js
 import {renderTurnActivity} from './turnActivities.js';
 import {getLifeThreads} from '../core/branchingStories.js';
 import {getConsequenceSummary} from '../core/consequenceSystems.js';
+import {eraSummary} from '../core/eraSystems.js';
 import {createOpportunityProgress} from '../core/opportunitySystems.js';
 import {renderLifeGoalPanel,renderLifeReview} from './lifeGoalPanel.js';
 const el=(tag,klass='',text='')=>{
@@ -81,6 +82,18 @@ export function renderPlayDashboard(container,state,handlers={}){
       }
       root.append(attention);
     }
+  }
+  const era=eraSummary(state.world);
+  if(era){
+    const panel=el('section','play-card play-era52');
+    panel.append(el('span','play-eyebrow','今月の社会情勢（架空モデル）'),el('h3','','時代の変化と暮らし'));
+    const values=el('div','era52-metrics');
+    for(const [name,value] of [['景気',state.world.phase],['物価',era.price],['雇用',era.labor],['技術',era.techLabel]]){
+      const item=el('div','');item.append(el('small','',name),el('strong','',value));values.append(item);
+    }
+    panel.append(values,el('p','',`生活費：予算比${era.livingImpact>=0?'+':''}${era.livingImpact}% ／ 給与：基本給比${era.wageImpact>=0?'+':''}${era.wageImpact}%`));
+    panel.append(quickButton('社会・ニュースを詳しく見る',()=>handlers.onNavigate?.('SOCIETY-01')));
+    root.append(panel);
   }
   const personalGoal=renderLifeGoalPanel(state,handlers.onAction);
   if(personalGoal)root.append(personalGoal);

@@ -1,0 +1,10 @@
+/* STEP 52: compact fictional society status, responsive and without new action clutter. */
+.play-era52{display:grid;gap:10px}
+.play-era52 h3{margin:0;font-size:1.08rem}
+.era52-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.era52-metrics>div{min-width:0;background:rgba(77,126,171,.10);border:1px solid rgba(142,177,206,.16);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:4px}
+.era52-metrics small{color:#b9d0e2;font-size:.75rem}
+.era52-metrics strong{font-size:.87rem;line-height:1.35;overflow-wrap:anywhere}
+.play-era52 p{margin:0;color:#b9d0e2;font-size:.86rem}
+.play-era52 .dashboard-shortcut{justify-self:start;max-width:100%;white-space:normal;text-align:left}
+@media(max-width:760px){.era52-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.play-era52{gap:8px}.era52-metrics>div{padding:8px}}

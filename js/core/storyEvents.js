@@ -3,6 +3,7 @@ import {createBranchingEvent,recordBranchChoice} from './branchingStories.js';
 import {selectCatalogEvent} from './eventCatalog.js';
 import {createConsequenceEvent,rememberConsequence,resolveConsequence} from './consequenceSystems.js';
 import {selectOpportunityEvent,reflectOpportunityStoryChoice} from './opportunitySystems.js';
+import {createEraChoiceEvent,recordEraChoice} from './eraSystems.js';
 /**
  * PHASE 42: player-led life scenes. All options are serializable so saves remain portable.
  * This is an original, fictional choice system; it does not replicate any branded board game.
@@ -155,6 +156,8 @@ export function createStoryEvent(date, turn, age, randomValue, storyProgress=nul
   if(echo)return echo;
   const milestone=selectOpportunityEvent(gameState,age,turn,randomValue);
   if(milestone)return {id:`T${turn}-choice`,type:'choice',story:true,blocking:true,year:date.year,month:date.month,turn,...milestone,options:milestone.options.map(o=>({...o,hint:impactHint(o.impact)}))};
+  const era=createEraChoiceEvent(gameState,date,turn,age);
+  if(era)return era;
   const selected=selectCatalogEvent(gameState,age,randomValue);
   if(selected){
     return {
@@ -235,6 +238,7 @@ export function resolveStoryChoice(state, id, choiceId) {
     }
   }
   reflectOpportunityStoryChoice(state,event,option);
+  recordEraChoice(state,event,option);
   if(event.branch)recordBranchChoice(state.storyProgress,event,option,state.timeline.ageYears);
   const longEffects=event.consequence?resolveConsequence(state,event,option):null;
   if(!event.consequence)rememberConsequence(state,event,option,{source:event.branch?'branch':'choice'});
