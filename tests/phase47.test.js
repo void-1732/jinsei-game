@@ -170,8 +170,8 @@ test('進学・就職・資産は同じカテゴリに集約され、自由行�
 
 test('STEP47のUI・版数・公開用ファイルが揃っている',()=>{
  const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
- assert.match(read('package.json'),/"version": "5\.7\.0"/);
- assert.match(read('README.md'),/STEP 49/);
+ assert.match(read('package.json'),/"version": "6\.0\.0"/);
+ assert.match(read('CHANGELOG.md'),/STEP 49/);
  assert.match(read('index.html'),/phase47\.css/);
  assert.match(read('js/ui/topicPage.js'),/renderOpportunityPanel/);
  assert.match(read('js/ui/topicGroups.js'),/opportunityOptions/);
