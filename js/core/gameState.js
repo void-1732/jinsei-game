@@ -21,6 +21,15 @@ import { createEconomyData, advanceEconomy, economyAction } from './economySyste
 import { createLifeData, advanceEducation, study, socialize, gainSkill, prepareExam, chooseSchool } from './lifeSystems.js';
 /** PHASE 3: game-domain store. Independent of presentation and navigation. */
 const MAX_YEAR = 2200;
+/** Age dominates mortality; severe physical/mental decline has a modest effect. */
+export function mortalityRisk(age,health){
+ if(age<40)return 0;
+ if(age>=110)return 1;
+ const base=Math.pow(Math.max(0,age-39)/95,4)*.12;
+ const frailty=age>=65?Math.max(0,45-(health?.physical??100))*.00008
+  +Math.max(0,30-(health?.mental??100))*.000025:0;
+ return Math.min(.30,base+frailty);
+}
 function freezeDeep(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.values(value).forEach(freezeDeep);
@@ -190,7 +199,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(age>=40){
       const mortality=nextRandom(state.random.seed);
       state.random.seed=mortality.seed;state.random.draws++;
-      const risk=age>=110?1:Math.min(.30,Math.pow(Math.max(0,age-39)/95,4)*.12+((state.health?.physical ?? 100)<30 ? .002 : 0));
+      const risk=mortalityRisk(age,state.health);
       if(mortality.value<risk) {
         const cause=age>=110?'寿命':state.health?.physical<30?'健康状態の悪化':'加齢に伴う死亡';
         const inheritance=calculateInheritance(state.finances,state.people);

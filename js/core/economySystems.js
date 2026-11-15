@@ -11,6 +11,22 @@ const JOBS=Object.freeze({
   '専門職':{salary:360000,age:22,academic:'大学'},
 });
 export const jobOptions=Object.freeze(Object.entries(JOBS).map(([name,job])=>Object.freeze({name,...job})));
+/** STEP 56: automatic raises taper with years worked, negotiated raises remain separate. */
+export function scheduledRaise(career){
+ const months=career?.experience??0;
+ if(!Number.isInteger(months)||months<=0||months%36!==0)return 0;
+ const step=months<=144?10000:months<=360?7000:4000;
+ return Math.max(0,Math.min(step,420000-(career?.monthlySalary??0)));
+}
+export function lateCareerWageFactor(age){return age>=75?.70:age>=65?.85:1;}
+/** Prolonged unemployment lowers real spending, not debt itself. Existing budgets apply. */
+export function livingExpenseWithHardship(finances,age,priceMultiplier=1,discount=0){
+ const full=Math.max(0,Math.round((finances?.monthlyBudget??0)*priceMultiplier));
+ const months=age>=18&&!finances?.career?.job?Math.max(0,finances?.career?.unemploymentMonths??0):0;
+ const factor=months>=72?.78:months>=36?.86:months>=12?.93:1;
+ const floor=Math.round(Math.min(finances?.monthlyBudget??0,60000)*priceMultiplier);
+ return Math.max(0,Math.max(floor,Math.round(full*factor))-Math.max(0,Math.round(discount)));
+}
 export function createEconomyData(){return {
   cash:0,investment:0,debt:0,monthlyBudget:85000,
   career:{job:null,company:null,monthlySalary:0,experience:0,promotions:0,jobChanges:0,unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,benefitEligible:true,insuredMonths:0},
@@ -331,8 +347,8 @@ export function advanceEconomy(e,from,months,playerBirth,world=null,options={}){
         if(e.career.benefitMonths===6)e.career.benefitEligible=false;
       }
     }
-    if(e.career.job){e.career.unemploymentMonths=0;e.career.insuredMonths=(e.career.insuredMonths??0)+1;if(e.career.insuredMonths>=12)e.career.benefitEligible=true;e.career.experience++;if(e.career.experience%36===0){e.career.promotions++;e.career.monthlySalary+=15000;notices.push({type:'promotion',title:'昇給',description:`月額給与が${e.career.monthlySalary.toLocaleString('ja-JP')}円になりました。`});}
-      const pay=Math.max(0,Math.round(e.career.monthlySalary*era.wage));
+    if(e.career.job){e.career.unemploymentMonths=0;e.career.insuredMonths=(e.career.insuredMonths??0)+1;if(e.career.insuredMonths>=12)e.career.benefitEligible=true;e.career.experience++;const raise=scheduledRaise(e.career);if(raise){e.career.promotions++;e.career.monthlySalary+=raise;notices.push({type:'promotion',title:'昇給',description:`月額給与が${e.career.monthlySalary.toLocaleString('ja-JP')}円になりました。`});}
+      const pay=Math.max(0,Math.round(e.career.monthlySalary*era.wage*lateCareerWageFactor(age)));
       gross+=pay;credit(e,date,'給与',pay);}
     if(e.sideJob.active){gross+=e.sideJob.monthlyIncome;credit(e,date,'副業収入',e.sideJob.monthlyIncome);}
     if(e.business.active){
@@ -452,9 +468,8 @@ export function advanceEconomy(e,from,months,playerBirth,world=null,options={}){
       if(b.cashFlowHistory.length>24)b.cashFlowHistory.shift();
     }
     const tax=Math.floor(gross*0.10);if(tax){debit(e,date,'簡易税金・社会保険',tax);e.totals.tax+=tax;}
-    const livingCost=Math.round(e.monthlyBudget*era.living);
-    const discount=Math.min(livingCost,Math.max(0,Math.round(options.livingDiscount??0)));
-    debit(e,date,'生活費',livingCost-discount);
+    const livingCost=livingExpenseWithHardship(e,age,era.living,options.livingDiscount??0);
+    debit(e,date,'生活費',livingCost);
     advanceLiving(e,date,age);
     if(e.investment>0){const gain=Math.floor(e.investment*0.002);if(gain){e.investment+=gain;log(e,date,'評価増減','投資評価額の増加',gain);}}
   }

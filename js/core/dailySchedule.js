@@ -55,8 +55,8 @@ export function advanceDailySchedule(state,date,age,discount=0){
  const plan=getTimePlan(schedule.planId);
  const [work,study,home,rest,social]=plan.shares;
  const formerFatigue=schedule.fatigue,formerStress=schedule.stress;
- schedule.fatigue=clamp(schedule.fatigue+(work>=35?3:work>=20?1:0)+(study>=35?2:0)-(rest>=40?7:rest>=20?2:1));
- schedule.stress=clamp(schedule.stress+(work>=35?3:0)+(study>=35?2:0)+(state.finances?.debt>300000?1:0)-(rest>=40?6:rest>=20?2:1)-(social>=40?1:0));
+ schedule.fatigue=clamp(schedule.fatigue+(work>=35?3:work>=20?1:0)+(study>=35?2:0)-(rest>=40?7:rest>=20?2:1)-Math.floor(schedule.fatigue/30));
+ schedule.stress=clamp(schedule.stress+(work>=35?3:0)+(study>=35?2:0)+(state.finances?.debt>300000?1:0)-(rest>=40?6:rest>=20?2:1)-(social>=40?1:0)-Math.floor(schedule.stress/30));
  const h=state.health,changes=[];
  if(schedule.fatigue>=65){h.energy=clamp(h.energy-1);changes.push('疲労で元気−1');}
  if(schedule.stress>=65){h.mental=clamp(h.mental-1);changes.push('ストレスで心−1');}

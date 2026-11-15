@@ -2,6 +2,7 @@
  * Saves remain schema v7. Unattended progress never commits a milestone choice.
  */
 import {eraEconomicEffects} from './eraSystems.js';
+import {livingExpenseWithHardship,lateCareerWageFactor} from './economySystems.js';
 export const TIME_FOCUSES=Object.freeze(['balanced','health','learning','relationships','finances']);
 export const FOCUS_LABELS=Object.freeze({balanced:'バランス重視',health:'健康・休養重視',learning:'勉強・技能重視',relationships:'人間関係重視',finances:'家計・仕事重視'});
 export function createBalanceProgress(){return {focus:'balanced',skippedChoices:0,fastRuns:0,lastSummary:null,practice:{}};}
@@ -67,11 +68,13 @@ export function estimateMonthlyBudget(state){
  if(!state?.initialized)return null;
  const f=state.finances,p=state.opportunity47;
  const era=eraEconomicEffects(state.world);
- const gross=Math.max(0,Math.round((f.career.job?f.career.monthlySalary:0)*era.wage)+(f.sideJob?.active?f.sideJob.monthlyIncome:0));
+ const age=state.timeline?.ageYears??18;
+ const gross=Math.max(0,Math.round((f.career.job?f.career.monthlySalary:0)*era.wage*lateCareerWageFactor(age))+(f.sideJob?.active?f.sideJob.monthlyIncome:0));
  const tax=Math.floor(gross*.10);
  const tuition=state.education.stage==='大学'?Math.max(0,Math.round(36000*era.tuition)-(p?.education.grantMonthly??0)):0;
  const borrowing=state.education.stage==='大学'&&p?.education.funding==='loan'?tuition:0;
- const livingBudget=Math.round(f.monthlyBudget*era.living);
+ const homeDiscount=age>=18&&state.daily54?.planId==='household'?800:0;
+ const livingBudget=livingExpenseWithHardship(f,age,era.living,homeDiscount);
  const outflow=livingBudget+tuition-borrowing;
  const balance=gross-tax-outflow;
  return {gross,tax,monthlyBudget:livingBudget,tuition,borrowing,balance,debt:f.debt,

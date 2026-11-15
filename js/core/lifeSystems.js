@@ -42,7 +42,8 @@ export function advanceEducation(education,previous,next,turn){
     const result=evaluateSchool(education.scores,stage);
     const preference=education.schoolPreference?.[stage]??'自動';
     const thresholds=stage==='高校'?{'進学校':75,'県立高校':55,'地域高校':0}:{'難関大学':80,'総合大学':60,'地域大学':0};
-    const passed=preference==='自動'||result.average>=thresholds[preference];
+    const preparationBonus=Math.min(8,Math.max(0,(education.examPreparation??0)*2));
+    const passed=preference==='自動'||result.average+preparationBonus>=thresholds[preference];
     school=passed&&preference!=='自動'?preference:result.school;
     education.entrance={status:passed?'合格':'第一志望不合格・代替進学',destination:school,average:result.average,preference};
     const message=passed?`${stage}入学：${school}`:`${preference}は不合格となり、${school}へ進学`;

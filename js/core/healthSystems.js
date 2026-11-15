@@ -16,7 +16,7 @@ export function advanceHealth(h,date,age,randomValue,{balanced=false,financialSt
  if(h.illness){h.illness.months++;h.physical=healthClamp(h.physical-3);h.energy=healthClamp(h.energy-3);
    // 自然治癒。治療により直ちに治すことも可能。
    if(h.illness.months>=3){notes.push({type:'recovery',title:'体調が回復',description:'病気から自然に回復しました。'});h.illness=null;}
- }else if(age>=5 && randomValue < (h.physical<45?0.055:0.012)*(1-Math.max(0,Math.min(.35,healthProtection)))){
+ }else if(age>=5 && randomValue < (h.physical<45?0.055:age>=65?0.018:0.012)*(1-Math.max(0,Math.min(.35,healthProtection)))){
    h.illness={name:'体調不良',months:0};h.physical=healthClamp(h.physical-8);h.energy=healthClamp(h.energy-10);
    notes.push({type:'illness',title:'体調不良',description:'体調を崩しました。健康画面から治療できます。'});
  }
@@ -28,7 +28,10 @@ export function advanceHealth(h,date,age,randomValue,{balanced=false,financialSt
    const recovery=age<18?2:age<65?1:(date.month%2===0?1:0);
    if(h.physical<recoveryLimit)h.physical=healthClamp(Math.min(recoveryLimit,h.physical+recovery));
  }
- if(h.physical<=30||h.mental<=25)notes.push({type:'health-warning',title:'健康状態に注意',description:'体調や精神状態が低下しています。生活習慣を見直してください。'});
+ const previous=h.healthHistory.at(-1);
+ const critical=h.physical<=30||h.mental<=25;
+ const previouslyCritical=previous&&(previous.physical<=30||previous.mental<=25);
+ if(critical&&(!previouslyCritical||date.month%3===0))notes.push({type:'health-warning',title:'健康状態に注意',description:'体調や精神状態が低下しています。生活習慣を見直してください。'});
  h.healthHistory.push({year:date.year,month:date.month,physical:h.physical,mental:h.mental,energy:h.energy,illness:h.illness?.name??null});
  if(h.healthHistory.length>240)h.healthHistory.shift();
  return notes;
