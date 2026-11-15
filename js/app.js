@@ -151,7 +151,7 @@ function renderGameStatus(snapshot){
   $('#save-game').disabled=!saveRepository||!gameInProgress||($('#save-slot').value==='人生記録'&&!snapshot.ending?.dead);
   $('#load-game').disabled=!saveRepository;
   $('#save-details').textContent=saveFeedback||'ターン進行・選択のたびに自動保存します。';
-  $('#version-label').textContent='v5.5.0 · 日常の時間配分・生活リズム版';
+  $('#version-label').textContent='v5.6.0 · ゲームバランス調整版';
   $('#export-game').disabled=!gameInProgress;
   $('#catalog-count').textContent=`${screenGroups.length}カテゴリ / ${screenGroups.reduce((sum,g)=>sum+g.screens.length,0)}画面`;
   $('#event-count').textContent=String(snapshot.pendingEvents.length);

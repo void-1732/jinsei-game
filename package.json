@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "5.5.0",
+  "version": "5.6.0",
   "type": "module",
-  "description": "人生シミュレーション 第54段階 日常生活・時間配分・生活習慣",
+  "description": "人生シミュレーション 第56段階 ゲームバランス総合調整",
   "scripts": {
     "test": "node --test --test-concurrency=4 tests/*.test.js",
     "check": "npm test",
