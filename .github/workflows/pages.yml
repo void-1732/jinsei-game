@@ -20,8 +20,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: ゲームの回帰テスト（STEP 54）
+      - name: 全世代・全機能の回帰テスト（STEP 55）
         run: npm test
+      - name: PC・スマートフォンのブラウザ操作検査（1440px / 390px）
+        run: node scripts/qa-browser.mjs
       - name: 公開対象と参照ファイルを検査
         run: node scripts/check-pages.mjs
       - name: 公開用ファイルを作成

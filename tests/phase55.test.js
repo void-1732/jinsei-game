@@ -54,7 +54,7 @@ for(const [style,seed,preferredPlan] of [
   const birth={year:2000,month:style==='learning'?1:style==='recovery'?6:11,day:style==='learning'?1:style==='recovery'?13:28};
   assert.equal(game.startNewGame({name:`STEP55-${style}`,seed,birth}).ok,true);
   const repo=memoryRepository();
-  let previous=game.getState(),turns=0,lastAge=-1,restores=0,usedFast=false,notifications=0,choiceCount=0;
+  let previous=game.getState(),turns=0,lastAge=-1,restores=0,usedFast=false,notifications=0,choiceCount=0,employedMonths=0;
   while(!game.getState().ending.dead){
     const before=game.getState();
     if(before.timeline.ageYears>110||turns>1800)throw Error('Did not reach an ending before max age / turns');
@@ -64,7 +64,12 @@ for(const [style,seed,preferredPlan] of [
       const r=game.performAction('setTimePlan',{planId:preferredPlan});
       assert.equal(r.ok,true,r.reason);state=game.getState();
     }
-    if(state.timeline.ageYears>=18 && state.timeline.ageYears<35 && !state.finances.career.job && turns%16===0){
+    if(style!=='relationships'&&state.timeline.ageYears>=18&&state.timeline.ageYears<65&&!state.finances.career.job&&turns%6===0){
+      const applied=game.performAction('applyJob',{postingId:style==='learning'?'shop':'care'});
+      if(applied.ok&&applied.passed)assert.ok(game.getState().finances.career.job,'Passed hiring must create employment');
+      state=game.getState();
+    }
+    if(style==='relationships'&&state.timeline.ageYears>=18 && state.timeline.ageYears<35 && !state.finances.career.job && turns%16===0){
       const r=game.performAction('jobSearch');
       if(r.ok){assert.equal(game.performAction('skill',{skill:'読書'}).ok,false,'Multiple actions in same turn');}
     }
@@ -75,6 +80,7 @@ for(const [style,seed,preferredPlan] of [
       const advanced=game.advanceTurn();assert.equal(advanced.ok,true,`${style} turn ${turns}: ${advanced.reason}`);
     }
     const next=game.getState();
+    if(next.finances.career.job)employedMonths++;
     checkInvariants(next,before,style);
     if(next.timeline.ageYears!==lastAge){lastAge=next.timeline.ageYears;notifications+=next.pendingEvents.filter(e=>e.type!=='choice').length;}
     if([18,45,65].includes(next.timeline.ageYears) && !next.ending.dead && ![18,45,65].includes(before.timeline.ageYears)){
@@ -97,10 +103,11 @@ for(const [style,seed,preferredPlan] of [
   assert.ok(choiceCount>120,`Too few choices: ${choiceCount}`);
   assert.ok(turns>=180,`Life ended too early for balance QA: ${style} ${last.timeline.ageYears}`);
   assert.ok(restores>=1,`Failed to test checkpoint: ${style}`);
+  if(style!=='relationships')assert.ok(employedMonths>=24,`Cannot secure employment in ${style}: ${employedMonths}`);
   assert.equal(game.advanceTurn().ok,false,'Life continued after ending');
   assert.equal(game.performAction('skill',{skill:'読書'}).ok,false,'Action performed after death');
   assert.equal(repo.save('人生記録',last).ok,true,'Ending record cannot be saved');
-  console.log(`STEP55 ${style}: age=${last.ending.date.age},turns=${turns},choices=${choiceCount},restores=${restores},fast=${usedFast},notices=${notifications},cash=${last.finances.cash},debt=${last.finances.debt},score=${last.ending.score}`);
+  console.log(`STEP55 ${style}: age=${last.ending.date.age},turns=${turns},choices=${choiceCount},restores=${restores},working=${employedMonths},fast=${usedFast},notices=${notifications},cash=${last.finances.cash},debt=${last.finances.debt},score=${last.ending.score}`);
  });
 }
 
