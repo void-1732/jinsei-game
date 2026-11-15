@@ -34,9 +34,9 @@ test('第25段階：状態表示は日本語で、予定操作を無効化した
  assert.match(src,/画面機能の接続状況/);
 });
 test('第25段階：画面版数と日本語の案内を更新',()=>{
- assert.match(read('index.html'),/第43段階/);
- assert.match(read('js/app.js'),/v4\.4\.0 · 1ターン1行動版/);
- assert.match(read('package.json'),/"version": "4\.4\.0"/);
+ assert.match(read('index.html'),/第44段階/);
+ assert.match(read('js/app.js'),/v4\.5\.0 · カテゴリ統合版/);
+ assert.match(read('package.json'),/"version": "4\.5\.0"/);
  assert.match(read('index.html'),/lang="ja"/);
 });
 test('第25段階：人生の月間収入に事業口座の売上を混入させない',()=>{

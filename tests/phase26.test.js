@@ -33,5 +33,5 @@ test('第26段階：未開始時には値を返さず、時間進行で現在年
   x.startNewGame({name:'進行者'});const old=getScreenFieldValues('LIFE-01',x.getState())['人生サマリー'];x.advanceTurn();const now=getScreenFieldValues('LIFE-01',x.getState())['人生サマリー'];assert.notEqual(old,now);
 });
 test('第26段階：画面では実データと未接続項目を区別し、版数を更新する',()=>{
-  const src=read('js/ui/screenRenderer.js');assert.match(src,/getScreenFieldValues/);assert.match(src,/未実装・未接続/);assert.match(src,/field-connected/);assert.match(read('index.html'),/lang="ja"/);assert.match(read('package.json'),/"version": "4\.4\.0"/);
+  const src=read('js/ui/screenRenderer.js');assert.match(src,/getScreenFieldValues/);assert.match(src,/未実装・未接続/);assert.match(src,/field-connected/);assert.match(read('index.html'),/lang="ja"/);assert.match(read('package.json'),/"version": "4\.5\.0"/);
 });

@@ -4,6 +4,9 @@ import { createGameStore, createRandomBirthday } from './core/gameState.js';
 import { createUiStore } from './ui/uiState.js';
 import { renderNavigation } from './ui/navigation.js';
 import { renderScreen } from './ui/screenRenderer.js';
+import {renderTopicPage} from './ui/topicPage.js';
+import {renderCategoryDock} from './ui/categoryDock.js';
+import {categoryLanding,getTopic} from './ui/topicGroups.js';
 
 const gameStore = createGameStore({interactiveChoices:true});
 let saveRepository = null;
@@ -20,7 +23,7 @@ const dom = {
   categoryLabel: $('#category-label'), systemMessage: $('#system-message'),
   backButton: $('#nav-back'), forwardButton: $('#nav-forward'), searchInput: $('#screen-search'),
   helpDialog: $('#help-dialog'), storyDialog: $('#story-dialog'), storyContent: $('#story-content'),
-  settingsDialog: $('#settings-dialog'),
+  settingsDialog: $('#settings-dialog'), categoryDock: $('#category-dock'),topicStrip:$('#topic-strip'),
 };
 if(saveRepository){
   const loaded = saveRepository.load('自動保存');
@@ -35,7 +38,6 @@ function openSettings(){
 }
 function navigateTo(id){
   uiStore.navigateTo(id);
-  if(id==='SETTING-01')openSettings();
   $('#sidebar').classList.remove('open');
   $('#toggle-nav').setAttribute('aria-expanded','false');
 }
@@ -44,9 +46,10 @@ function render(state){
   const screen=findScreen(state.activeScreenId);
   if(!screen)return;
   if(lastScreenId!==screen.id){actionFeedback='';lastScreenId=screen.id;}
-  dom.pageTitle.textContent=screen.title;
-  dom.screenId.textContent=screen.id;
-  dom.breadcrumbs.textContent=`画面一覧 / ${screen.category} / ${screen.title}`;
+  const mergedTopic=getTopic(screen.id);
+  dom.pageTitle.textContent=mergedTopic?.screenIds.length>1?mergedTopic.title:screen.title;
+  dom.screenId.textContent=mergedTopic?.screenIds.length>1?`${mergedTopic.screenIds.length}項目`:screen.id;
+  dom.breadcrumbs.textContent=`カテゴリ / ${screen.category} / ${mergedTopic?.title??screen.title}`;
   dom.categoryLabel.textContent=screen.category;
   dom.backButton.disabled=state.historyIndex<=0;
   dom.forwardButton.disabled=state.historyIndex>=state.history.length-1;
@@ -55,7 +58,14 @@ function render(state){
     activeCategory:state.activeCategory, searchQuery:state.searchQuery,
     onCategoryChange:category=>uiStore.openCategory(category),
   });
-  renderScreen(dom.screenRoot,screen,gameState,{
+  renderCategoryDock(dom.categoryDock,dom.topicStrip,screen,state,gameState,{
+    onCategory:category=>{
+      if(category===screen.category)uiStore.openCategory(category);
+      else navigateTo(categoryLanding(category));
+    },
+    onTopic:navigateTo,
+  });
+  const screenHandlers={
     filter:state.fieldFilters[screen.id]??'',
     onFilterChange:value=>uiStore.setFieldFilter(screen.id,value),
     onNavigate:navigateTo,
@@ -70,7 +80,9 @@ function render(state){
       actionFeedback=result.message??(result.ok?'操作を反映しました。':result.reason);
       dom.systemMessage.textContent=actionFeedback;
     },
-  });
+  };
+  if(getTopic(screen.id)?.screenIds.length>1)renderTopicPage(dom.screenRoot,screen,gameState,screenHandlers);
+  else renderScreen(dom.screenRoot,screen,gameState,screenHandlers);
   dom.systemMessage.textContent=actionFeedback||`${screen.id} を表示中 · ${gameState.initialized?`${gameState.timeline.turnsElapsed}ターン経過`:'人生開始前'}`;
   if(state.helpOpen&&!dom.helpDialog.open)dom.helpDialog.showModal();
   if(!state.helpOpen&&dom.helpDialog.open)dom.helpDialog.close();
@@ -134,7 +146,7 @@ function renderGameStatus(snapshot){
   $('#save-game').disabled=!saveRepository||!gameInProgress||($('#save-slot').value==='人生記録'&&!snapshot.ending?.dead);
   $('#load-game').disabled=!saveRepository;
   $('#save-details').textContent=saveFeedback||'ターン進行・選択のたびに自動保存します。';
-  $('#version-label').textContent='v4.4.0 · 1ターン1行動版';
+  $('#version-label').textContent='v4.5.0 · カテゴリ統合版';
   $('#catalog-count').textContent=`${screenGroups.length}カテゴリ / ${screenGroups.reduce((sum,g)=>sum+g.screens.length,0)}画面`;
   $('#event-count').textContent=String(snapshot.pendingEvents.length);
   $('#hub-event-message').textContent=queued?queued.title:(gameInProgress?'次の出来事を待っています。':'まずは人生を始めてみましょう。');

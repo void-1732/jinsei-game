@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="css/phase37.css">
   <link rel="stylesheet" href="css/phase42.css">
   <link rel="stylesheet" href="css/phase43.css">
+  <link rel="stylesheet" href="css/phase44.css">
 </head>
 <body>
   <a class="skip-navigation" href="#main-content">本文へ移動</a>
@@ -40,7 +41,7 @@
         <div class="world-status-line"><strong id="date-label">2000年1月</strong><span id="age-label">0歳</span><span class="world-status-separator"></span><span class="world-profile" id="profile-label">プレイヤー未作成</span></div>
       </div>
       <div class="topbar-actions">
-        <button class="button button-secondary" id="toggle-nav" type="button" aria-controls="sidebar" aria-expanded="false">メニュー</button>
+        <button class="button button-secondary" id="toggle-nav" type="button" aria-controls="sidebar" aria-expanded="false">全画面検索</button>
         <button class="button button-secondary" id="open-settings" type="button">設定・保存</button>
         <span class="save-indicator" id="save-status">保存待ち</span>
       </div>
@@ -48,7 +49,7 @@
 
     <div class="workspace">
       <aside class="sidebar" id="sidebar" aria-label="画面メニュー">
-        <div class="sidebar-heading"><span>画面を選ぶ</span><span class="sidebar-heading-dot"></span></div>
+        <div class="sidebar-heading"><span>詳細画面を探す</span><span class="sidebar-heading-dot"></span></div>
         <label class="visually-hidden" for="screen-search">画面を検索</label>
         <input id="screen-search" class="nav-search" type="search" autocomplete="off" placeholder="画面名・識別番号を検索" aria-controls="main-navigation">
         <div class="nav-label-row"><span>カテゴリ / 画面</span><span id="catalog-count">9カテゴリ / 61画面</span></div>
@@ -60,8 +61,10 @@
         <div class="breadcrumbs" id="breadcrumbs">画面一覧 / 人生 / 生活ダッシュボード</div>
         <div class="page-heading">
           <div class="page-title-block"><div class="page-kickers"><span class="category-tag" id="category-label">人生</span><span class="screen-code" id="screen-id">LIFE-01</span></div><h1 id="page-title">生活ダッシュボード</h1><p class="page-subtitle">毎ターンの選択が、未来を変える。</p></div>
+          <nav id="category-dock" class="category-dock" aria-label="カテゴリを選ぶ"></nav>
           <div class="page-actions"><div class="history-actions"><button class="icon-button" id="nav-back" type="button" aria-label="直前に表示した画面へ" title="戻る（Ctrl+Alt+←）" disabled>←</button><button class="icon-button" id="nav-forward" type="button" aria-label="次に表示した画面へ" title="進む（Ctrl+Alt+→）" disabled>→</button></div><button class="button button-secondary" id="help-button" type="button">画面ガイド</button></div>
         </div>
+        <nav id="topic-strip" class="topic-strip" aria-label="カテゴリ内の項目"></nav>
         <section id="screen-root" aria-label="現在の画面" aria-live="polite"></section>
       </main>
 
@@ -93,12 +96,12 @@
       </aside>
     </div>
 
-    <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第43段階 · 1ターン1行動</span></footer>
+    <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第44段階 · カテゴリから行動</span></footer>
   </div>
 
   <dialog id="help-dialog" class="modal" aria-labelledby="help-title">
     <div class="modal-header"><h2 id="help-title">画面ガイド</h2><button class="icon-button" id="close-help" type="button">閉じる</button></div>
-    <p>9カテゴリ・61画面を切り替えられます。左メニューからカテゴリを開くか、検索欄で画面名・画面IDを検索してください。</p>
+    <p>ページ上部の9カテゴリから移動できます。似た項目は同じページにまとめています。全61画面の個別表示は「全画面検索」から探せます。</p>
     <p>「←」「→」は閲覧した画面の履歴操作です。キーボードの コントロール＋オルト＋左右矢印でも操作できます。ゲームの時間は「次のターンへ進む」でのみ進みます。</p>
     <p class="muted small">0～14歳は3か月、15歳以降は1か月ずつ進みます。「次のターンへ進む」を押すと出来事が開き、選択後は画面に戻ります。自由行動は各ターンで1回までです。</p>
   </dialog>

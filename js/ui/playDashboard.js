@@ -1,3 +1,5 @@
+import {screenGroups} from '../core/screenCatalog.js';
+import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js';
 import {renderTurnActivity} from './turnActivities.js';
 const el=(tag,klass='',text='')=>{
   const node=document.createElement(tag);if(klass)node.className=klass;
@@ -59,6 +61,20 @@ export function renderPlayDashboard(container,state,handlers={}){
     card.append(top,track,el('small','',description));metrics.append(card);
   }
   root.append(metrics);
+  // Show playable destinations at first glance, not only a next-turn button.
+  const opportunities=el('section','play-card play-opportunities');
+  const ready=hasFreeAction(state);
+  opportunities.append(el('h3','',ready?'今できること — カテゴリから選ぼう':'人生を選んだら、カテゴリでも行動できます'));
+  opportunities.append(el('p','',ready?'光っているカテゴリは行動できます。どこかで1回行動すると、そのターンの自由行動は終了します。':'「次のターンへ進む」で出来事を選択すると、カテゴリから自由行動ができるようになります。'));
+  const choices=el('div','category-opportunities');
+  for(const group of screenGroups){
+    if(!categoryActivities(state,group.category).length)continue;
+    const btn=el('button','',group.category+' →');btn.type='button';
+    btn.addEventListener('click',()=>handlers.onNavigate?.(categoryLanding(group.category)));
+    if(ready)btn.append(el('small','','● 行動可'));
+    choices.append(btn);
+  }
+  opportunities.append(choices);root.append(opportunities);
   root.append(renderTurnActivity(state,handlers.onAction));
   const lower=el('div','play-lower');
   const storyCard=el('section','play-card play-story-card');
