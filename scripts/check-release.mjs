@@ -10,6 +10,7 @@ const version='6.0.0';
 verify(pkg.version===version,'package.jsonのバージョンが一致しません');
 const html=read('index.html'),app=read('js/app.js');
 verify(html.includes('v'+version)&&html.includes('第58段階'),'画面の版数が一致しません');
+verify(html.includes(`<title>人生シミュレーション v${version} — 正式版</title>`),'ブラウザタイトルの正式版表記が一致しません');
 verify(app.includes('v'+version),'アプリ内の版数が一致しません');
 verify(html.includes('lang="ja"')&&html.includes('id="story-dialog"'),'日本語の操作画面が見つかりません');
 verify(app.includes('acknowledgeNotifications()'),'イベント通知の一括確認が欠落しています');
