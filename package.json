@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "5.7.0",
+  "version": "6.0.0",
   "type": "module",
-  "description": "人生シミュレーション 第57段階 操作性・体験の改善",
+  "description": "人生シミュレーション 正式版 STEP 58 品質検証と公開",
   "scripts": {
     "test": "node --test --test-concurrency=4 tests/*.test.js",
     "check": "npm test",

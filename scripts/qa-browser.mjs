@@ -77,10 +77,35 @@ async function runViewport(binary,width){
   if(!(await get("!!document.querySelector('#export-game') && !!document.querySelector('#import-game-file')")))throw Error('Backup controls missing');
   await click("document.querySelector('#close-settings')");
   await until(async()=>get("!document.querySelector('#settings-dialog').open"),'settings closed');
+
+  // STEP 58 release gate: guide, real UI manual save/load and browser restart.
+  await click("document.querySelector('#help-button')");
+  await until(async()=>get("document.querySelector('#help-dialog').open"),'beginner guide opened');
+  await click("document.querySelector('#close-help')");
+  await until(async()=>get("!document.querySelector('#help-dialog').open"),'beginner guide closed');
+  await click("document.querySelector('#open-settings')");
+  await evaluate("document.querySelector('#save-slot').value='手動保存1'");
+  await click("document.querySelector('#save-game')");
+  const saveConfirmed=await get("document.querySelector('#save-details').textContent.includes('保存しました。')");
+  if(!saveConfirmed)throw Error('Manual save UI did not confirm success');
+  await click("document.querySelector('#close-settings')");
+  const savedTurn=Number(await get("document.querySelector('#turn-count').textContent"));
+  await click("document.querySelector('#advance-turn')");
+  await until(async()=>get("document.querySelector('#story-dialog').open"),'next event for restore test');
+  await click("document.querySelector('#story-content .story-choices button')");
+  await until(async()=>get("!document.querySelector('#story-dialog').open"),'second event resolved');
+  if(Number(await get("document.querySelector('#turn-count').textContent"))<=savedTurn)throw Error('Time did not advance before loading');
+  await click("document.querySelector('#open-settings')");
+  await evaluate("document.querySelector('#save-slot').value='手動保存1'");
+  await click("document.querySelector('#load-game')");
+  await until(async()=>get("!document.querySelector('#settings-dialog').open && Number(document.querySelector('#turn-count').textContent)===${savedTurn}"),'manual load restored original turn');
+  await send('Page.reload',{ignoreCache:true});
+  await until(async()=>get("document.readyState==='complete' && document.querySelector('#start-game')?.disabled===true && Number(document.querySelector('#turn-count')?.textContent)===${savedTurn}"),'autosave survived browser reload',30000);
+  
   const final=await get("({width:document.documentElement.scrollWidth,viewport:innerWidth,turn:document.querySelector('#turn-count').textContent,started:document.querySelector('#start-game').disabled})");
   if(final.width>final.viewport+3||!final.started)throw Error('Layout or game state invalid '+JSON.stringify(final));
   if(client.exceptions.length)throw Error(`Browser errors: ${client.exceptions.join('; ')}`);
-  console.log(`PASS browser ${width}px: 9 categories; focused event choice; result recap; notifications; category open/close; settings; save controls; no overflow`);
+  console.log(`PASS browser ${width}px: 9 categories; focused event choice; result recap; notification clear; guide; manual save/load; reload; no overflow`);
  }finally{
   client?.close();child.kill('SIGKILL');await rm(profile,{recursive:true,force:true,maxRetries:2,retryDelay:250});
  }
