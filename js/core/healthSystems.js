@@ -2,12 +2,15 @@
 const healthClamp=(n,lower=0,upper=100)=>Math.max(lower,Math.min(upper,Math.round(n)));
 const HABITS=['運動','休養','食生活'];
 export function createHealthData(){return {physical:85,mental:80,energy:85,habits:{運動:0,休養:0,食生活:0},illness:null,medicalVisits:0,healthHistory:[],lastActionMonth:null};}
-export function advanceHealth(h,date,age,randomValue){
+export function advanceHealth(h,date,age,randomValue,{balanced=false,financialStress=false}={}){
  const notes=[];
  const aging=age>=65?2:age>=45?1:0;
+ // The original simulation stays unchanged. The playable mode ages gradually
+ // rather than removing 1-3 health points on every single month.
+ const gradualLoss=age>=80?1:age>=65?(date.month%2===0?1:0):age>=45?(date.month%4===0?1:0):age>=18?(date.month===1?1:0):0;
  const exercise=h.habits.運動,rest=h.habits.休養,food=h.habits.食生活;
- h.physical=healthClamp(h.physical-(age>=18?1:0)-aging+Math.floor((exercise+food)/40));
- h.mental=healthClamp(h.mental-(age>=18?1:0)+Math.floor(rest/25));
+ h.physical=healthClamp(h.physical-(balanced?gradualLoss:(age>=18?1:0)+aging)+Math.floor((exercise+food)/40));
+ h.mental=healthClamp(h.mental-(balanced?(financialStress&&date.month%3===0?1:0):(age>=18?1:0))+Math.floor(rest/25));
  h.energy=healthClamp(h.energy+2-(h.illness?5:0)+Math.floor(rest/20));
  for(const habit of HABITS)h.habits[habit]=Math.max(0,h.habits[habit]-2);
  if(h.illness){h.illness.months++;h.physical=healthClamp(h.physical-3);h.energy=healthClamp(h.energy-3);

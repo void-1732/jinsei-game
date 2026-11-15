@@ -58,7 +58,8 @@ test('能力上昇は高能力で頭打ち、下落はそのまま適用',()=>{
   s.education.skills.読書=94;
   assert.equal(g.loadState(s).ok,true);
   assert.equal(g.performAction('skill',{skill:'読書'}).ok,true);
-  assert.equal(g.getState().education.skills.読書,95);
+  assert.equal(g.getState().education.skills.読書,94);
+  assert.ok(g.getState().balance48.practice['skill:読書']>0,'高能力の追加練習は蓄積する');
 });
 
 test('前バージョンのセーブは回数制限を補完し、不正な回数を拒否',()=>{

@@ -47,8 +47,8 @@ test('上部カテゴリとまとめ画面はプルダウン不要、詳細は�
 });
 
 test('画面統合は最新版でも維持される',()=>{
-  assert.match(read('package.json'),/"version": "4\.8\.0"/);
-  assert.match(read('README.md'),/STEP 47/);
+  assert.match(read('package.json'),/"version": "4\.9\.0"/);
+  assert.match(read('README.md'),/STEP 48/);
   assert.match(read('操作説明書.md'),/行動可/);
-  assert.match(read('index.html'),/第47段階/);
+  assert.match(read('index.html'),/第48段階/);
 });

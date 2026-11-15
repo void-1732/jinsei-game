@@ -1,0 +1,14 @@
+/* STEP 48: keep optional acceleration tucked under the existing turn control. */
+.hub-fast-forward{margin:8px 0 12px;padding:10px 12px;border:1px solid rgba(147,179,213,.28);border-radius:10px;background:rgba(16,33,53,.5)}
+.hub-fast-forward summary{cursor:pointer;font-weight:650;font-size:13px;color:#cde3fb;list-style-position:inside}
+.hub-fast-forward label{display:block;font-size:12px;line-height:1.5;color:#c2d7eb;margin:12px 0 6px}
+.hub-fast-forward select{width:100%;min-width:0;border:1px solid #476581;background:#17283f;color:#fff;border-radius:8px;padding:9px 10px;font:inherit;font-size:13px}
+.hub-fast-button{width:100%;margin:10px 0 4px}
+.hub-fast-forward .hub-turn-help{font-size:11px;line-height:1.6;margin:6px 0 0}
+#fast-forward-feedback:not(:empty){padding-top:7px;border-top:1px solid rgba(147,179,213,.28);color:#c5f0c9}
+@media(max-width:900px){.hub-fast-forward{max-width:100%}}
+
+.play-budget-trend{font-size:13px;font-weight:650;margin:6px 0}
+.play-budget-debt{font-size:12px;color:#fbc7ad;margin:5px 0}
+.play-budget-warning{font-size:12px;color:#ffd59c;margin:4px 0;line-height:1.6}
+@media(max-width:760px){.player-hub .hub-fast-forward{grid-column:1/-1;min-width:0;width:100%}}

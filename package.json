@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "4.8.0",
+  "version": "4.9.0",
   "type": "module",
-  "description": "人生シミュレーション 第47段階 進学・就職・家計の長期連動",
+  "description": "人生シミュレーション 第48段階 長期バランス・重要イベントまでの時間進行",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "check": "npm test",

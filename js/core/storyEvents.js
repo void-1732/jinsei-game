@@ -1,3 +1,4 @@
+import {balancedGrowth} from './balanceSystems.js';
 import {createBranchingEvent,recordBranchChoice} from './branchingStories.js';
 import {selectCatalogEvent} from './eventCatalog.js';
 import {selectOpportunityEvent,reflectOpportunityStoryChoice} from './opportunitySystems.js';
@@ -190,14 +191,14 @@ export function resolveStoryChoice(state, id, choiceId) {
   }
   if(Number.isFinite(impacts.study)){
     const before=Object.values(state.education.scores).reduce((a,b)=>a+b,0);
-    for(const key of Object.keys(state.education.scores))state.education.scores[key]=develop(state.education.scores[key],impacts.study);
+    for(const key of Object.keys(state.education.scores))state.education.scores[key]=balancedGrowth(state,`score:${key}`,state.education.scores[key],impacts.study);
     const delta=Math.round((Object.values(state.education.scores).reduce((a,b)=>a+b,0)-before)/Object.keys(state.education.scores).length);
     if(delta)changes.push(`学力${delta>0?'+':''}${delta}`);
   }
   if(impacts.skill && Number.isFinite(impacts.skillValue)){
     const name=impacts.skill;
     const was=state.education.skills[name]??0;
-    state.education.skills[name]=develop(was,impacts.skillValue);
+    state.education.skills[name]=balancedGrowth(state,`skill:${name}`,was,impacts.skillValue);
     const delta=state.education.skills[name]-was;
     if(delta)changes.push(`${name}${delta>0?'+':''}${delta}`);
   }
@@ -209,7 +210,7 @@ export function resolveStoryChoice(state, id, choiceId) {
       :target==='child'?candidates.filter(p=>p.role==='子')
       :[candidates.find(p=>p.role==='友人')??candidates[0]].filter(Boolean);
     const before=targets.reduce((sum,p)=>sum+p.relationship,0);
-    for(const person of targets)person.relationship=develop(person.relationship,impacts.social);
+    for(const person of targets)person.relationship=balancedGrowth(state,`relation:${person.id}`,person.relationship,impacts.social);
     const delta=targets.length?Math.round((targets.reduce((sum,p)=>sum+p.relationship,0)-before)/targets.length):0;
     if(delta)changes.push(`人間関係${delta>0?'+':''}${delta}`);
   }
@@ -222,11 +223,11 @@ export function resolveStoryChoice(state, id, choiceId) {
   if(Number.isFinite(impacts.work)){
     const career=state.finances.career;
     if(Number.isFinite(career.performance)){
-      const was=career.performance; career.performance=develop(was,impacts.work);
+      const was=career.performance; career.performance=balancedGrowth(state,'career:performance',was,impacts.work);
       const delta=career.performance-was;if(delta)changes.push(`仕事評価${delta>0?'+':''}${delta}`);
     } else {
       const was=state.education.skills.パソコン??0;
-      state.education.skills.パソコン=develop(was,impacts.work);
+      state.education.skills.パソコン=balancedGrowth(state,'skill:パソコン',was,impacts.work);
       const delta=state.education.skills.パソコン-was;if(delta)changes.push(`仕事スキル${delta>0?'+':''}${delta}`);
     }
   }

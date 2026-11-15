@@ -9,6 +9,7 @@ import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
 import {createChoiceEvent,resolveChoice} from './eventSystems.js';
 import {createStoryEvent,resolveStoryChoice} from './storyEvents.js';
+import {createBalanceProgress,ensureBalanceProgress,chooseRoutineOption,hasImportantTurnEvent,TIME_FOCUSES,balancedGrowth} from './balanceSystems.js';
 import {createOpportunityProgress,ensureOpportunityProgress,advanceOpportunityMonth,opportunityAction,interviewBonus,afterJobApplication,reconcileGenericDebtPayment} from './opportunitySystems.js';
 import {createStoryProgress,ensureStoryProgress} from './branchingStories.js';
 import { createEconomyData, advanceEconomy, economyAction } from './economySystems.js';
@@ -51,6 +52,7 @@ export const initialGameState = freezeSnapshot({
   turnActions: {turn: 0, used: 0, lastAction: null},
   storyProgress: createStoryProgress(),
   opportunity47: createOpportunityProgress(),
+  balance48: createBalanceProgress(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
@@ -136,7 +138,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         for(const item of worldEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
         const healthDraw=nextRandom(state.random.seed);
         state.random.seed=healthDraw.seed;state.random.draws++;
-        const healthEvents=advanceHealth(state.health,date,monthAge,healthDraw.value);
+        const healthEvents=advanceHealth(state.health,date,monthAge,healthDraw.value,{balanced:interactiveChoices,financialStress:state.finances.debt>100000 && state.finances.career.monthlySalary < state.finances.monthlyBudget});
         for(const item of healthEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
         const prior={year:date.month===1?date.year-1:date.year,month:date.month===1?12:date.month-1};
         const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world);
@@ -196,6 +198,46 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
     emit();
     return { ok: true, months, events: freezeSnapshot(newEvents), snapshot: getState() };
+  }
+  /** Explicitly requested convenience progress. No important choices are auto-selected.
+   * Skipped ordinary choices remain in the timeline and still affect abilities/finances.
+   * The default free action is intentionally waived, not silently performed.
+   */
+  function fastForward({focus='balanced',maxMonths=12}={}){
+    if(!interactiveChoices)return {ok:false,reason:'まとめて進む機能はプレイモード専用です。'};
+    if(!TIME_FOCUSES.includes(focus)||!Number.isInteger(maxMonths)||maxMonths<1||maxMonths>12)return {ok:false,reason:'進行条件が不正です。'};
+    if(!state.initialized||state.ending.dead)return {ok:false,reason:'進行中の人生で利用してください。'};
+    if(state.pendingEvents.some(e=>e.type==='choice'))return {ok:false,reason:'現在の出来事を選んでから進めてください。'};
+    const balance=ensureBalanceProgress(state);
+    balance.focus=focus;
+    let turns=0,auto=0,months=0,reason='指定期間まで進みました';
+    while(months<maxMonths){
+      const stepMonths=state.timeline.ageYears<15?3:1;
+      if(months+stepMonths>maxMonths)break;
+      const advanced=advanceTurn();
+      if(!advanced.ok){reason=advanced.reason;break;}
+      turns++;months+=advanced.months;
+      if(state.ending.dead||hasImportantTurnEvent(advanced.events)){
+        reason=state.ending.dead?'人生が終了しました':'重要な出来事が発生しました';
+        break;
+      }
+      const event=state.pendingEvents.find(e=>e.type==='choice');
+      if(!event)continue;
+      const option=chooseRoutineOption(event,state,focus);
+      if(!option){reason='手動での選択が必要です';break;}
+      const selected=performAction('resolveChoice',{eventId:event.id,choice:option.id});
+      if(!selected.ok){reason='手動での選択が必要です';break;}
+      auto++;
+    }
+    if(!turns)return {ok:false,reason:'進められる期間がありません。'};
+    balance.skippedChoices+=auto;balance.fastRuns++;
+    balance.lastSummary={turns,auto,reason};
+    state.eventHistory.push({id:`F${state.timeline.turnsElapsed}-${balance.fastRuns}`,type:'fast-forward',
+      title:'時間をまとめて進めた',description:`${months}か月進行・通常の選択${auto}件を「${focus}」方針で処理。${reason}`,
+      year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
+    if(state.eventHistory.length>1200)state.eventHistory.shift();
+    emit();
+    return {ok:true,turns,months,auto,reason,important:state.pendingEvents.some(e=>e.type==='choice')};
   }
   function acknowledgeEvent(id) {
     const index = state.pendingEvents.findIndex(event => event.id === id);
@@ -264,15 +306,15 @@ export function createGameStore({interactiveChoices=false} = {}) {
         // Less growth as proficiency rises; routine actions don't create perfect scores.
         for (const [key,oldValue] of Object.entries(beforeDevelopment.scores)) {
           const value=state.education.scores[key];
-          if (Number.isFinite(value) && value > oldValue) state.education.scores[key] = modestProgress(oldValue,value-oldValue);
+          if (Number.isFinite(value) && value > oldValue) state.education.scores[key] = balancedGrowth(state,`score:${key}`,oldValue,value-oldValue);
         }
         for (const [key,value] of Object.entries(state.education.skills)) {
           const oldValue=beforeDevelopment.skills[key]??0;
-          if (Number.isFinite(value) && value>oldValue) state.education.skills[key] = modestProgress(oldValue,value-oldValue);
+          if (Number.isFinite(value) && value>oldValue) state.education.skills[key] = balancedGrowth(state,`skill:${key}`,oldValue,value-oldValue);
         }
         for (const person of state.people) {
           const oldValue=beforeDevelopment.relations[person.id];
-          if (Number.isFinite(oldValue) && person.relationship > oldValue) person.relationship=modestProgress(oldValue,person.relationship-oldValue);
+          if (Number.isFinite(oldValue) && person.relationship > oldValue) person.relationship=balancedGrowth(state,`relation:${person.id}`,oldValue,person.relationship-oldValue);
         }
         state.turnActions={turn:state.timeline.turnsElapsed,used:1,lastAction:action};
       }
@@ -289,6 +331,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if (!state.turnActions) state.turnActions={turn:state.timeline.turnsElapsed,used:0,lastAction:null};
     ensureStoryProgress(state);
     ensureOpportunityProgress(state);
+    ensureBalanceProgress(state);
     if(state.finances){
       const c=state.finances.career,b=state.finances.business;
       for(const [key,val] of Object.entries({unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,insuredMonths:0,benefitEligible:true}))if(c[key]===undefined)c[key]=val;
@@ -310,7 +353,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
   }
   function restart() {state=clone(initialGameState);emit();return {ok:true};}
   return Object.freeze({
-    loadState, restart, getState, startNewGame, advanceTurn, acknowledgeEvent, performAction,
+    loadState, restart, getState, startNewGame, advanceTurn, fastForward, acknowledgeEvent, performAction,
     subscribe(listener) { subscribers.add(listener); return () => subscribers.delete(listener); },
   });
 }
