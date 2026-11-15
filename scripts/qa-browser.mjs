@@ -98,9 +98,9 @@ async function runViewport(binary,width){
   await click("document.querySelector('#open-settings')");
   await evaluate("document.querySelector('#save-slot').value='手動保存1'");
   await click("document.querySelector('#load-game')");
-  await until(async()=>get("!document.querySelector('#settings-dialog').open && Number(document.querySelector('#turn-count').textContent)===${savedTurn}"),'manual load restored original turn');
+  await until(async()=>!(await get("document.querySelector('#settings-dialog').open")) && Number(await get("document.querySelector('#turn-count').textContent"))===savedTurn,'manual load restored original turn');
   await send('Page.reload',{ignoreCache:true});
-  await until(async()=>get("document.readyState==='complete' && document.querySelector('#start-game')?.disabled===true && Number(document.querySelector('#turn-count')?.textContent)===${savedTurn}"),'autosave survived browser reload',30000);
+  await until(async()=>Boolean(await get("document.readyState==='complete' && document.querySelector('#start-game')?.disabled===true")) && Number(await get("document.querySelector('#turn-count')?.textContent"))===savedTurn,'autosave survived browser reload',30000);
   
   const final=await get("({width:document.documentElement.scrollWidth,viewport:innerWidth,turn:document.querySelector('#turn-count').textContent,started:document.querySelector('#start-game').disabled})");
   if(final.width>final.viewport+3||!final.started)throw Error('Layout or game state invalid '+JSON.stringify(final));
