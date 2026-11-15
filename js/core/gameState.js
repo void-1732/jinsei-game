@@ -34,7 +34,7 @@ export function nextRandom(seed) {
 function modestProgress(value, amount) {
   if (amount <= 0) return Math.max(0,Math.min(100,value+amount));
   const gain=value>=90?1:value>=80?Math.max(1,Math.ceil(amount*.4)):value>=65?Math.max(1,Math.ceil(amount*.65)):amount;
-  return Math.min(95,value+gain);
+  return Math.max(Math.min(100,value),Math.min(95,value+gain));
 }
 function yearsOld(year, month, birth) {
   return year - birth.year - (month < birth.month ? 1 : 0);
@@ -92,7 +92,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(interactiveChoices){
       const draw=nextRandom(state.random.seed);
       state.random.seed=draw.seed;state.random.draws++;
-      const intro=createStoryEvent({year:2000,month:birthday.month},0,0,draw.value,state.storyProgress);
+      const intro=createStoryEvent({year:2000,month:birthday.month},0,0,draw.value,state.storyProgress,state);
       state.pendingEvents.push(intro);state.eventHistory.push(intro);
     }
     emit();
@@ -182,7 +182,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(interactiveChoices && !state.ending.dead){
       const draw=nextRandom(state.random.seed);
       state.random.seed=draw.seed;state.random.draws++;
-      newEvents.push(createStoryEvent({year,month},turn,age,draw.value,state.storyProgress));
+      newEvents.push(createStoryEvent({year,month},turn,age,draw.value,state.storyProgress,state));
       // Passive notifications remain in history but do not clutter the next turn.
       state.pendingEvents=state.pendingEvents.filter(event=>event.type==='choice');
     }

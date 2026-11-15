@@ -31,8 +31,8 @@ test('第40段階：表示項目の名称・値で絞り込み、接続数を保
 });
 test('第40段階：日本語表示・キーボード移動・視認性',()=>{
  const page=read('index.html');const css=read('css/phase37.css');
- assert.match(page,/lang="ja"/);assert.match(page,/本文へ移動/);assert.match(page,/第45段階/);
+ assert.match(page,/lang="ja"/);assert.match(page,/本文へ移動/);assert.match(page,/第46段階/);
  assert.match(page,/aria-atomic="true"/);assert.match(css,/:focus-visible/);
  assert.match(css,/prefers-reduced-motion/);
- assert.match(read('package.json'),/"version": "4\.6\.0"/);
+ assert.match(read('package.json'),/"version": "4\.7\.0"/);
 });

@@ -1,4 +1,5 @@
 import {createBranchingEvent,recordBranchChoice} from './branchingStories.js';
+import {selectCatalogEvent} from './eventCatalog.js';
 /**
  * PHASE 42: player-led life scenes. All options are serializable so saves remain portable.
  * This is an original, fictional choice system; it does not replicate any branded board game.
@@ -7,7 +8,7 @@ const clamp = value => Math.min(100, Math.max(0, Math.round(value)));
 export function develop(value, delta) {
   if (!Number.isFinite(delta) || delta<=0) return clamp(value+delta);
   const step=value>=90?1:value>=80?Math.max(1,Math.ceil(delta*.4)):value>=65?Math.max(1,Math.ceil(delta*.65)):Math.round(delta);
-  return Math.min(95,value+step);
+  return Math.max(clamp(value),Math.min(95,value+step));
 }
 const choice = (label, hint, result, impact) => ({label,hint,result,impact});
 const scene = (title, description, options) => ({title,description,options: options.map((item,i)=>({...item,id:String(i+1)}))});
@@ -132,18 +133,40 @@ const pools = [
   ]}
 ];
 
-export function createStoryEvent(date, turn, age, randomValue, storyProgress=null) {
+/** STEP 46: context-sensitive encounter first, but a scheduled STEP 45 continuation wins. */
+function impactHint(impact){
+  const labels={study:'学力',physical:'体力',mental:'心',energy:'元気',social:'人間関係',cash:'お金',work:'仕事評価'};
+  const text=[];
+  for(const [key,label] of Object.entries(labels)){
+    const value=impact[key];if(typeof value!=='number'||!value)continue;
+    const suffix=key==='cash'?'円':'';
+    text.push(`${label}${value>0?'+':''}${value.toLocaleString('ja-JP')}${suffix}`);
+  }
+  if(impact.skill&&Number.isFinite(impact.skillValue))text.push(`${impact.skill}+${impact.skillValue}`);
+  return text.join(' / ')||'経験を積む';
+}
+export function createStoryEvent(date, turn, age, randomValue, storyProgress=null, gameState=null) {
   const branch=createBranchingEvent(storyProgress,date,turn,age);
   if(branch)return branch;
-  const group = pools.find(item => age <= item.max) ?? pools.at(-1);
-  const pool = group.list;
-  const item = pool[(turn + Math.floor(randomValue * pool.length)) % pool.length];
-  return {
-    id: `T${turn}-choice`, type:'choice', story:true, blocking:true,
-    year:date.year, month:date.month, turn, category:group.tag,
-    title:item.title, description:item.description,
-    options:item.options.map(option=>({...option, impact:{...option.impact}})),
-  };
+  const selected=selectCatalogEvent(gameState,age,randomValue);
+  if(selected){
+    return {
+      id:`T${turn}-choice`,type:'choice',story:true,blocking:true,
+      year:date.year,month:date.month,turn,category:selected.tag,catalogKey:selected.id,
+      title:selected.title,description:selected.description,
+      options:selected.options.map((option,i)=>({
+        id:String(i+1),label:option.label,hint:impactHint(option.impact),result:option.result,
+        impact:{...option.impact},
+      })),
+    };
+  }
+  // Legacy fallback for unusual direct callers (including ages outside a normal lifespan).
+  const group=pools.find(item=>age<=item.max)??pools.at(-1);
+  const item=group.list[(turn+Math.floor(randomValue*group.list.length))%group.list.length];
+  return {id:`T${turn}-choice`,type:'choice',story:true,blocking:true,
+    year:date.year,month:date.month,turn,category:group.tag,
+    title:item.title,description:item.description,
+    options:item.options.map(option=>({...option,impact:{...option.impact}}))};
 }
 
 export function resolveStoryChoice(state, id, choiceId) {
@@ -152,6 +175,8 @@ export function resolveStoryChoice(state, id, choiceId) {
   const option = event.options.find(o=>o.id===choiceId);
   if (!option) return {ok:false,reason:'選択肢が不正です。'};
   const impacts=option.impact ?? {};
+  if(Number.isFinite(impacts.cash)&&impacts.cash<0&&state.finances.cash< -impacts.cash)
+    return {ok:false,reason:'この選択には所持金が足りません。別の選択肢を選んでください。'};
   const changes=[];
   const effects=[['physical','体力',state.health],['mental','心',state.health],['energy','元気',state.health]];
   for(const [key,name,object] of effects){
@@ -174,7 +199,12 @@ export function resolveStoryChoice(state, id, choiceId) {
     if(delta)changes.push(`${name}${delta>0?'+':''}${delta}`);
   }
   if(Number.isFinite(impacts.social)){
-    const targets=state.people.filter(p=>p.role!=='本人');
+    const candidates=state.people.filter(p=>p.role!=='本人');
+    const target=impacts.socialTarget;
+    let targets=target==='family'?candidates.filter(p=>['父','母','配偶者','子'].includes(p.role))
+      :target==='partner'?candidates.filter(p=>['交際相手','配偶者'].includes(p.role))
+      :target==='child'?candidates.filter(p=>p.role==='子')
+      :[candidates.find(p=>p.role==='友人')??candidates[0]].filter(Boolean);
     const before=targets.reduce((sum,p)=>sum+p.relationship,0);
     for(const person of targets)person.relationship=develop(person.relationship,impacts.social);
     const delta=targets.length?Math.round((targets.reduce((sum,p)=>sum+p.relationship,0)-before)/targets.length):0;
