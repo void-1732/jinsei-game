@@ -1,4 +1,5 @@
 import {calculateInheritance} from './estateSystems.js';
+import {createDailySchedule,ensureDailySchedule,setDailySchedule,monthlyHouseholdDiscount,advanceDailySchedule} from './dailySchedule.js';
 import {createLifeGoalProgress,ensureLifeGoalProgress,observeLifeGoals,chooseLifeDream,finalizeLifeGoals} from './lifeGoals.js';
 import {createLivingData, ensureLiving, ensureMortgage, livingAction, getHousingEquity} from './livingSystems.js';
 import {ensureCompanyMarket,advanceCompanyMarket,supportRebuilding} from './companySystems.js';
@@ -60,6 +61,7 @@ export const initialGameState = freezeSnapshot({
   lifeGoal49: createLifeGoalProgress(),
   legacy51: createConsequenceProgress(),
   surprise53: createSurpriseProgress(),
+  daily54: createDailySchedule(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
   ending: { dead: false, date: null, cause: null, score: null, inheritance: null, legacy: [] },
@@ -153,7 +155,9 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const healthEvents=advanceHealth(state.health,date,monthAge,healthDraw.value,{balanced:interactiveChoices,financialStress:state.finances.debt>100000 && state.finances.career.monthlySalary < state.finances.monthlyBudget*eraEconomicEffects(state.world).living,healthProtection:consequenceHealthProtection(state)});
         for(const item of healthEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
         const prior={year:date.month===1?date.year-1:date.year,month:date.month===1?12:date.month-1};
-        const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world);
+        const homeDiscount=interactiveChoices?monthlyHouseholdDiscount(state,date,monthAge):0;
+        const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world,{livingDiscount:homeDiscount});
+        if(interactiveChoices)advanceDailySchedule(state,date,monthAge,homeDiscount);
         if(interactiveChoices)advanceOpportunityMonth(state,date);
         advanceWorkplace(state.finances,date);
         advanceCompanyMarket(state.finances,date,state.world);
@@ -294,6 +298,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
         if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
       case 'safetyPrep': result=prepareForSurprise(state,payload.area);break;
+      case 'setTimePlan': result=setDailySchedule(state,payload.planId);break;
       case 'applyScholarship': case 'setEducationFunding': case 'repayEducation': case 'prepareInterview': case 'careerCertification': case 'salaryNegotiation': case 'reviewBudget':
         result=opportunityAction(state,action,payload);break;
       case 'interactCoworker': case 'resolveWorkIncident': case 'workHard': case 'helpColleague': case 'talkSupervisor': case 'reviewPerformance': case 'trainStaff': case 'dismissStaff': case 'staffCare':
@@ -347,7 +352,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const success=action!=='applyJob'||result.passed;
         if(success)rememberConsequence(state,{title:action==='marry'?'結婚という選択':action==='haveChild'?'家族が増えた日':'仕事の節目'}, {label:result.message??action,impact:{}},{source:'action',forceDomain:['marry','haveChild'].includes(action)?'bonds':'career'});
       }
-      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='habit'?'生活習慣':action==='treatment'?'治療':action==='resolveChoice'?'人生選択':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
+      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='setTimePlan'?'時間配分':action==='habit'?'生活習慣':action==='treatment'?'治療':action==='resolveChoice'?'人生選択':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
       if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
       if(interactiveChoices){
         const highlight=choiceBeingResolved?.branch||choiceBeingResolved?.consequence
@@ -378,6 +383,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     ensureLifeGoalProgress(state);
     ensureConsequenceProgress(state);
     ensureSurpriseProgress(state);
+    ensureDailySchedule(state);
     if(state.ending.dead&&interactiveChoices)finalizeLifeGoals(state);
     else if(interactiveChoices)observeLifeGoals(state,{quiet:true});
     if(state.finances){

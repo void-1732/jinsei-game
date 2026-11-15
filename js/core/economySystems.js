@@ -312,7 +312,7 @@ export function economyAction(e,action,payload,context){
   }
 }
 /** 3か月ターンでも暦月ごとに精算。各月の状態は同じ初期職業状態を使用。 */
-export function advanceEconomy(e,from,months,playerBirth,world=null){
+export function advanceEconomy(e,from,months,playerBirth,world=null,options={}){
   const notices=[];
   for(let step=1;step<=months;step++){
     const index=from.year*12+from.month-1+step;
@@ -452,7 +452,9 @@ export function advanceEconomy(e,from,months,playerBirth,world=null){
       if(b.cashFlowHistory.length>24)b.cashFlowHistory.shift();
     }
     const tax=Math.floor(gross*0.10);if(tax){debit(e,date,'簡易税金・社会保険',tax);e.totals.tax+=tax;}
-    debit(e,date,'生活費',Math.round(e.monthlyBudget*era.living));
+    const livingCost=Math.round(e.monthlyBudget*era.living);
+    const discount=Math.min(livingCost,Math.max(0,Math.round(options.livingDiscount??0)));
+    debit(e,date,'生活費',livingCost-discount);
     advanceLiving(e,date,age);
     if(e.investment>0){const gain=Math.floor(e.investment*0.002);if(gain){e.investment+=gain;log(e,date,'評価増減','投資評価額の増加',gain);}}
   }

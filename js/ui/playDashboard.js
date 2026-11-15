@@ -1,6 +1,7 @@
 import {screenGroups} from '../core/screenCatalog.js';
 import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js';
 import {renderTurnActivity} from './turnActivities.js';
+import {renderDailySchedulePanel} from './dailySchedulePanel.js';
 import {getLifeThreads} from '../core/branchingStories.js';
 import {getConsequenceSummary} from '../core/consequenceSystems.js';
 import {eraSummary} from '../core/eraSystems.js';
@@ -67,6 +68,7 @@ export function renderPlayDashboard(container,state,handlers={}){
     card.append(top,track,el('small','',description));metrics.append(card);
   }
   root.append(metrics);
+  root.append(renderDailySchedulePanel(state,handlers.onAction));
   // Keep the next concrete step visible during financially or medically hard periods.
   if(!state.ending?.dead){
     const warnings=[];

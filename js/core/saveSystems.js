@@ -7,6 +7,7 @@ import {validateLifeGoalProgress} from './lifeGoals.js';
 import {validateConsequenceProgress} from './consequenceSystems.js';
 import {validateEraProgress} from './eraSystems.js';
 import {validateSurpriseProgress} from './surpriseSystems.js';
+import {validateDailySchedule} from './dailySchedule.js';
 /** 第7段階：ローカル保存。外部送信なし。保存データは実行可能コードとして扱わない。 */
 export const SAVE_PREFIX = 'gls:v7:';
 export const SLOT_IDS = Object.freeze(['自動保存','手動保存1','手動保存2','手動保存3','人生記録']);
@@ -32,6 +33,7 @@ export function validateGameState(s) {
   if(s.lifeGoal49!==undefined && !validateLifeGoalProgress(s.lifeGoal49))return false;
   if(s.legacy51!==undefined && !validateConsequenceProgress(s.legacy51))return false;
   if(s.surprise53!==undefined && !validateSurpriseProgress(s.surprise53))return false;
+  if(s.daily54!==undefined && !validateDailySchedule(s.daily54))return false;
   if(!s.initialized) return true;
   if(!s.player || typeof s.player.name!=='string' || !s.player.name.trim() || s.player.name.length>30 || s.player.birth?.year!==2000 || !Number.isInteger(s.player.birth?.month) || s.player.birth.month<1 || s.player.birth.month>12 || !Number.isInteger(s.player.birth?.day) || s.player.birth.day<1 || s.player.birth.day>new Date(Date.UTC(2000,s.player.birth.month,0)).getUTCDate() || !s.finances || !s.health || !s.world || !s.education || !Array.isArray(s.people) || !Array.isArray(s.pendingEvents) || !Array.isArray(s.eventHistory)) return false;
   if(!s.random || !Number.isSafeInteger(s.random.seed) || s.random.seed<0 || s.random.seed>0xffffffff) return false;

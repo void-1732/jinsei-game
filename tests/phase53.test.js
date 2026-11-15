@@ -161,9 +161,9 @@ test('ゲーム本体でも事故を手動選択するまで時間短縮でき�
 
 test('STEP53のUI・設定・公開に必要なモジュールは揃っている',()=>{
  const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
- assert.match(read('package.json'),/"version": "5\.4\.0"/);
+ assert.match(read('package.json'),/"version": "5\.5\.0"/);
  assert.match(read('index.html'),/css\/phase53\.css/);
- assert.match(read('index.html'),/第53段階/);
+ assert.match(read('index.html'),/第54段階/);
  assert.match(read('js/ui/playDashboard.js'),/もしもの備えと人生の転機/);
  assert.match(read('js/ui/turnActivities.js'),/safetyPrep/);
  assert.match(read('js/core/storyEvents.js'),/createSurpriseEvent/);

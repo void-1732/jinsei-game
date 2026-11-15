@@ -1,9 +1,9 @@
 {
   "name": "grand-life-simulation",
   "private": true,
-  "version": "5.4.0",
+  "version": "5.5.0",
   "type": "module",
-  "description": "人生シミュレーション 第53段階 事件・事故・災害・幸運・過去の備えの効果",
+  "description": "人生シミュレーション 第54段階 日常生活・時間配分・生活習慣",
   "scripts": {
     "test": "node --test --test-concurrency=4 tests/*.test.js",
     "check": "npm test",
