@@ -53,8 +53,9 @@ test('手動の備えは1ターン1回・所持金・年齢・最大値の制約
  assert.equal(validateSurpriseProgress(s.surprise53),true);
  const actual=start();const staged=aged(22);assert.equal(actual.loadState(staged).ok,true);
  assert.equal(actual.performAction('safetyPrep',{area:'security'}).ok,true);
+ assert.equal(actual.performAction('safetyPrep',{area:'health'}).ok,true);
  assert.equal(actual.performAction('safetyPrep',{area:'health'}).ok,false);
- assert.equal(actual.getState().turnActions.used,1);
+ assert.equal(actual.getState().turnActions.used,2);
 });
 
 test('直前の出来事を避け、条件外の詐欺や長期の連発を防ぐ',()=>{
