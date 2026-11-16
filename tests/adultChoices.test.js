@@ -92,3 +92,22 @@ test('物件3種類は価格・維持費が異なり従来の標準物件を維�
   assert.equal(validateLiving(finances.living),true);
   assert.equal(livingAction(finances,{},'moveHome',{region:'新潟・新潟',housing:'持ち家',homeType:'invalid'},{age:18,date:{year:2018,month:6}}).ok,false);
 });
+
+test('表示先を1か所に限定し、実操作は初期表示・折りたたみ可能',()=>{
+ const topics=readFileSync(new URL('../js/ui/topicGroups.js',import.meta.url),'utf8');
+ const compact=readFileSync(new URL('../js/ui/topicPage.js',import.meta.url),'utf8');
+ const details=readFileSync(new URL('../js/ui/screenRenderer.js',import.meta.url),'utf8');
+ const finance=readFileSync(new URL('../js/ui/economyPanels.js',import.meta.url),'utf8');
+ const living=readFileSync(new URL('../js/ui/livingPanel.js',import.meta.url),'utf8');
+ assert.match(topics,/\['住まい・車',\['LIFE-02'\]\]/);
+ assert.match(topics,/\['保険・年金',\['LIFE-07'\]\]/);
+ assert.match(compact,/details\.open=true/);
+ assert.match(compact,/overview\.hidden=true/);
+ assert.match(compact,/embedded:true/);
+ assert.match(details,/detail\.open=Boolean\(handlers\.embedded\)/);
+ assert.match(details,/if\(!handlers\.embedded\)container\.prepend\(quick\)/);
+ assert.match(finance,/if\(screen\.id==='LIFE-05'\)/);
+ assert.match(finance,/if\(screen\.id==='LIFE-06'\)/);
+ assert.match(living,/if\(screen\.id==='LIFE-07'\)/);
+ assert.ok(!living.includes("['LIFE-02','SOCIETY-06'].includes(screen.id)"));
+});
