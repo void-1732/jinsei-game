@@ -1,4 +1,7 @@
-/** A compact optional action per turn. The store checks the limit independently. */
+/** Compact dashboard activity picker. The store validates all actions independently. */
+import {choiceButtons} from './choiceButtons.js';
+import {ONE_OFF_ACTIVITIES} from '../core/monthlyRoutines.js';
+import {actionBudget,turnActionCategory,categoryActionAvailable} from '../core/adultActionBudget.js';
 const E=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 const option=(title,action,payload)=>({title,action,payload});
 export function turnActivityOptions(state){
@@ -18,25 +21,31 @@ export function turnActivityOptions(state){
   }
   if(state.health.illness)options.unshift(option('病気の治療を受ける','treatment',{}));
   if(age>=18&&!state.finances.career.job)options.push(option('仕事を探す','jobSearch',{}));
+  if(age>=18)for(const a of ONE_OFF_ACTIVITIES){
+    if(a.id==='friends-outing'&&!state.people.some(p=>p.role==='友人'||p.role==='交際相手'))continue;
+    options.push(option(`${a.name}（${a.cost.toLocaleString('ja-JP')}円）`,'adultActivity',{id:a.id}));
+  }
   return options;
 }
 export function renderTurnActivity(state,onAction){
-  const box=E('section','play-card turn-activity');
-  const heading=E('div','play-card-heading');heading.append(E('h3','','このターンの自由行動'),E('span','','任意・1回まで'));
-  box.append(heading);
-  const pending=state.pendingEvents.some(e=>e.type==='choice');
-  const done=state.turnActions?.turn===state.timeline.turnsElapsed&&state.turnActions.used>=1;
-  if(pending){box.append(E('p','turn-activity-note','まず「次のターンへ進む」から出来事を選んでください。'));return box;}
-  if(done){box.append(E('p','turn-activity-note','今のターンの自由行動は完了しました。次のターンでまた行動できます。'));return box;}
-  const form=E('div','turn-activity-form');
-  const label=E('label','','行動を選ぶ');
-  const select=E('select','turn-activity-select');
-  const actions=turnActivityOptions(state);
-  for(const item of actions){const entry=E('option','',item.title);entry.value=item.action+':'+actions.indexOf(item);select.append(entry);}
-  label.append(select);
-  const confirm=E('button','button button-secondary','行動する');confirm.type='button';
-  confirm.addEventListener('click',()=>{const i=select.selectedIndex;if(i>=0)onAction?.(actions[i].action,actions[i].payload);});
-  confirm.disabled=!actions.length;
-  form.append(label,confirm);box.append(form,E('p','turn-activity-note','出来事の選択は自由行動に含みません。能力は高くなるほど伸びにくくなります。'));
-  return box;
+ const box=E('details','play-card turn-activity');
+ box.open=Boolean(document.querySelector('.turn-activity')?.open);
+ const budget=actionBudget(state);
+ const heading=E('summary','',`自由行動の候補をまとめて選ぶ ｜ 残り${budget.remaining}/${budget.limit}回`);
+ box.append(heading);
+ const pending=budget.pending;
+ if(pending){box.append(E('p','turn-activity-note','まず現在の重要な出来事を選択してください。'));return box;}
+ if(!budget.remaining){box.append(E('p','turn-activity-note','このターンの自由行動は完了です。'));return box;}
+ const options=turnActivityOptions(state).filter(a=>categoryActionAvailable(state,turnActionCategory(a.action,a.payload)));
+ if(!options.length){box.append(E('p','turn-activity-note','利用できる自由行動はありません。'));return box;}
+ const choices=choiceButtons('候補から選択',options.map((a,i)=>({value:i,label:a.title})),0);
+ choices.element.classList.add('turn-activity-buttons');
+ const confirm=E('button','button button-secondary','選んだ行動を実行');confirm.type='button';
+ confirm.addEventListener('click',()=>{
+  const a=options[Number(choices.getValue())];if(a)onAction?.(a.action,a.payload);
+ });
+ const group=E('div','turn-activity-form');
+ group.append(choices.element,confirm);
+ box.append(group,E('p','turn-activity-note','18歳以降は異なるカテゴリで3回まで。重要な出来事の選択と事業管理は別枠です。'));
+ return box;
 }
