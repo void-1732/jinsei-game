@@ -121,6 +121,38 @@ async function runViewport(binary,width){
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1].children[2]");
   if(!(await get("document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length===2")))throw Error('Selected button state not updated');
   if(!(await get("document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length===1")))throw Error('Top screen state not updated');
+  const jobLayout=await evaluate(`(async()=>{
+    const [{createGameStore},{renderFocusedScreen}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/screenRenderer.js')
+    ]);
+    const store=createGameStore({interactiveChoices:true});store.startNewGame();
+    const snapshot=structuredClone(store.getState());snapshot.pendingEvents=[];
+    snapshot.timeline={year:2026,month:5,ageYears:26,turnsElapsed:101,monthsElapsed:316};
+    snapshot.turnActions={turn:101,used:0,lastAction:null,categories:[]};
+    snapshot.finances.cash=300000;
+    if(!store.loadState(snapshot).ok)return {error:'fixture loading'};
+    const host=document.createElement('div');host.className='sidejob-browser-scenario';
+    host.style.width='min(90%,900px)';document.body.append(host);
+    let result;
+    renderFocusedScreen(host,{id:'WORK-03'},store.getState(),{
+      onAction:(action,payload)=>{result=store.performAction(action,payload);}
+    });
+    const buttons=[...host.querySelectorAll('.work-compact-choice .choice-button')];
+    const start=host.querySelector('.sidejob-workspace .work-compact-card .work-compact-action');
+    const oldPreview=host.querySelector('.work-compact-preview')?.textContent;
+    buttons[1]?.click();
+    const newPreview=host.querySelector('.work-compact-preview')?.textContent;
+    start?.click();
+    const outcome={stats:host.querySelectorAll('.work-compact-stat').length,
+      options:buttons.length,legacyCards:host.querySelectorAll('.phase10-job').length,
+      previewChanged:oldPreview!==newPreview,started:store.getState().finances.sideJob.active,
+      result:result?.ok,spent:store.getState().turnActions.used,
+      overflow:document.documentElement.scrollWidth>innerWidth+3};
+    host.remove();return outcome;
+  })()`);
+  if(jobLayout.error||jobLayout.stats!==3||jobLayout.options!==6||jobLayout.legacyCards!==0||
+    !jobLayout.previewChanged||!jobLayout.started||!jobLayout.result||jobLayout.spent!==1||jobLayout.overflow)
+    throw Error('Compact side-job UI and actions failed '+JSON.stringify(jobLayout));
   // Use a detached scenario to verify that a real equipment button works after
   // the ordinary life action was spent. This must not modify the player's save.
   const machine=await evaluate(`(async()=>{
@@ -146,12 +178,22 @@ async function runViewport(binary,width){
     renderFocusedScreen(host,{id:'WORK-04'},store.getState(),{
       onAction:(name,payload)=>{actionResult=store.performAction(name,payload);}
     });
+    const tabs=[...host.querySelectorAll('.business-compact-tab')];
+    const visible=()=>[...host.querySelectorAll('.business-compact-pane')].filter(x=>!x.hidden);
+    const overview=host.querySelectorAll('.work-compact-stat').length;
+    const financeTab=tabs.find(x=>x.textContent==='融資・資金');
+    financeTab?.click();
+    const financeVisible=visible().length===1&&visible()[0].querySelectorAll('button[data-action-scope="business"]').length>=5;
+    const equipmentTab=tabs.find(x=>x.textContent==='設備');
+    equipmentTab?.click();
+    const equipmentVisible=visible().length===1&&visible()[0].querySelector('.business-equipment-panel')!==null;
     const equipment=host.querySelector('.business-equipment-panel');
     const selector=host.querySelector('.business-machine-choice');
     const target=[...host.querySelectorAll('button')].find(x=>x.textContent.includes('点検 5,000円'));
     const unblocked=Boolean(target&&!target.disabled);
     target?.click();
     const result={equipment:!!equipment,selector:!!selector,unblocked,
+      tabs:tabs.length,overview,financeVisible,equipmentVisible,visiblePaneCount:visible().length,
       operation:actionResult?.ok,adminUsed:store.getState().businessTurn.used,
       lifeUsed:store.getState().turnActions.used,
       noDuplicate:host.querySelectorAll('.business-equipment-panel').length===1,
@@ -159,6 +201,7 @@ async function runViewport(binary,width){
     host.remove();return result;
   })()`);
   if(machine.error||!machine.equipment||!machine.selector||!machine.unblocked||
+     machine.tabs!==5||machine.overview!==6||!machine.financeVisible||!machine.equipmentVisible||machine.visiblePaneCount!==1||
      !machine.operation||machine.adminUsed!==1||machine.lifeUsed!==1||!machine.noDuplicate||machine.overflow)
     throw Error('Business equipment action is missing, blocked or duplicated '+JSON.stringify(machine));
   // Exercise the actual adult store: three distinct category actions, one each,
