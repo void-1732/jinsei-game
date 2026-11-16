@@ -14,6 +14,22 @@ export const JOB_POSTINGS=Object.freeze([
   {id:'care',company:'青葉生活支援',job:'生活支援職',salary:215000,minAge:18,threshold:40,focus:'理科'},
 ]);
 const integer=(n,min=0,max=1000000)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
+export const CAREER_PLANS=Object.freeze([
+ {id:'balanced',name:'安定重視',description:'成果・健康・職場の信頼をバランスよく伸ばす'},
+ {id:'specialist',name:'専門性重視',description:'業務成果を重視し技術・専門職として経験を積む'},
+ {id:'leadership',name:'管理職を目指す',description:'上司と同僚の信頼を高め昇進を目指す'},
+]);
+export function careerStage(career){
+ if(!career?.job)return {name:'就職準備',next:'求人応募・面接準備'};
+ const months=career.experience??0,rank=career.rank??1;
+ if(rank>=4)return {name:'管理職',next:'人材育成・組織の成果'};
+ if(rank>=2)return {name:'リーダー',next:'次の昇進審査・人事評価'};
+ if(months<3)return {name:'試用期間',next:`初回評価まで残り${3-months}か月`};
+ if(months<12)return {name:'業務習得期',next:`昇進審査の資格まで残り${12-months}か月`};
+ if(months<36)return {name:'中堅社員',next:'実績・面接・専門技能を磨いて昇進'};
+ return {name:'ベテラン社員',next:'管理職への昇進・専門分野の深化'};
+}
+
 export function employmentScore(education,posting,experience=0){
  const scores=education?.scores??{};const all=Object.values(scores).filter(Number.isFinite);
  const average=all.length?all.reduce((a,b)=>a+b,0)/all.length:0;
@@ -46,6 +62,14 @@ export function careerAction(finances,action,payload,context){
   career.experience=0;career.unemploymentMonths=0;career.benefitMonths=0;career.insuredMonths=0;career.previousSalary=0;career.searchEffort=0;career.rank=1;career.performance=50;career.supervisorTrust=50;career.coworkerTrust=50;career.workplaceActions=0;career.reviews=[];resetWorkplacePeople(career);career.promotions=career.promotions??0;career.jobChanges=(career.jobChanges??0)+1;
   record(`${post.company}に${changing?'転職':'就職'}`);
   return {ok:true,passed:true,message:`${post.company}に${changing?'転職':'就職'}しました。`};
+ }
+ if(action==='setCareerPlan'){
+  if(!career.job)return {ok:false,reason:'働き方の方針は就職後に選べます。'};
+  const plan=CAREER_PLANS.find(p=>p.id===payload.plan);
+  if(!plan)return {ok:false,reason:'働き方の方針が不正です。'};
+  if((career.plan??'balanced')===plan.id)return {ok:false,reason:'すでに選択中の働き方です。'};
+  career.plan=plan.id;record(`働き方の方針を「${plan.name}」へ変更`);
+  return {ok:true,message:`${plan.name}を選びました。今後の職場評価の伸び方が変化します。`};
  }
  if(action==='promotionExam'){
   if(!career.job)return {ok:false,reason:'就業していません。'};
