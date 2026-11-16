@@ -14,9 +14,9 @@ export function renderLifePanel(container,screen,game,handlers={}){
     const heading=lifeEl('h3','','家族・人物');section.append(heading);
     const age=t.ageYears;
     if(age<6){
-      section.append(lifeEl('p','muted small',`現在${age}歳：新しい友人を作る行動は6歳から利用できます（あと${6-age}歳）。交際・結婚は18歳からです。`));
+      heading.textContent=`家族・人物（現在${age}歳／友人は6歳から、あと${6-age}歳）`;
     }else if(age<18){
-      section.append(lifeEl('p','muted small',`現在${age}歳：友人と交流できます。交際・結婚は18歳から（あと${18-age}歳）。`));
+      heading.textContent=`家族・人物（${age}歳／交際は18歳から、あと${18-age}歳）`;
     }
 
     for(const p of people){const age=t.year-p.birth.year-(t.month<p.birth.month?1:0);line(section,`${p.role}：${p.name}`,`${age}歳 / 関係値 ${p.relationship}${p.role==='子'?` / ${p.lifeStage??'未就学'}`:''}`);}
@@ -28,8 +28,11 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const others=people.filter(p=>p.role!=='本人');
         if(others.length){
           const target=choiceButtons('交流する相手',others.map(p=>({value:p.id,label:p.name})),others[0].id);
-          controls.append(target.element,bonds.element);
-          action(controls,'選んだ相手と交流',()=>handlers.onAction?.('familyBond',{personId:target.getValue(),activity:bonds.getValue()}));
+          const extra=lifeEl('details','phase4-extra');
+          extra.append(lifeEl('summary','','会話・贈り物・旅行'));
+          extra.append(target.element,bonds.element);
+          action(extra,'選んだ相手と交流',()=>handlers.onAction?.('familyBond',{personId:target.getValue(),activity:bonds.getValue()}));
+          controls.append(extra);
         }
       }
       section.append(controls);
@@ -43,7 +46,10 @@ export function renderLifePanel(container,screen,game,handlers={}){
       for(const p of candidates){
         if(p.role==='友人'){
           if(age>=18){
-            action(controls,`${p.name}と親しくなる`,()=>handlers.onAction?.('courtship',{personId:p.id}));
+            const extra=lifeEl('details','phase4-extra');
+            extra.append(lifeEl('summary','',`${p.name}との交際準備`));
+            action(extra,`${p.name}と親しくなる`,()=>handlers.onAction?.('courtship',{personId:p.id}));
+            controls.append(extra);
           }
           const dating=action(controls,`${p.name}と交際する（親密度60以上）`,()=>handlers.onAction?.('date',{personId:p.id}));
           dating.disabled=age<18||p.relationship<60;
@@ -139,9 +145,12 @@ export function renderLifePanel(container,screen,game,handlers={}){
       const controls=lifeEl('div','phase4-actions');for(const skill of ['読書','パソコン','運動'])action(controls,`${skill}を練習`,()=>handlers.onAction?.('skill',{skill}));
       if(t.ageYears>=15){
         const courses=choiceButtons('職業別研修',CAREER_TRAINING.map(c=>({value:c.id,label:c.name})),CAREER_TRAINING[0].id);
-        controls.append(courses.element);
-        action(controls,'選んだ職業技能を研修',()=>handlers.onAction?.('careerTraining',{postingId:courses.getValue()}));
-      }else section.append(lifeEl('p','muted small',`職業別研修は15歳から利用できます（あと${15-t.ageYears}歳）。`));
+        const extra=lifeEl('details','phase4-extra');
+        extra.append(lifeEl('summary','','職業別研修・技能認定'));
+        extra.append(courses.element);
+        action(extra,'選んだ職業技能を研修',()=>handlers.onAction?.('careerTraining',{postingId:courses.getValue()}));
+        controls.append(extra);
+      }
       section.append(controls);
     }
     if(screen.id==='EDU-06'){
