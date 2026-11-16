@@ -135,7 +135,9 @@ export function advanceProperties(f,date){
    const interestPaid=Math.min(paid,interest);
    f.cash-=paid;f.totals.expenses+=interestPaid;
    p.loanBalance=Math.max(0,p.loanBalance-(paid-interestPaid));
-   p.arrears=Math.min(100000000,p.arrears+payment-paid);
+   // Only unpaid interest becomes arrears; unpaid principal stays in loanBalance.
+   // This prevents charging missed principal a second time when arrears are cleared.
+   p.arrears=Math.min(100000000,p.arrears+interest-interestPaid);
    push(f,date,`物件${p.id}の住宅ローン返済`,-paid);
    if(!p.loanBalance)p.loanPayment=0;
   }
