@@ -1,4 +1,4 @@
-import {REGIONS, HOME_OPTIONS, INSURANCE_PLANS, REGIONAL_FACTORS, getHousingEquity, mortgageSchedule,assessMortgage,calculatePension,medicalCoverageSummary,estimateInsuranceBenefit,pensionHistoryByYear,auditLivingAccounts} from '../core/livingSystems.js';
+import {REGIONS, HOME_OPTIONS, INSURANCE_PLANS, PROPERTY_COVERAGE, REGIONAL_FACTORS, getHousingEquity, mortgageSchedule,assessMortgage,calculatePension,medicalCoverageSummary,estimateInsuranceBenefit,pensionHistoryByYear,auditLivingAccounts} from '../core/livingSystems.js';
 import {renderPropertyPortfolio} from './propertyPortfolioPanel.js';
 import {choiceButtons} from './choiceButtons.js';
 const make=(tag,text,cls='')=>{const x=document.createElement(tag);x.textContent=text;x.className=cls;return x;};
@@ -79,6 +79,19 @@ export function renderLivingPanel(container,screen,game,handlers={}){
    field(panel,'公的医療保障による累計軽減額',yen(l.medicalSubsidyPaid??0));field(panel,'任意保障の累計給付',yen(l.insuranceBenefitPaid??0));
    const coverage=selector(panel,'任意保険給付方式',['定額','自己負担上限'],l.insuranceClaimCap??'定額');button(panel,'給付方式を変更',()=>handlers.onAction?.('setInsuranceClaimCap',{mode:coverage.value}),age<18);
    const medical=medicalCoverageSummary(l);field(panel,'診療費の標準額',yen(medical.standard));field(panel,'簡易公的医療保障',yen(medical.publicSupport));field(panel,'治療時の本人負担',yen(medical.outOfPocket));field(panel,'任意保障の給付額（別途請求）',yen(medical.optionalBenefit));field(panel,'設定に応じた給付見込み',yen(estimateInsuranceBenefit(l)));
+   const coverageDetails=make('details','','phase4-extra');
+   coverageDetails.dataset.foldKey='home-disaster-cover';
+   coverageDetails.append(make('summary','火災・地震・洪水の保険と防災'));
+   field(coverageDetails,'住宅・家財保障',l.propertyCoverage??'未加入');
+   field(coverageDetails,'毎月の住宅・家財保険料',yen(PROPERTY_COVERAGE[l.propertyCoverage??'未加入']?.premium??0));
+   field(coverageDetails,'防災対策',`${game.surprise53?.prepared?.disaster??0}/5`);
+   field(coverageDetails,'防犯対策',`${game.surprise53?.prepared?.security??0}/5`);
+   const planRows=make('div','','phase27-form');
+   const homeCoverage=selector(planRows,'住宅・家財保険',Object.keys(PROPERTY_COVERAGE),l.propertyCoverage??'未加入');
+   button(planRows,'住宅・家財保障を変更',()=>handlers.onAction?.('setPropertyCoverage',{plan:homeCoverage.value}),age<18);
+   const prepDetails=make('p','防災・防犯の備えは自由行動から強化できます。火災・地震・洪水では防災、盗難では防犯の準備が被害を軽減します。','muted small');
+   coverageDetails.append(planRows,prepDetails);
+   panel.append(coverageDetails);
    panel.append(make('p','保険は任意加入のゲーム独自の制度です。簡易老齢年金は65歳以降、加入120か月以上で支給します。加入期間が長い場合は簡易加算があります。治療費にはゲーム独自の簡易医療保障が適用されます。現実の公的医療保険制度とは異なります。','muted small'));
  }
  if(screen.id==='SOCIETY-06'){field(panel,'居住地域',l.region);const r=REGIONAL_FACTORS[l.region];field(panel,'生活費の地域係数',`${Math.round((r?.living??1)*100)}%`);field(panel,'就業環境の参考係数',`${Math.round((r?.jobs??1)*100)}%`);}
