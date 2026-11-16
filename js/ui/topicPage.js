@@ -53,16 +53,17 @@ export function renderTopicPage(container,screen,state,handlers={}){
   const topic=getTopic(screen.id);
   if(!topic)return renderScreen(container,screen,state,handlers);
   const root=el('div','topic-page topic-compact');
+  const leading=el('div','topic-leading');
   const intro=el('header','topic-intro');
   intro.append(el('span','topic-eyebrow',screen.category),
     el('h2','',topic.title),
-    el('p','','詳細操作は最初から表示されます。見出しを押すと閉じられ、概要だけを確認できます。'));
-  root.append(intro);
+    el('p','','詳細は見出しから開閉できます。'));
+  leading.append(intro);root.append(leading);
   if(screen.category==='履歴'&&state?.initialized)root.append(renderLifeReview(state,{expanded:Boolean(state.ending?.dead)}));
   const actions=state?.initialized?actionBox(state,screen.category,handlers.onAction):null;
-  if(actions)root.append(actions);
+  if(actions){leading.classList.add('has-actions');leading.append(actions);}
   const featured=renderOpportunityPanel(state,screen.category,handlers.onAction);
-  if(featured)root.append(featured);
+  if(featured){leading.classList.add('has-context');featured.classList.add('topic-context');leading.append(featured);}
   if(screen.category==='設定'){
     const button=el('button','button button-primary topic-settings-button','保存・読み込み・新しい人生');
     button.type='button';button.addEventListener('click',()=>handlers.onSettings?.());root.append(button);
