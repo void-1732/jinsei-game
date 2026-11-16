@@ -2,6 +2,7 @@ import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures,CAREER_PLANS,careerStage} from '../core/careerSystems.js';
 import {choiceButtons} from './choiceButtons.js';
 import {renderBusinessEquipmentPanel} from './businessEquipmentPanel.js';
+import {renderSideJobWorkspace,renderBusinessWorkspace} from './workCompactPanel.js';
 import {employmentQualificationBonus,canApplyUniversityRole,majorFor} from '../core/educationPaths.js';
 import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns,PART_TIME_JOBS,INVESTMENT_PRODUCTS,VEHICLE_OPTIONS} from '../core/economySystems.js';
 /** 仕事・家計の実データ操作パネル。入力はユーザー操作時のみ反映。 */
@@ -32,6 +33,14 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   section.append(econEl('h2','',headings[screen.id]??'仕事・家計・資産'));
   if(!game?.initialized){section.append(econEl('p','muted','人生を開始すると仕事・資産の情報が表示されます。'));container.prepend(section);return true;}
   const f=game.finances,job=f.career,b=f.business,age=game.timeline.ageYears;
+  if(screen.id==='WORK-03'){
+    renderSideJobWorkspace(section,game,handlers.onAction);
+    container.prepend(section);return true;
+  }
+  if(screen.id==='WORK-04'){
+    renderBusinessWorkspace(section,game,handlers.onAction);
+    container.prepend(section);return true;
+  }
   const work=screen.id.startsWith('WORK-')&&screen.id!=='WORK-04';
   if(work||['LIFE-04','LIFE-05','LIFE-06'].includes(screen.id)){
     line(section,'現金',yen(f.cash));line(section,'投資評価額',yen(f.investment));line(section,'借入残高',yen(f.debt));line(section,'純資産（事業資金を含む）',yen(netWorth(f)));
@@ -130,144 +139,6 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     action(controls,'退職する',()=>handlers.onAction?.('resign',{}),!f.career.job);section.append(controls);
     line(section,'役職',`${job.rank??1}級`);
     const promote=econEl('div','phase4-actions');action(promote,'昇進審査を受ける',()=>handlers.onAction?.('promotionExam',{}),!job.job||job.experience<12);section.append(promote);
-  }
-  if(screen.id==='WORK-03'){
-    section.append(econEl('h3','','アルバイト・副業を選ぶ'));
-    const current=PART_TIME_JOBS.find(x=>x.id===f.sideJob?.jobId);
-    line(section,'現在のアルバイト',f.sideJob.active?(current?.name??'従来の副業'):'なし');
-    line(section,'月間勤務時間',`${f.sideJob?.active?(f.sideJob.hours??0):0}時間`);
-    line(section,'副業月収（額面）',yen(f.sideJob?.active?f.sideJob.monthlyIncome:0));
-    const choices=econEl('div','phase10-job-grid');
-    for(const job of PART_TIME_JOBS){
-      const card=econEl('div','phase10-job');
-      card.append(econEl('strong','',job.name),
-        econEl('p','muted small',`月${job.hours}時間 ／ 時給${yen(job.hourlyWage)} ／ 月収見込${yen(job.hours*job.hourlyWage)}`));
-      action(card,f.sideJob?.active&&current?.id===job.id?'選択中':'この仕事を始める',
-        ()=>handlers.onAction?.('sideJob',{active:true,jobId:job.id}),
-        age<18||(f.sideJob?.active&&current?.id===job.id));
-      choices.append(card);
-    }
-    section.append(choices);
-    action(section,'アルバイト・副業を停止',()=>handlers.onAction?.('sideJob',{active:false}),!f.sideJob?.active);
-    section.append(econEl('p','muted small','就職中でも併用可能です。収入は毎月精算され、税金・生活費にも反映されます。時間と給与はゲーム用の架空モデルです。'));
-  }
-  if(screen.id==='WORK-04'){
-    section.classList.add('business-focused');
-    section.append(econEl('h3','','会社・事業経営'));
-    line(section,'事業売上／月',yen(b.monthlyRevenue));line(section,'事業経費／月',yen(b.monthlyCosts));
-    const controls=econEl('div','phase4-actions');action(controls,'30万円で事業を開始',()=>handlers.onAction?.('startBusiness',{}),b.active||age<20);
-    action(controls,'事業を終了',()=>handlers.onAction?.('closeBusiness',{}),!b.active);section.append(controls);
-    if(b.active){
-      const figures=businessMonthlyFigures(b,game.world?.phase);
-      line(section,'従業員数',`${b.employees??0}人`);
-      line(section,'営業状態',b.status??'営業中');
-      line(section,'運転資金残高（管理指標）',yen(b.operatingCash??b.capitalSpent??0));
-      line(section,'累積資金不足（参考）',yen(b.operatingDebt??0));
-      line(section,'個人への累計引出し',yen(b.ownerDraws??0));
-      line(section,'連続赤字月数',`${b.lossMonths??0}か月`);
-      line(section,'月額自動返済',yen(b.monthlyRepayment??0));line(section,'累計設備減価償却',yen(b.equipmentDepreciation??0));line(section,'融資審査の申請回数',`${b.loanApplications??0}回`);line(section,'事業融資残高',yen(b.loanBalance??0));line(section,'支払・未払利息累計',yen(b.loanInterestPaid??0));line(section,'事業設備の帳簿価額',yen(b.equipmentValue??0));
-      line(section,'融資の信用評価',`${b.creditScore??70} / 100点`);
-      line(section,'融資の延滞期間',`${b.loanOverdueMonths??0}か月`);
-      if((b.loanDueIndex??0)>0){const i=b.loanDueIndex;line(section,'融資返済期限',`${Math.floor(i/12)}年${i%12+1}月`);}
-      section.append(econEl('h3','','融資契約ごとの返済状況'));
-      for(const c of (b.loanContracts??[]).filter(x=>x.principal>0)){
-        const due=c.dueIndex>0?`${Math.floor(c.dueIndex/12)}年${c.dueIndex%12+1}月`:'期限未設定';
-        line(section,`契約${c.id}・期限 ${due}・延滞${c.overdueMonths}か月`, `元本${yen(c.principal)}／借入額${yen(c.original)}／月額予定${yen(c.monthlyTarget??0)}`);
-        const row=econEl('div','phase4-actions');const planned=input(row,c.monthlyTarget??10000,`契約${c.id}の毎月の返済予定額（円）`);planned.min='0';
-        businessAction(row,`契約${c.id}の返済額を設定`,()=>handlers.onAction?.('setContractRepayment',{id:c.id,amount:Number(planned.value)}));section.append(row);
-      }
-      section.append(econEl('h3','','今後12か月の返済予定（資金不足は考慮しない）'));
-      const projections=projectLoanSchedule(b,{year:game.timeline.year,month:game.timeline.month});
-      for(const r of projections.slice(0,36))line(section,`${r.year}年${r.month}月 契約${r.contractId}`,`元本予定 ${yen(r.principal)}／利息見込 ${yen(r.interest)}／予定残高 ${yen(r.remaining)}${r.due?'（期限到来）':''}`);
-      section.append(econEl('h3','','月別の返済予定と実績'));
-      for(const r of (b.loanScheduleHistory??[]).slice(-12).reverse())line(section,`${r.year}年${r.month}月 契約${r.contractId}`,`予定 ${yen(r.planned)}／実績 ${yen(r.actual)}／差額 ${yen(r.actual-r.planned)}`);
-      section.append(econEl('h3','','融資の返済実績（直近）'));
-      const recent=(b.loanPaymentHistory??[]).slice(-12);
-      const scheduled=projectLoanSchedule(b,{year:game.timeline.year,month:game.timeline.month},1);
-      line(section,'翌月の元本返済予定合計',yen(scheduled.reduce((sum,r)=>sum+r.principal,0)));
-      line(section,'これまでの元本返済実績',yen((b.loanPaymentHistory??[]).reduce((sum,r)=>sum+r.amount,0)));
-      for(const r of (b.loanPaymentHistory??[]).slice(-8).reverse())line(section,`${r.year}年${r.month}月 契約${r.contractId} ${r.kind}`,yen(r.amount));
-
-      renderBusinessEquipmentPanel(section,b,handlers.onAction,game.world?.phase??'通常');
-      const financing=econEl('div','phase4-actions');const financingAmount=input(financing,50000,'事業融資・返済・設備購入の金額（円）');
-      businessAction(financing,'事業融資を借りる',()=>handlers.onAction?.('businessLoan',{amount:Number(financingAmount.value)}));
-      businessAction(financing,'事業融資を返済',()=>handlers.onAction?.('repayBusinessLoan',{amount:Number(financingAmount.value)}),(b.loanBalance??0)===0);
-      businessAction(financing,'毎月の融資返済額を設定',()=>handlers.onAction?.('setLoanRepayment',{amount:Number(financingAmount.value)}),(b.loanBalance??0)===0);
-      businessAction(financing,'自動返済を解除',()=>handlers.onAction?.('setLoanRepayment',{amount:0}),(b.monthlyRepayment??0)===0);
-      businessAction(financing,'事業未払金を精算',()=>handlers.onAction?.('settleBusinessPayable',{amount:Number(financingAmount.value)}),(b.operatingDebt??0)===0);
-      businessAction(financing,'延滞融資の返済条件を変更',()=>handlers.onAction?.('restructureBusinessDebt',{}),(b.loanOverdueMonths??0)===0);
-      section.append(financing);
-      section.append(econEl('h3','','事業口座の取引履歴'));
-      const ledgerControls=econEl('div','phase4-actions');
-      const historyFilter=econEl('select','phase4-select');historyFilter.setAttribute('aria-label','事業の取引履歴の絞り込み');
-      for(const name of ['すべて','設備','融資','事業','点検・修理']){const opt=econEl('option','',name);opt.value=name;historyFilter.append(opt);}ledgerControls.append(historyFilter);
-      const ledgerSearch=econEl('input','phase5-number');ledgerSearch.type='search';ledgerSearch.placeholder='取引名を検索';ledgerSearch.setAttribute('aria-label','事業取引の文字検索');ledgerControls.append(ledgerSearch);
-      const ledgerResults=econEl('div','');
-      const refreshLedger=()=>{ledgerResults.replaceChildren();const needle=historyFilter.value;
-        const filtered=(b.businessLedger??[]).filter(entry=>(!ledgerSearch.value.trim()||entry.label.includes(ledgerSearch.value.trim()))&&(needle==='すべて'||(needle==='設備'&&entry.label.includes('設備'))||(needle==='融資'&&(/融資|契約|返済|利息/.test(entry.label)))||(needle==='事業'&&(/事業売上|事業経費|事業主/.test(entry.label)))||(needle==='点検・修理'&&(/点検|修理|故障/.test(entry.label)))));
-        for(const entry of filtered.slice(-12).reverse())line(ledgerResults,`${entry.year}年${entry.month}月 ${entry.label}`,yen(entry.amount));
-        if(!filtered.length)ledgerResults.append(econEl('p','muted','該当する取引記録はありません。'));
-      };
-      historyFilter.addEventListener('change',refreshLedger);ledgerSearch.addEventListener('input',refreshLedger);refreshLedger();section.append(ledgerControls,ledgerResults);
-      const funding=econEl('div','phase4-actions');
-      const fundingAmount=input(funding,100000,'事業へ追加する運転資金（円）');
-      businessAction(funding,'運転資金を追加',()=>handlers.onAction?.('businessFunding',{amount:Number(fundingAmount.value)}));
-      businessAction(funding,'休業中の事業を再開',()=>handlers.onAction?.('restartBusiness',{}),b.status!=='休業'||(b.operatingCash??0)<100000);
-      const draw=input(funding,50000,'個人へ引き出す事業資金（円）');
-      businessAction(funding,'事業資金を個人へ移す',()=>handlers.onAction?.('ownerDraw',{amount:Number(draw.value)}));
-      section.append(funding);
-      graph(section,'事業の月次利益推移',b.cashFlowHistory,'profit');
-      for(const cash of (b.cashFlowHistory??[]).slice(-3).reverse())line(section,`${cash.year}年${cash.month}月 事業収支`, `売上${yen(cash.revenue)}・経費${yen(cash.costs)}・利益${yen(cash.profit)}（${cash.status}）`);line(section,'経営方針',b.policy??'安定');
-      line(section,'景気反映後の見込売上',yen(figures.revenue));line(section,'従業員費を含む見込経費',yen(figures.costs));
-      const management=econEl('div','phase4-actions');businessAction(management,'従業員を1人採用',()=>handlers.onAction?.('hireEmployee',{}),(b.employees??0)>=20||f.cash<100000);
-      const policy=econEl('select','phase4-select');policy.setAttribute('aria-label','経営方針');for(const name of ['安定','成長','節約']){const opt=econEl('option','',name);opt.value=name;policy.append(opt);}policy.value=b.policy??'安定';management.append(policy);
-      businessAction(management,'経営方針を変更',()=>handlers.onAction?.('businessPolicy',{policy:policy.value}));section.append(management);
-      section.append(econEl('h3','','従業員・企業業績（第11段階）'));
-      line(section,'企業の評判',`${b.reputation??50}点`);
-      for(const staff of b.staff??[]){
-        const row=econEl('div','phase11-staff');
-        row.append(econEl('strong','',staff.name),econEl('span','',`技能${staff.skill}点／意欲${staff.morale}点／月額人件費 ${yen(staff.salary)}`));
-        businessAction(row,'研修する（3万円）',()=>handlers.onAction?.('trainStaff',{staffId:staff.id}),f.cash<30000);
-        businessAction(row,'退職処理',()=>handlers.onAction?.('dismissStaff',{staffId:staff.id}));
-        section.append(row);
-      }
-      if((b.staff??[]).length)businessAction(section,'職場環境を改善',()=>handlers.onAction?.('staffCare',{}));
-      section.append(econEl('h3','','企業業績の記録（第12段階）'));
-      line(section,'現在の採用人数',`${(b.staff??[]).length}人`);
-      for(const item of (b.marketHistory??[]).slice(-3).reverse())line(section,`${item.year}年${item.month}月 事業指標`, `従業員${item.employees}人／平均技能${item.averageSkill}点／意欲${item.averageMorale}点`);
-      for(const result of (b.results??[]).slice(-6).reverse())line(section,`${result.year}年${result.month}月`,`${result.employees}人／平均技能${result.averageSkill}点／平均意欲${result.averageMorale}点`);
-
-    }
-  }
-  if(screen.id==='WORK-04'&&b.active){
-    const dashboard=econEl('div','business-overview');
-    for(const [key,value] of [
-      ['営業状態',b.status??'営業中'],['事業資金',yen(b.operatingCash??0)],
-      ['設備の台数',`${b.equipmentItems?.length??0}台`],['従業員',`${b.staff?.length??0}人`],
-      ['事業融資',yen(b.loanBalance??0)],['今月の見込売上',yen(b.monthlyRevenue??0)]
-    ]){
-      const item=econEl('div','business-overview-card');
-      item.append(econEl('small','',key),econEl('strong','',value));dashboard.append(item);
-    }
-    const heading=[...section.children].find(node=>node.tagName==='H3'&&node.textContent==='会社・事業経営');
-    const panel=section.querySelector('.business-equipment-panel');
-    if(heading&&panel){
-      heading.after(dashboard,panel);
-      const trailing=[...section.children].slice([...section.children].indexOf(panel)+1);
-      const details=[];
-      let current=null;
-      const group=(label)=>{
-        const item=econEl('details','business-folded-details');
-        item.append(econEl('summary','',label));
-        section.append(item);details.push(item);current=item;
-      };
-      group('経営・融資・返済の詳細');
-      for(const node of trailing){
-        if(node.tagName==='H3'&&node.textContent==='事業口座の取引履歴')group('資金移動・取引履歴');
-        if(node.tagName==='H3'&&node.textContent.includes('従業員・企業業績'))group('従業員・職場運営');
-        current.append(node);
-      }
-    }
   }
   if(['LIFE-03','LIFE-04','LIFE-08'].includes(screen.id)){
     section.append(econEl('h3','','家計・資産状況'));
