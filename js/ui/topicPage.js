@@ -54,7 +54,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
   const intro=el('header','topic-intro');
   intro.append(el('span','topic-eyebrow',screen.category),
     el('h2','',topic.title),
-    el('p','','必要な情報はここに集約しました。詳しい操作だけを下から選べます。'));
+    el('p','','詳細操作は最初から表示されます。見出しを押すと閉じられ、概要だけを確認できます。'));
   root.append(intro);
   if(screen.category==='履歴'&&state?.initialized)root.append(renderLifeReview(state,{expanded:Boolean(state.ending?.dead)}));
   const actions=state?.initialized?actionBox(state,screen.category,handlers.onAction):null;
@@ -66,17 +66,19 @@ export function renderTopicPage(container,screen,state,handlers={}){
     button.type='button';button.addEventListener('click',()=>handlers.onSettings?.());root.append(button);
   }
   const card=el('section','topic-summary-card');
-  card.append(el('h3','','現在の状況'));
+  const overview=el('div','topic-overview');
+  overview.append(el('h3','','現在の状況'));
   const entries=state?.initialized?compactValues(state,topic.screenIds):[];
-  if(!state?.initialized)card.append(el('p','topic-no-data','人生を開始すると、ここに状況が表示されます。'));
-  else if(!entries.length)card.append(el('p','topic-no-data','進行や選択によって記録が増えていきます。'));
+  if(!state?.initialized)overview.append(el('p','topic-no-data','人生を開始すると、ここに状況が表示されます。'));
+  else if(!entries.length)overview.append(el('p','topic-no-data','進行や選択によって記録が増えていきます。'));
   else{
     const values=el('dl','topic-values');
     for(const [key,value]of entries){const line=el('div','topic-value');line.append(el('dt','',key),el('dd','',value));values.append(line);}
-    card.append(values);
+    overview.append(values);
   }
   const details=el('details','topic-detail');
-  details.append(el('summary','','詳細・個別操作を見る'));
+  details.open=true;
+  details.append(el('summary','','詳しい情報・操作を閉じる／開く'));
   const body=el('div','topic-detail-content');
   const label=el('label','topic-tool-label','操作する項目');
   const select=el('select','topic-tool-select');
@@ -90,11 +92,13 @@ export function renderTopicPage(container,screen,state,handlers={}){
   const full=el('div','topic-legacy-detail');
   const show=()=>{
     const target=findScreen(select.value);full.replaceChildren();
-    renderScreen(full,target,state,{...handlers,filter:'',onFilterChange:()=>{}});
+    renderScreen(full,target,state,{...handlers,embedded:true,filter:'',onFilterChange:()=>{}});
   };
   select.addEventListener('change',show);
-  details.addEventListener('toggle',()=>{if(details.open)show();});
-  body.append(full);details.append(body);card.append(details);
+  details.addEventListener('toggle',()=>{overview.hidden=details.open;if(details.open)show();});
+  overview.hidden=true;
+  body.append(full);details.append(body);card.append(overview,details);
+  show();
   root.append(card);
   container.replaceChildren(root);
 }
