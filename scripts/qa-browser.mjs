@@ -206,6 +206,31 @@ async function runViewport(binary,width){
      !qualificationQA.original?.includes('難易度')||!qualificationQA.doctor.includes('医学課程修了')||
      !qualificationQA.examDisabled||!qualificationQA.examEnabled||!qualificationQA.earned||qualificationQA.overflow)
     throw Error('Qualification UI broken at this viewport '+JSON.stringify(qualificationQA));
+  const earnedAndInsuranceQA=await evaluate(`(async()=>{
+    const [{createGameStore},{renderQualificationPanel},{renderLivingPanel}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/qualificationPanel.js'),import('./js/ui/livingPanel.js')
+    ]);
+    const g=createGameStore();g.startNewGame();
+    const state=structuredClone(g.getState());
+    state.timeline={year:2028,month:1,ageYears:28,turnsElapsed:190,monthsElapsed:336};
+    state.finances.cash=100000;
+    state.education.qualificationTrack={earned:['itEntry'],preparation:{},attempts:{}};
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    host.append(renderQualificationPanel(state,()=>({ok:true})));
+    const list=host.querySelector('.qualification-picker');
+    const hidden=[...list.options].every(x=>x.value!=='itEntry');
+    const listed=host.querySelector('.qualification-body')?.textContent.includes('IT基礎認定');
+    host.replaceChildren();
+    renderLivingPanel(host,{id:'LIFE-07'},state,{onAction:()=>({ok:true})});
+    const cover=host.querySelector('details[data-fold-key="home-disaster-cover"]');
+    const plans=[...(cover?.querySelector('select')?.options??[])].map(x=>x.value);
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {hidden,listed,cover:!!cover,closed:cover?.open===false,plans,overflow};
+  })()`);
+  if(!earnedAndInsuranceQA.hidden||!earnedAndInsuranceQA.listed||!earnedAndInsuranceQA.cover||
+     !earnedAndInsuranceQA.closed||earnedAndInsuranceQA.plans.length!==4||earnedAndInsuranceQA.overflow)
+    throw Error('Earned qualification picker or home disaster cover UI broken '+JSON.stringify(earnedAndInsuranceQA));
   // Industrial/commercial/technical students: age-16 exams; training effect;
   // open/closed preferences survive re-render at both tested widths.
   const youthCareerQA=await evaluate(`(async()=>{
