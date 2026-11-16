@@ -1,6 +1,7 @@
 /** 第26段階：保存されたゲーム状態から画面の設計項目へ値を投影する読み取り専用アダプター。
  * モデル未実装の住居・保険・地域などは値を捏造せず未接続のままにする。
  */
+import {estateBreakdown} from './estateSystems.js';
 const yen = n => `${Math.round(n).toLocaleString('ja-JP')}円`;
 const number = n => `${Number(n).toLocaleString('ja-JP')}`;
 const date = x => x ? `${x.year}年${x.month}月` : '記録なし';
@@ -15,17 +16,21 @@ export function getScreenFieldValues(id, state) {
   const ledger=f?.ledger??[], history=state.eventHistory??[];
   const last=ledger.at(-1), recentFinance=recent(ledger,12);
   const averageScore=e ? Math.round(Object.values(e.scores).reduce((a,v)=>a+v,0)/Math.max(1,Object.keys(e.scores).length)):null;
-  const totalWealth=f ? f.cash+f.investment-f.debt+(f.living?.propertyValue??0)-(f.living?.mortgageBalance??0)+(b?.operatingCash??0)-(b?.operatingDebt??0)-(b?.loanBalance??0)+(b?.equipmentValue??0):0;
+  const totalWealth=f?estateBreakdown(f).netAssets:0;
   const living=f?.living;
   const housingCost=living?.monthlyHousingCost??0;
+  const portfolioValue=(living?.properties??[]).reduce((sum,p)=>sum+(p.value??0),0);
+  const portfolioLoans=(living?.properties??[]).reduce((sum,p)=>sum+(p.loanBalance??0)+(p.arrears??0),0);
+  const carValue=[f?.vehicle,...(f?.vehicles??[])].filter(Boolean).reduce((sum,v)=>sum+(v.value??0),0);
+  const assetCount=(living?.housing==='持ち家'?1:0)+(living?.properties?.length??0);
   const insurancePremium=({未加入:0,基本保障:3000,充実保障:7000})[living?.insurance??'未加入']??0;
   const values={
     'LIFE-01':{'人生サマリー':`${state.player.name}・${t.ageYears}歳・${t.year}年${t.month}月`,'家族・仕事・家計・健康':`${people.length}人・${c.job??'無職'}・現金${yen(f.cash)}・健康${h.physical}点`,'重要イベント':`${state.pendingEvents?.length??0}件`},
-    'LIFE-02':{'居住地域':living?.region??'未設定','住居種別':living?.housing??'実家','所有・賃貸':living?.housing==='持ち家'?'所有':living?.housing==='賃貸'?'賃貸':'実家','居住費':yen(housingCost),'引越し履歴':`${living?.moves?.length??0}件`,'住宅ローン':yen(living?.mortgageBalance??0)},
+    'LIFE-02':{'居住地域':living?.region??'未設定','住居種別':living?.housing??'実家','所有・賃貸':living?.housing==='持ち家'?'所有':living?.housing==='賃貸'?'賃貸':'実家','居住費':yen(housingCost),'引越し履歴':`${living?.moves?.length??0}件`,'住宅ローン':yen((living?.mortgageBalance??0)+portfolioLoans),'所有不動産':`${assetCount}件`,'所有車両':`${(f?.vehicle?1:0)+(f?.vehicles?.length??0)}台`},
     'LIFE-07':{'加入保険':living?.insurance??'未加入','保障内容':living?.insurance==='充実保障'?'体調不良の給付40,000円':living?.insurance==='基本保障'?'体調不良の給付15,000円':'任意保障なし','保険料':yen(insurancePremium),'給付見込み':living?.insurance==='未加入'?'給付なし':'病気発生時に請求可能'},
     'SOCIETY-06':{'地域名':living?.region??'未設定','人口規模':'未実装・未接続','物価・生活費':`${yen(housingCost)}（住居費）`,'雇用環境':'地域別就業係数を簡易設定','地域特性':'国内主要10地域から選択可能'},
     'LIFE-03':{'収入内訳':`給与${yen(c.monthlySalary)}・副業${yen(f.sideJob.active?f.sideJob.monthlyIncome:0)}`,'支出内訳':`基本生活費${yen(f.monthlyBudget)}・住居費${yen(housingCost)}・保険料${yen(insurancePremium)}・年金${yen(t.ageYears>=18&&t.ageYears<65&&(living?.pensionMode??'通常納付')==='通常納付'?4000:0)}`,'固定費':yen(f.monthlyBudget+housingCost+insurancePremium+(t.ageYears>=18&&t.ageYears<65&&(living?.pensionMode??'通常納付')==='通常納付'?4000:0)+(living?.mortgageBalance>0?(living?.mortgagePayment??0):0)),'家計履歴':`${ledger.length}件`,'当月収支':yen(recentFinance.filter(x=>x.year===t.year&&x.month===t.month).reduce((sum,x)=>sum+(x.amount??0),0))},
-    'LIFE-04':{'現金':yen(f.cash),'預金残高':`未管理（現金${yen(f.cash)}）`,'資産構成':`現金${yen(f.cash)}・投資${yen(f.investment)}・住宅純資産${yen((living?.propertyValue??0)-(living?.mortgageBalance??0))}・個人借入${yen(f.debt)}`,'残高履歴':`${ledger.length}件の取引記録`},
+    'LIFE-04':{'現金':yen(f.cash),'預金残高':`未管理（現金${yen(f.cash)}）`,'資産構成':`現金${yen(f.cash)}・投資${yen(f.investment)}・住宅純資産${yen((living?.propertyValue??0)+portfolioValue-(living?.mortgageBalance??0)-portfolioLoans)}・車両${yen(carValue)}・個人借入${yen(f.debt)}`,'残高履歴':`${ledger.length}件の取引記録`},
     'LIFE-05':{'時価評価':yen(f.investment),'取引履歴':`${ledger.filter(x=>/投資/.test(x.label??'')).length}件`},
     'LIFE-06':{'残高':yen(f.debt),'返済予定':`事業融資${yen(b.loanBalance??0)}（個人借入とは別）`},
     'LIFE-08':{'資産推移':`${ledger.length}件の家計履歴`,'収支推移':`${ledger.length}件の家計取引`,'取引年表':shown(last?`${date(last)}：${last.label}`:null)},
