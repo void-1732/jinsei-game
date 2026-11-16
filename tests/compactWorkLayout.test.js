@@ -28,7 +28,7 @@ test('経営UIは主要指標を6枚だけ表示し管理用5タブに分割す�
  assert.match(layout,/role','tabpanel/);
  assert.match(layout,/\['利益見込／月'/);
  assert.match(layout,/business-compact-pane/);
- assert.match(layout,/panel\.hidden=!active/);
+ assert.match(layout,/panels\.get\(name\)\.hidden=!active/);
  const finance=read('js/ui/economyPanels.js');
  assert.match(finance,/renderBusinessWorkspace\(section,game,handlers.onAction\)/);
 });
