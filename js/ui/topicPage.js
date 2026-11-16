@@ -13,6 +13,7 @@ import {renderMonthlyRoutinePanel} from './monthlyRoutinePanel.js';
 const el=(tag,klass='',text='')=>{const e=document.createElement(tag);if(klass)e.className=klass;e.textContent=text;return e;};
 // UI-only state; reopening the page defaults to expanded unless explicitly collapsed.
 const expandedByTopic=new Map();
+const selectedByTopic=new Map();
 
 function actionBox(state,category,onAction){
   const actions=categoryActivities(state,category);
@@ -101,6 +102,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
   }
   const details=el('details','topic-detail');
   const topicKey=topic.screenIds[0];
+  const selectedDetail=topic.screenIds.includes(selectedByTopic.get(topicKey))?selectedByTopic.get(topicKey):screen.id;
   details.open=expandedByTopic.get(topicKey)??true;
   details.append(el('summary','','詳細・個別操作を見る（クリックで閉じる／開く）'));
   const body=el('div','topic-detail-content');
@@ -115,18 +117,18 @@ export function renderTopicPage(container,screen,state,handlers={}){
       option.value=id;
       select.append(option);
     }
-    select.value=screen.id;
-    select.addEventListener('change',()=>show(select.value));
+    select.value=selectedDetail;
+    select.addEventListener('change',()=>{selectedByTopic.set(topicKey,select.value);show(select.value);});
     picker.append(select);
     body.append(picker);
   }
   const full=el('div','topic-legacy-detail');
-  const show=(selectedId=screen.id)=>{
+  const show=(selectedId=selectedDetail)=>{
     if(full.dataset.renderedScreenId)foldState.capture(full,full.dataset.renderedScreenId);
     const target=findScreen(selectedId);full.replaceChildren();
     renderScreen(full,target,state,{...handlers,embedded:true,filter:'',onFilterChange:()=>{}});
-    foldState.restore(full,selectedId);
     full.dataset.renderedScreenId=selectedId;
+    foldState.restore(full,selectedId);
   };
   // Detailed screen navigation is now rendered only in the persistent top topic strip.
   details.addEventListener('toggle',()=>{
