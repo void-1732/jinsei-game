@@ -149,6 +149,33 @@ async function runViewport(binary,width){
   if(studentPlanner.count!==3||!studentPlanner.initial?.includes('休息 4h')||!studentPlanner.blocked||
       !studentPlanner.valid||!studentPlanner.healthCost||!studentPlanner.message||studentPlanner.overflow)
     throw Error('Student balance browser interaction invalid '+JSON.stringify(studentPlanner));
+  // Extended labor market is visible through one collapsed tool, not a wall of 30 cards.
+  const careerExpansion=await evaluate(`(async()=>{
+    const [{createGameStore},{renderEconomyPanel},{EXTENDED_JOB_POSTINGS,marketListings}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/economyPanels.js'),import('./js/core/careerMarketplace.js')
+    ]);
+    const game=createGameStore();game.startNewGame();
+    const state=structuredClone(game.getState());
+    state.timeline={year:2026,month:5,ageYears:26,turnsElapsed:101,monthsElapsed:316};
+    state.finances.cash=1000000;
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    renderEconomyPanel(host,{id:'WORK-01'},state,{onAction:()=>({ok:true})});
+    const drawer=host.querySelector('.career-market');
+    const sectors=host.querySelector('.career-sector-select');
+    const jobs=host.querySelector('.career-posting-select');
+    const original=jobs?.options.length??0;
+    const count=marketListings(state).length;
+    if(sectors){sectors.value='IT';sectors.dispatchEvent(new Event('change',{bubbles:true}));}
+    const filtered=[...jobs?.options??[]].every(o=>o.textContent.includes('エンジニア')||o.textContent.includes('技術')||o.textContent.includes('ゲーム')||o.textContent.includes('情報'));
+    const after=jobs?.options.length??0;
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {drawer:!!drawer,closed:drawer?.open===false,registered:EXTENDED_JOB_POSTINGS.length,
+      original,count,after,filtered,overflow};
+  })()`);
+  if(!careerExpansion.drawer||!careerExpansion.closed||careerExpansion.registered!==30||
+     !careerExpansion.original||!careerExpansion.count||!careerExpansion.after||!careerExpansion.filtered||careerExpansion.overflow)
+    throw Error('Expanded job market browser UI failed '+JSON.stringify(careerExpansion));
   // U4/U5/U7: isolated adult fixture checks the real responsive game panels
   // and long-term event generation without touching the browser's save slots.
   const newFeatures=await evaluate(`(async()=>{
