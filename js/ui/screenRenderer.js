@@ -1,5 +1,6 @@
 import {renderPlayDashboard} from './playDashboard.js';
 import {businessActionsRemaining} from '../core/businessOperations.js';
+import {categoryActionAvailable,actionBudget} from '../core/adultActionBudget.js';
 import {renderLivingPanel} from './livingPanel.js';
 import {getScreenFieldValues} from '../core/screenFieldValues.js';
 import {renderHistoryPanel} from './historyPanels.js';
@@ -53,7 +54,8 @@ export function renderFocusedScreen(container,screen,gameState,handlers={}){
     flush();
   }
   const hasStory=Boolean(gameState?.pendingEvents?.some(e=>e.type==='choice'));
-  const ordinaryUsed=Boolean(gameState?.initialized&&gameState.turnActions?.turn===gameState.timeline.turnsElapsed&&gameState.turnActions.used>=1);
+  const canCategoryAct=categoryActionAvailable(gameState,screen.category);
+  const actionLimit=actionBudget(gameState);
   const businessRemaining=businessActionsRemaining(gameState);
   // Navigation and selection buttons remain operable. Only the action which
   // would exceed its own allowance is disabled. Business controls have a
@@ -61,13 +63,13 @@ export function renderFocusedScreen(container,screen,gameState,handlers={}){
   for(const button of container.querySelectorAll('button:not([disabled])')){
     if(button.classList.contains('choice-button'))continue;
     const admin=button.dataset.actionScope==='business';
-    if(hasStory||(admin?businessRemaining===0:ordinaryUsed)){
+    if(hasStory||(admin?businessRemaining===0:!canCategoryAct)){
       button.disabled=true;
-      button.title=hasStory?'先に出来事を選択してください。':admin?'今月の事業管理操作は3回までです。':'自由行動は次のターンに行えます。';
+      button.title=hasStory?'先に出来事を選択してください。':admin?'今月の事業管理操作は3回までです。':actionLimit.remaining===0?'このターンの自由行動は上限です。':'このカテゴリは今月使用済みです。';
     }
   }
-  if(hasStory||ordinaryUsed||businessRemaining===0){
-    const notice=hasStory?'先に出来事の選択を完了してください。':businessRemaining===0?'今月の事業管理は完了です。次のターンで再開できます。':'今月の自由行動は使用済みです。事業管理は別枠で行えます。';
+  if(hasStory||!canCategoryAct||businessRemaining===0){
+    const notice=hasStory?'先に出来事の選択を完了してください。':businessRemaining===0?'今月の事業管理は完了です。次のターンで再開できます。':actionLimit.remaining===0?'今月の自由行動は完了しました。':'このカテゴリの自由行動は使用済みです。別のカテゴリを選べます。';
     if(container.querySelector('button:disabled'))container.prepend(el('p','muted small focused-action-message',notice));
   }
 }
