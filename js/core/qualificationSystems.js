@@ -245,6 +245,9 @@ export function qualificationAction(state,action,payload={}){
    e.qualificationTrack=track;
    f.cash-=costs.preparation;f.totals.expenses+=costs.preparation;
    track.preparation[q.id]=Math.min(30,previous+10);
+   // Exams also train the specific practical skill, not only abstract test prep.
+   const skill=QUALIFICATION_SKILLS[q.id]?.[0];
+   if(skill)e.skills[skill]=Math.min(100,Number(e.skills?.[skill]??0)+5);
    h.energy=Math.max(0,h.energy-3);
    record(state,`${q.name}の受験対策${costs.subsidized?'（学校支援）':''}`,-costs.preparation);
    return {ok:true,message:`${q.name}の対策を進めました（準備${track.preparation[q.id]}/30）。合格見込みが改善します。`};
