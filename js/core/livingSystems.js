@@ -5,7 +5,8 @@ export const REGIONS=Object.freeze([
  ['福岡・福岡',79000],['鹿児島・鹿児島',59000]
 ].map(([name,rent])=>Object.freeze({name,rent})));
 export const INSURANCE_PLANS=Object.freeze({
- '未加入':{premium:0,benefit:0},'基本保障':{premium:3000,benefit:15000},'充実保障':{premium:7000,benefit:40000}
+ '未加入':{premium:0,benefit:0},'基本保障':{premium:3000,benefit:15000},'充実保障':{premium:7000,benefit:40000},
+ '医療重点':{premium:4500,benefit:28000},'がん・重病重点':{premium:6200,benefit:50000},'生活防衛':{premium:8500,benefit:65000}
 });
 export const REGIONAL_FACTORS=Object.freeze({'北海道・札幌':{living:0.94,jobs:0.98},'宮城・仙台':{living:0.96,jobs:1},'新潟・新潟':{living:0.92,jobs:0.97},'埼玉・さいたま':{living:1,jobs:1.02},'東京・東京23区':{living:1,jobs:1},'愛知・名古屋':{living:0.98,jobs:1.03},'大阪・大阪':{living:1,jobs:1.02},'香川・高松':{living:0.9,jobs:0.95},'福岡・福岡':{living:0.96,jobs:1},'鹿児島・鹿児島':{living:0.9,jobs:0.95}});
 export function createLivingData(){return {region:'東京・東京23区',housing:'実家',rent:0,propertyValue:0,monthlyHousingCost:0,insurance:'未加入',lastClaimKey:null,moves:[],claims:[],mortgageBalance:0,mortgagePayment:0,mortgageMonths:0,pensionMonths:0,pensionPaid:0,mortgageArrears:0,mortgageLateMonths:0,mortgageHistory:[],propertyAgeMonths:0,repairCount:0,pensionContributions:0,medicalSubsidyPaid:0,mortgageCredit:70,mortgageArrearsPaid:0,homeMaintenancePaid:0,pensionPremiumPaid:0,insuranceBenefitPaid:0,pensionMode:'通常納付',pensionExemptMonths:0,pensionUnpaidMonths:0,pensionBackPaidMonths:0,pensionUnpaidRecords:[],pensionCreditHalfUnits:0,mortgageRejectedApplications:0,mortgageAccounting:'従来方式',mortgageOverdueInterest:0,pensionExemptionApplications:0,insuranceClaimCap:'定額',pensionHistory:[]};}
