@@ -53,25 +53,11 @@ export function renderFocusedScreen(container,screen,gameState,handlers={}){
     }
     flush();
   }
-  const hasStory=Boolean(gameState?.pendingEvents?.some(e=>e.type==='choice'));
-  const canCategoryAct=categoryActionAvailable(gameState,screen.category);
-  const actionLimit=actionBudget(gameState);
-  const businessRemaining=businessActionsRemaining(gameState);
-  // Navigation and selection buttons remain operable. Only the action which
-  // would exceed its own allowance is disabled. Business controls have a
-  // separate capped budget from the once-per-turn life choice.
-  for(const button of container.querySelectorAll('button:not([disabled])')){
-    if(button.classList.contains('choice-button'))continue;
-    const admin=button.dataset.actionScope==='business';
-    if(hasStory||(admin?businessRemaining===0:!canCategoryAct)){
-      button.disabled=true;
-      button.title=hasStory?'先に出来事を選択してください。':admin?'今月の事業管理操作は3回までです。':actionLimit.remaining===0?'このターンの自由行動は上限です。':'このカテゴリは今月使用済みです。';
-    }
-  }
-  if(hasStory||!canCategoryAct||businessRemaining===0){
-    const notice=hasStory?'先に出来事の選択を完了してください。':businessRemaining===0?'今月の事業管理は完了です。次のターンで再開できます。':actionLimit.remaining===0?'今月の自由行動は完了しました。':'このカテゴリの自由行動は使用済みです。別のカテゴリを選べます。';
-    if(container.querySelector('button:disabled'))container.prepend(el('p','muted small focused-action-message',notice));
-  }
+  // Do not disable every button based on the containing screen's category.
+  // Selection and navigation controls remain usable; the game store validates
+  // each submitted action against the real action category and business budget.
+  // Domain panels still disable controls with genuine local prerequisites.
+
 }
 
 /** Render only domain snapshots; all interactive filters are UI-local. */
@@ -198,14 +184,6 @@ export function renderScreen(container, screen, gameState = null, handlers = {})
     detail.open=Boolean(handlers.embedded);
     detail.append(el('summary','','操作・記録を閉じる／開く'));
     for(const node of extraPanels)detail.append(node);
-    const blocked=gameState?.initialized && (gameState?.pendingEvents?.some(e=>e.type==='choice') || (gameState?.turnActions?.turn===gameState?.timeline?.turnsElapsed && gameState?.turnActions?.used>=1));
-    if (blocked) {
-      const note=el('p','muted small',gameState.pendingEvents.some(e=>e.type==='choice')?'先に次のターンの出来事を選んでください。':'このターンの自由行動は使用済みです。');
-      detail.insertBefore(note,detail.children[1]??null);
-      for(const actionButton of detail.querySelectorAll('button')) {
-        if(!actionButton.disabled){actionButton.disabled=true;actionButton.title='今のターンは行動できません';}
-      }
-    }
     container.prepend(detail);
   }
   const quick=el('section','content-card quick-overview');quick.append(el('h3','','現在の状況'));
