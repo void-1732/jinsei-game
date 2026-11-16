@@ -11,7 +11,7 @@ export function lifeGuidance(state){
  const warnings=[],suggestions=[];
  if(h.illness)warnings.push(make('illness','体調不良が続いています','健康画面で治療や休養の選択肢を確認できます。','HEALTH-01','健康','high'));
  if(h.physical<=35||h.mental<=30)warnings.push(make('health-low','健康の状態に注意',`体力${h.physical}・こころ${h.mental}。休養・治療・毎月の習慣を見直しましょう。`,'HEALTH-01','健康','high'));
- if(age>=18&&!f.career.job)warnings.push(make('unemployed','現在は仕事についていません','求人・就職準備を確認し、収入を確保する方法を検討できます。','WORK-01','仕事・経営','high'));
+ if(age>=18&&age<65&&!f.career.job)warnings.push(make('unemployed','現在は仕事についていません','求人・就職準備を確認し、収入を確保する方法を検討できます。','WORK-01','仕事・経営','high'));
  if(age>=18&&monthly.available&&monthly.outflow>0&&monthly.liquidCash<monthly.outflow*2)
   warnings.push(make('cash-low','現金の余裕が少なくなっています',`現在の現金は${Math.round(monthly.liquidCash).toLocaleString('ja-JP')}円。固定支出の概算約${Math.round(monthly.outflow).toLocaleString('ja-JP')}円／月です。`,'LIFE-03','生活・資産','high'));
  if(age>=18&&monthly.available&&monthly.net<0)
@@ -28,7 +28,7 @@ export function lifeGuidance(state){
  if(age>=18&&(h.physical<=65||h.mental<=60))suggestions.push(make('monthly-health','毎月の健康習慣を整える','ウォーキング・ジム・心のケアなどの継続プランを選べます。','HEALTH-01','健康'));
  if(age>=18&&state.people.some(p=>p.role==='配偶者'||p.role==='子'))suggestions.push(make('family-time','家族との時間を確保','家族との交流や毎月の食事計画を確認できます。','PERSON-01','人物・家族'));
  return {
-  warnings:warnings.slice(0,2),
+  warnings:warnings.slice(0,5),
   suggestions:suggestions.filter(s=>!warnings.some(w=>w.destination===s.destination)).slice(0,2)
     .map(s=>({...s,canAct:categoryActionAvailable(state,s.category)})),
   remaining:budget.remaining,
