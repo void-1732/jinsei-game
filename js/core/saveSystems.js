@@ -13,6 +13,7 @@ import {validateEraProgress} from './eraSystems.js';
 import {validateSurpriseProgress} from './surpriseSystems.js';
 import {validateDailySchedule} from './dailySchedule.js';
 import {validateStudentBalance} from './studentBalance.js';
+import {validateCareerExpansion} from './careerMarketplace.js';
 /** 第7段階：ローカル保存。外部送信なし。保存データは実行可能コードとして扱わない。 */
 export const SAVE_PREFIX = 'gls:v7:';
 export const SLOT_IDS = Object.freeze(['自動保存','手動保存1','手動保存2','手動保存3','人生記録']);
@@ -74,6 +75,7 @@ export function validateGameState(s) {
   }
   const career=s.finances.career,business=s.finances.business;
   if(!career || !business || typeof career!=='object' || typeof business!=='object')return false;
+  if(!validateCareerExpansion(career))return false;
   if(s.finances.companyMarket!==undefined && (!Array.isArray(s.finances.companyMarket)||s.finances.companyMarket.length!==6||!s.finances.companyMarket.every(c=>c&&typeof c.id==='string'&&typeof c.name==='string'&&typeof c.sector==='string'&&Number.isInteger(c.performance)&&c.performance>=0&&c.performance<=100&&Number.isInteger(c.staffCount)&&c.staffCount>=0&&c.staffCount<=500&&Number.isInteger(c.openings)&&c.openings>=0&&c.openings<=4&&['成長','縮小','横ばい'].includes(c.trend)&&Array.isArray(c.history)&&c.history.length<=24&&c.history.every(h=>Number.isInteger(h.year)&&Number.isInteger(h.month)&&h.month>=1&&h.month<=12&&Number.isInteger(h.performance)&&h.performance>=0&&h.performance<=100))))return false;
   // 第14段階の新形式は厳格に検証。旧形式の財務項目がない場合は読込時に補完。
   if(s.finances.companyMarket?.some(c=>{
