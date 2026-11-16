@@ -350,15 +350,17 @@ export function economyAction(e,action,payload,context){
     case 'buyInvestment':{
       if(age<18)return {ok:false,reason:'投資は18歳から利用できます。'};
       if(!validAmount(payload.amount)||e.cash<payload.amount)return {ok:false,reason:'投資額が不正か現金が不足しています。'};
-      const product=INVESTMENT_PRODUCTS.find(p=>p.id===(payload.productId??'index'));
-      if(!product)return {ok:false,reason:'投資商品の種類が不正です。'};
-      e.investmentHoldings??=[];
-      const existing=e.investmentHoldings.find(p=>p.id===product.id);
-      if(existing)existing.value+=payload.amount;
-      else e.investmentHoldings.push({id:product.id,value:payload.amount});
+      const product=payload.productId===undefined?null:INVESTMENT_PRODUCTS.find(p=>p.id===payload.productId);
+      if(payload.productId!==undefined&&!product)return {ok:false,reason:'投資商品の種類が不正です。'};
+      if(product){
+        e.investmentHoldings??=[];
+        const existing=e.investmentHoldings.find(p=>p.id===product.id);
+        if(existing)existing.value+=payload.amount;
+        else e.investmentHoldings.push({id:product.id,value:payload.amount});
+      }
       e.cash-=payload.amount;e.investment+=payload.amount;
-      log(e,date,'資産移動',`${product.name}を購入`,-payload.amount);
-      return {ok:true,message:`${product.name}を購入しました。`};
+      log(e,date,'資産移動',product?`${product.name}を購入`:'投資商品を購入',-payload.amount);
+      return {ok:true,message:product?`${product.name}を購入しました。`:'投資商品を購入しました。'};
     }
     case 'sellInvestment':{
       if(!validAmount(payload.amount)||e.investment<payload.amount)return {ok:false,reason:'売却額が不正か投資残高が不足しています。'};
