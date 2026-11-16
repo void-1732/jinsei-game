@@ -3,7 +3,7 @@
  * Specialist careers require a path, credentials, or election milestones.
  */
 export const CAREER_SECTORS=Object.freeze([
- '製造','IT','研究','医療','金融','出版','創作','飲食','スポーツ','政治','公共','建築','メディア','観光'
+ '製造','IT','研究','医療','金融','出版','創作','飲食','スポーツ','政治','公共','建築','メディア','観光','小売','事務','福祉','企画'
 ]);
 const posting=(id,company,job,sector,salary,minAge,threshold,focus,extras={})=>
  Object.freeze({id,company,job,sector,salary,minAge,threshold,focus,...extras});
