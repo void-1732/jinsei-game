@@ -1,4 +1,5 @@
 import {REGIONAL_FACTORS} from './livingSystems.js';
+import {jobQualificationInfo,hiringProbability,hiringRoll} from './qualificationSystems.js';
 import {employmentQualificationBonus,canApplyUniversityRole} from './educationPaths.js';
 import {getCompany} from './companySystems.js';
 import {jobMarketAdjustment} from './worldSystems.js';
@@ -51,7 +52,7 @@ export function employmentScore(education,posting,experience=0){
  const course=CAREER_TRAINING.find(item=>item.id===posting.id);
  const trained=course?Number(education?.skills?.[course.skill]??0):0;
  const certified=course && (education?.qualifications??[]).includes(`${course.name}技能認定（ゲーム内）`);
- return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id)+Math.min(8,trained*.12)+(certified?4:0)+schoolRecommendationBonus(education,posting))));
+ return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id)+Math.min(8,trained*.12)+(certified?4:0)+schoolRecommendationBonus(education,posting)+jobQualificationInfo(education,posting.id).bonus)));
 }
 export function careerAction(finances,action,payload,context){
  ensureWorkplace(finances);
@@ -131,18 +132,24 @@ export function careerAction(finances,action,payload,context){
   const regionalScore= Math.round(((REGIONAL_FACTORS[finances.living?.region]?.jobs??1)-1)*20);
   const score=Math.max(0,Math.min(100,employmentScore(context.education,post,career.experience)+(career.searchEffort??0)*3+regionalScore+jobMarketAdjustment(context.world)+eraHiringAdjustment(context.world,post.id)+(context.interviewBonus??0)+Math.min(12,(career.internships?.[post.sector]??0)*3)+(post.sector&&career.sector===post.sector?7:0)+(post.sector&&career.targetSector===post.sector?2:0)+(career.reputation??0)*.04));
   career.applications=Array.isArray(career.applications)?career.applications:[];
-  const passed=score>=post.threshold+(employer?.performance<40?3:0);
+  const benchmark=post.threshold+(employer?.performance<40?3:0);
+  // Preserve legacy six-company hiring results. Extended companies use
+  // reproducible probability; qualifications improve the chance, never guarantee.
+  const extended=!JOB_POSTINGS.some(p=>p.id===post.id);
+  const chance=extended?hiringProbability(score,benchmark):score>=benchmark?100:0;
+  const attempted=career.applications.filter(a=>a.company===post.company).length;
+  const passed=extended?hiringRoll(post,date,attempted,Number(context.marketState?.random?.seed??0))<chance:score>=benchmark;
   career.applications.push({year:date.year,month:date.month,company:post.company,job:post.job,score,passed});
   if(career.applications.length>40)career.applications.shift();
   record(`${post.company}の採用選考：${passed?'合格':'不合格'}`);
-  if(!passed)return {ok:true,passed:false,message:`採用見送り（評価${score}点／基準${post.threshold}点）。成績や技能を上げて再挑戦できます。`};
+  if(!passed)return {ok:true,passed:false,chance,message:`採用見送り（評価${score}点／基準${post.threshold}点${extended?`／内定見込み${chance}%`:''}）。成績や技能・資格を上げて再挑戦できます。`};
   const changing=Boolean(career.job);
   career.job=post.job;career.company=post.company;career.sector=post.sector??null;
   if(post.politicalRank)career.politicalRank=post.politicalRank;
   career.monthlySalary=post.salary+employmentQualificationBonus(context.education,post.id)*1000;
   career.experience=0;career.unemploymentMonths=0;career.benefitMonths=0;career.insuredMonths=0;career.previousSalary=0;career.searchEffort=0;career.rank=1;career.performance=50;career.supervisorTrust=50;career.coworkerTrust=50;career.workplaceActions=0;career.reviews=[];resetWorkplacePeople(career);career.promotions=career.promotions??0;career.jobChanges=(career.jobChanges??0)+1;
   record(`${post.company}に${changing?'転職':'就職'}`);
-  return {ok:true,passed:true,message:`${post.company}に${changing?'転職':'就職'}しました。`};
+  return {ok:true,passed:true,chance,message:`${post.company}に${changing?'転職':'就職'}しました。`};
  }
  if(action==='setCareerPlan'){
   if(!career.job)return {ok:false,reason:'働き方の方針は就職後に選べます。'};
