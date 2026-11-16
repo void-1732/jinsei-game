@@ -368,7 +368,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'familyActivity': result=interactiveChoices?familyJourneyAction(state,action,payload):familyActivity(state,payload);break;
       case 'studentDay': result=performStudentDay(state,payload);break;
        case 'study': result=study(state.education,payload.subject,payload.hours);break;
-      case 'socialize': result=socialize(state.people,payload.personId);break;
+      case 'socialize': result=interactiveChoices?familyJourneyAction(state,action,payload):socialize(state.people,payload.personId);break;
       case 'skill': result=gainSkill(state.education,payload.skill);break;
       case 'university':
         if (state.timeline.ageYears<15 || state.education.stage==='卒業') result={ok:false,reason:'進路を選択できる期間ではありません。'};
