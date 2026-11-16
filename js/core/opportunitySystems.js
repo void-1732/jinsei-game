@@ -182,7 +182,7 @@ export function opportunityOptions(state,category){
  if(category==='仕事・経営'&&age>=17){
    if(!f.career.job){
      if(p.career.interviewPrep<6)add('面接の練習','prepareInterview',{},'採用評価を上げる・疲労あり');
-     if(age>=18)for(const job of JOB_POSTINGS){
+     if(age>=18)for(const job of JOB_POSTINGS.slice(0,6)){
        if(age>=job.minAge&&(!job.university||canApplyUniversityRole(state.education)))
          add(`${job.job}へ応募`,'applyJob',{postingId:job.id},`月給${job.salary.toLocaleString('ja-JP')}円・採用は能力と募集状況次第`);
      }
