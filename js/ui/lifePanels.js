@@ -92,8 +92,6 @@ export function renderLifePanel(container,screen,game,handlers={}){
         update();
       }
       if(spouse){
-        const bond=action(controls,'夫婦で会話する',()=>handlers.onAction?.('familyBond',{personId:spouse.id,activity:'会話'}));
-        bond.disabled=age<18;
         if(!summary.plan){
           const form=lifeEl('div','phase27-form');
           const name=lifeEl('input','phase4-select');name.placeholder='子どもの名前';name.maxLength=20;name.setAttribute('aria-label','子どもの名前');
@@ -119,11 +117,16 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const child=children.find(x=>x.id===childChoice.getValue())??children[0];
         const education=lifeEl('details','phase4-extra');education.dataset.foldKey='family-education';
         education.append(lifeEl('summary','','子どもの教育方針'));
-        const plans=choiceButtons('学校・学習の方針',['公立中心','学習支援','私立中心'],summary.educationPlans?.[child.id]??'公立中心');
-        education.append(plans.element);
+        const plans=lifeEl('select','phase4-select family-education-select');
+        plans.setAttribute('aria-label','学校・学習の方針');
+        for(const choice of ['公立中心','学習支援','私立中心']){
+          const option=lifeEl('option','',choice);option.value=choice;plans.append(option);
+        }
+        plans.value=summary.educationPlans?.[child.id]??'公立中心';
+        education.append(plans);
         const explain=lifeEl('p','muted small','公立中心：基本費用／学習支援：毎月追加費用と学習支援／私立中心：学費の負担が大きくなります。');
         education.append(explain);
-        const set=action(education,'教育方針を変更',()=>handlers.onAction?.('setChildEducation',{personId:childChoice.getValue(),plan:plans.getValue()}));
+        const set=action(education,'教育方針を変更',()=>handlers.onAction?.('setChildEducation',{personId:childChoice.getValue(),plan:plans.value}));
         set.disabled=age<18;
         wrap.append(education);
         wrap.append(childButtons);
