@@ -2,6 +2,7 @@
 import {choiceButtons} from './choiceButtons.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING} from '../core/careerSystems.js';
+import {renderStudentBalancePanel} from './studentBalancePanel.js';
 const lifeEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 function line(root,key,value){const row=lifeEl('div','field-list-item');row.append(lifeEl('strong','',key),lifeEl('span','',String(value)));root.append(row);}
 function action(root,label,callback){const b=lifeEl('button','button button-secondary phase4-action',label);b.type='button';b.addEventListener('click',callback);root.append(b);return b;}
@@ -88,10 +89,12 @@ export function renderLifePanel(container,screen,game,handlers={}){
     if((e.qualifications??[]).length)line(section,'取得したゲーム内資格',e.qualifications.join('、'));
     if(e.schoolPreference)line(section,'志望校',`${e.schoolPreference.高校??'自動'}／${e.schoolPreference.大学??'自動'}`);
     if(screen.id==='EDU-03'||screen.id==='EDU-01'){
+      if(screen.id==='EDU-01')section.append(renderStudentBalancePanel(game,handlers.onAction));
       const scoreArea=lifeEl('div','phase4-scores');
       for(const [name,score] of Object.entries(e.scores))line(scoreArea,name,`${score} / 100`);
       section.append(scoreArea);
-      const controls=lifeEl('div','phase4-actions phase4-choice-actions');
+      const controls=lifeEl('details','phase4-actions phase4-choice-actions');
+      controls.append(lifeEl('summary','','従来の科目別学習（個別操作）'));
       const subject=choiceButtons('勉強する科目',Object.keys(e.scores),Object.keys(e.scores)[0]);
       const hours=choiceButtons('学習時間',[1,2,4,8].map(n=>({value:n,label:`${n}時間`})),1);
       controls.append(subject.element,hours.element);
