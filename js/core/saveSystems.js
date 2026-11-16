@@ -83,6 +83,7 @@ export function validateGameState(s) {
   }))return false;
   if(career.workplacePeople!==undefined&&career.workplacePeople.some(p=>(p.personality!==undefined&&!['慎重','協調的','積極的'].includes(p.personality))||(p.skill!==undefined&&(!Number.isInteger(p.skill)||p.skill<0||p.skill>100))))return false;
   if(career.rank!==undefined && (!Number.isInteger(career.rank)||career.rank<1||career.rank>5))return false;
+  if(career.plan!==undefined&&!['balanced','specialist','leadership'].includes(career.plan))return false;
   if(career.applications!==undefined && (!Array.isArray(career.applications)||career.applications.length>40||!career.applications.every(a=>a&&typeof a.company==='string'&&typeof a.job==='string'&&Number.isInteger(a.score)&&a.score>=0&&a.score<=100&&typeof a.passed==='boolean')))return false;
   if(career.workplacePeople!==undefined&&(!Array.isArray(career.workplacePeople)||career.workplacePeople.length>10||!career.workplacePeople.every(p=>p&&/^WORK-[0-9]+$/.test(p.id)&&typeof p.name==='string'&&p.name.length<=30&&['上司','同僚'].includes(p.role)&&Number.isInteger(p.trust)&&p.trust>=0&&p.trust<=100)))return false;
   if(career.workplaceIncidents!==undefined&&(!Array.isArray(career.workplaceIncidents)||career.workplaceIncidents.length>12||!career.workplaceIncidents.every(p=>p&&typeof p.id==='string'&&p.id.length<=60&&typeof p.title==='string'&&p.title.length<=80&&typeof p.resolved==='boolean')))return false;
