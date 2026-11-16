@@ -7,6 +7,7 @@ import { createUiStore } from './ui/uiState.js';
 import { renderNavigation } from './ui/navigation.js';
 import { renderScreen } from './ui/screenRenderer.js';
 import {renderTopicPage} from './ui/topicPage.js';
+import {foldState} from './ui/foldState.js';
 import {renderCategoryDock} from './ui/categoryDock.js';
 import {renderActionCenter} from './ui/actionCenter.js';
 import {categoryLanding,getTopic} from './ui/topicGroups.js';
@@ -18,6 +19,7 @@ let saveFeedback = '';
 let actionFeedback = '';
 let storyResult = null;
 let lastScreenId = null;
+let lastRenderedFoldScreen = null;
 const $ = selector => document.querySelector(selector);
 const uiStore = createUiStore();
 const dom = {
@@ -88,8 +90,11 @@ function render(state){
       return result;
     },
   };
+  if(lastRenderedFoldScreen)foldState.capture(dom.screenRoot,lastRenderedFoldScreen);
   if(getTopic(screen.id)&&screen.id!=='LIFE-01')renderTopicPage(dom.screenRoot,screen,gameState,screenHandlers);
   else renderScreen(dom.screenRoot,screen,gameState,screenHandlers);
+  foldState.restore(dom.screenRoot,screen.id);
+  lastRenderedFoldScreen=screen.id;
   dom.systemMessage.textContent=actionFeedback||`${screen.id} を表示中 · ${gameState.initialized?`${gameState.timeline.turnsElapsed}ターン経過`:'人生開始前'}`;
   if(state.helpOpen&&!dom.helpDialog.open)dom.helpDialog.showModal();
   if(!state.helpOpen&&dom.helpDialog.open)dom.helpDialog.close();
