@@ -35,7 +35,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
       const guide=lifeEl('p','muted small',spouse?'結婚生活：家計・夫婦関係・育児費用に注意':
         partner?'交際中：時間を重ね、将来の生活を相談しましょう':'出会いと信頼関係を育てると交際できます');
       wrap.append(guide);
-      if(summary.plan)wrap.append(lifeEl('p','muted small',`家族計画：${summary.plan.mode==='birth'?'妊娠・出産':'養子縁組'}／${summary.plan.stage}。子どもを迎えるまで経過を見守ります。`));
+      if(summary.plan)wrap.append(lifeEl('p','muted small',`家族計画：${summary.plan.mode==='birth'?'妊娠・出産':'養子縁組'}／${summary.plan.stage}。予定まで月単位で経過を見守ります。`));
       if(children.length)wrap.append(lifeEl('p','muted small',`子ども${children.length}人／養育費目安${summary.monthlyCost.toLocaleString('ja-JP')}円・月（家計へ自動反映）`));
       const controls=lifeEl('div','phase4-actions');
       if(!spouse&&!partner){
@@ -50,11 +50,13 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const update=()=>{
           const id=target.getValue();
           const selected=people.find(p=>p.id===id);
+          const phase=summary.partnership;
           const step=selected?.role==='友人'?(selected.relationship>=60?'date':'courtship'):
-            selected?.role==='交際相手'?'marry':'familyBond';
+            selected?.role==='交際相手'?(phase?.engagedSince>=0?'marry':
+             (game.timeline.year*12+game.timeline.month-1-(phase?.datingSince??0)>=12?'engage':'discussFuture')):'familyBond';
           const reason=familyEligibility(game,step,id);
           status.textContent=`${selected?.name??''}：親密度${selected?.relationship??0}/100。 ${reason??(step==='date'?'交際を始められます':step==='marry'?'結婚を申し込めます':'交流を続けられます')}`;
-          if(nextButton)nextButton.textContent=step==='date'?'交際を申し込む':step==='marry'?'結婚を申し込む':step==='courtship'?'将来について話す':'会話する';
+          if(nextButton)nextButton.textContent=step==='date'?'交際を申し込む':step==='engage'?'婚約する':step==='marry'?'結婚する':step==='courtship'?'親しく話す':step==='discussFuture'?'将来について話す':'会話する';
           if(nextButton)nextButton.disabled=Boolean(reason);
           return step;
         };
@@ -65,8 +67,25 @@ export function renderLifePanel(container,screen,game,handlers={}){
             {personId:target.getValue(),activity:'会話'}:{personId:target.getValue()});
         });
         if(partner){
-          const talk=action(controls,'将来の暮らしを相談する',()=>handlers.onAction?.('discussFuture',{personId:target.getValue()}));
-          talk.disabled=age<18;
+          const phase=summary.partnership;
+          if(phase?.cohabitingSince<0){
+            const cohabit=action(controls,'同棲を始める',()=>handlers.onAction?.('cohabit',{personId:target.getValue()}));
+            const reason=familyEligibility(game,'cohabit',partner.id);
+            cohabit.disabled=Boolean(reason);
+            if(reason)cohabit.title=reason;
+          }else if(phase?.cohabitingSince>=0){
+            wrap.append(lifeEl('p','muted small','同棲中：毎月の生活費に25,000円が加算されます。'));
+          }
+          if(phase?.engagedSince>=0&&phase?.weddingMonth<0){
+            const ceremony=lifeEl('details','phase4-extra');ceremony.dataset.foldKey='family-wedding';
+            ceremony.append(lifeEl('summary','','結婚式を計画（任意）'));
+            const style=choiceButtons('結婚式',['小規模','標準'].map(x=>({value:x,label:x==='小規模'?'小規模（16万円）':'標準（42万円）'})),'小規模');
+            ceremony.append(style.element);
+            const wedding=action(ceremony,'選んだ結婚式を挙げる',()=>handlers.onAction?.('holdWedding',{personId:partner.id,style:style.getValue()}));
+            const reason=familyEligibility(game,'holdWedding',partner.id);
+            wedding.disabled=Boolean(reason);if(reason)ceremony.append(lifeEl('p','muted small',reason));
+            wrap.append(ceremony);
+          }
         }
         target.group.addEventListener('click',update);
         wrap.append(status);
@@ -97,6 +116,16 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const childButtons=lifeEl('div','phase4-actions');
         action(childButtons,'子どもと過ごす',()=>handlers.onAction?.('familyCare',{personId:childChoice.getValue()}));
         action(childButtons,'勉強を手伝う',()=>handlers.onAction?.('familyActivity',{personId:childChoice.getValue(),activity:'勉強を手伝う'}));
+        const child=children.find(x=>x.id===childChoice.getValue())??children[0];
+        const education=lifeEl('details','phase4-extra');education.dataset.foldKey='family-education';
+        education.append(lifeEl('summary','','子どもの教育方針'));
+        const plans=choiceButtons('学校・学習の方針',['公立中心','学習支援','私立中心'],summary.educationPlans?.[child.id]??'公立中心');
+        education.append(plans.element);
+        const explain=lifeEl('p','muted small','公立中心：基本費用／学習支援：毎月追加費用と学習支援／私立中心：学費の負担が大きくなります。');
+        education.append(explain);
+        const set=action(education,'教育方針を変更',()=>handlers.onAction?.('setChildEducation',{personId:childChoice.getValue(),plan:plans.getValue()}));
+        set.disabled=age<18;
+        wrap.append(education);
         wrap.append(childButtons);
       }
       wrap.append(controls);
