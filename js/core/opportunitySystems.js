@@ -39,7 +39,7 @@ export const SCHOLARSHIP_PER_MONTH=18_000;
 /** Monthly tuition and repayment are additional to the existing household cashflow. */
 export function advanceOpportunityMonth(state,date){
  const p=ensureOpportunityProgress(state),e=p.education,f=state.finances;
- if(state.education.stage==='大学'){
+ if(['大学','大学院','高専','高専専攻科'].includes(state.education.stage)){
    const tuition=Math.round((state.education.program?.tuition??TUITION_PER_MONTH)*eraEconomicEffects(state.world).tuition);
    const charged=Math.max(0,tuition-e.grantMonthly);
    p.education.tuitionCharged+=tuition;
@@ -77,7 +77,7 @@ function repayEducationBalance(state,amount,date,label){
 }
 export function opportunityAction(state,action,payload={}){
  const p=ensureOpportunityProgress(state),f=state.finances,age=state.timeline.ageYears,date=state.timeline;
- const u=state.education.stage==='大学',employed=Boolean(f.career.job),idx=monthIndex(date);
+ const u=['大学','大学院','高専','高専専攻科'].includes(state.education.stage),employed=Boolean(f.career.job),idx=monthIndex(date);
  if(action==='applyScholarship'){
    if(!u)return {ok:false,reason:'奨学金の申請は大学在学中だけです。'};
    if(p.education.scholarship!=='未申請')return {ok:false,reason:'この進学での申請は完了しています。'};
@@ -173,7 +173,7 @@ export function opportunityOptions(state,category){
    if(state.education.universityChoice==='進学')add('高校卒業後は就職を選ぶ','university',{choice:'就職'},'大学の学費を負わず働き始める。専門職の応募条件は変わる');
    else add('高校卒業後は大学進学を選ぶ','university',{choice:'進学'},'進学には将来の学費と資金計画が必要');
  }
- if(category==='学業'&&stage==='大学'){
+ if(category==='学業'&&['大学','大学院','高専','高専専攻科'].includes(stage)){
    if(p.education.scholarship==='未申請')add('給付奨学金に申請','applyScholarship',{},'学力や幼少期の探究経験で審査。採用なら毎月18,000円を補助');
    if(p.education.funding==='self')add('学費を教育ローンに切替','setEducationFunding',{mode:'loan'},'今後の学費を負債に計上し、卒業後に返済');
    else add('学費を現金払いに戻す','setEducationFunding',{mode:'self'},'残るローンの返済は継続');
@@ -205,7 +205,7 @@ export function selectOpportunityEvent(state,age,turn,randomValue){
  const job=state.finances.career.job,stage=state.education.stage;
  if(stage==='高校'&&age>=16)options.push(custom('卒業後の生活を考える','学費と収入の関係を知ると、進路の見え方が変わる。',[
   ['奨学金の条件を調べる','学びの準備を進めた',{study:3}],['働く先を調べる','職業の選択肢が見えた',{interviewPrep:2,study:1}],['家族と費用を話し合う','現実的な計画を立てた',{social:3,socialTarget:'family'}]]));
- if(stage==='大学')options.push(custom('大学の学費と将来','学費が積み重なる。学びとお金、どちらも考えよう。',[
+ if(['大学','大学院','高専','高専専攻科'].includes(stage))options.push(custom('大学の学費と将来','学費が積み重なる。学びとお金、どちらも考えよう。',[
   ['勉強に専念する','知識を積み上げた',{study:4,energy:-3}],['インターンの準備をする','社会で使える技能を磨いた',{careerPortfolio:2,energy:-3}],['家計簿を見直す','小さな支出が変わった',{budgetHabit:1,mental:-1}]]));
  if(age>=18&&!job)options.push(custom('採用選考への準備','応募先の人事担当者から選考の進め方を教わった。',[
   ['模擬面接を受ける','話し方を練習できた',{interviewPrep:2,energy:-3}],['過去の実績をまとめる','成果をわかりやすく整理した',{careerPortfolio:2}],['体調を整える','落ち着いて選考に臨めそうだ',{energy:5,mental:2}]]));
