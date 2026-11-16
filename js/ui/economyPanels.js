@@ -20,12 +20,14 @@ function graph(root,heading,items,key){
 }
 function input(root,value,aria){const x=econEl('input','phase5-number');x.type='number';x.min='1';x.max='100000000';x.step='1000';x.value=String(value);x.setAttribute('aria-label',aria);root.append(x);return x;}
 export function renderEconomyPanel(container,screen,game,handlers={}){
-  if(!screen.id.startsWith('WORK-')&&!screen.id.startsWith('LIFE-') )return false;
+  if(!screen.id.startsWith('WORK-')&&!['LIFE-02','LIFE-03','LIFE-04','LIFE-05','LIFE-06','LIFE-08'].includes(screen.id))return false;
   const section=econEl('section','content-card phase4-panel phase5-panel');section.append(econEl('h2','','仕事・家計・資産の実データ'));
   if(!game?.initialized){section.append(econEl('p','muted','人生を開始すると仕事・資産の情報が表示されます。'));container.prepend(section);return true;}
   const f=game.finances,job=f.career,b=f.business,age=game.timeline.ageYears;
-  line(section,'現金',yen(f.cash));line(section,'投資評価額',yen(f.investment));line(section,'借入残高',yen(f.debt));line(section,'純資産（事業資金を含む）',yen(netWorth(f)));
   const work=screen.id.startsWith('WORK-');
+  if(work||['LIFE-04','LIFE-05','LIFE-06'].includes(screen.id)){
+    line(section,'現金',yen(f.cash));line(section,'投資評価額',yen(f.investment));line(section,'借入残高',yen(f.debt));line(section,'純資産（事業資金を含む）',yen(netWorth(f)));
+  }
   if(work||screen.id==='LIFE-01'){
     section.append(econEl('h3','','勤務・副業・事業'));
     line(section,'現在の職業',job.job??'無職');line(section,'勤務先',job.company??'勤務先なし');line(section,'月額給与（額面）',yen(job.monthlySalary));
@@ -241,14 +243,14 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
 
     }
   }
-  if(screen.id.startsWith('LIFE-')){
+  if(['LIFE-03','LIFE-04','LIFE-08'].includes(screen.id)){
     section.append(econEl('h3','','家計・資産状況'));
     line(section,'個人家計と事業会計は別管理',b.active?'事業売上は個人収入へ直接加算されません':'現在は事業なし');line(section,'毎月の生活費設定',yen(f.monthlyBudget));line(section,'これまでの収入',yen(f.totals.income));line(section,'これまでの支出',yen(f.totals.expenses));line(section,'税金・社会保険相当累計',yen(f.totals.tax));
   }
-  if(['LIFE-02','LIFE-03','LIFE-04'].includes(screen.id)){
+  if(screen.id==='LIFE-03'){
     const controls=econEl('div','phase4-actions');const value=input(controls,f.monthlyBudget,'毎月の生活費（円）');action(controls,'生活費を設定',()=>handlers.onAction?.('setBudget',{amount:Number(value.value)}));section.append(controls);
   }
-  if(['LIFE-05','LIFE-06','LIFE-07'].includes(screen.id)){
+  if(screen.id==='LIFE-05'){
     section.append(econEl('h3','','商品を選んで投資'));
     const controls=econEl('div','phase4-actions');
     const value=input(controls,10000,'取引金額（円）');
@@ -271,7 +273,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     if(f.investment>tracked)line(section,'以前の投資残高',yen(f.investment-tracked));
     section.append(econEl('p','muted small','商品ごとに利回りと変動幅が異なります。旧セーブの投資残高はそのまま保護されます。'));
   }
-  if(['LIFE-02','LIFE-05'].includes(screen.id)){
+  if(screen.id==='LIFE-02'){
     section.append(econEl('h3','','マイカーの購入・売却'));
     const owned=VEHICLE_OPTIONS.find(v=>v.id===f.vehicle?.id);
     line(section,'所有車',owned?.name??'なし');
@@ -288,7 +290,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     action(section,'現在の車を売却する',()=>handlers.onAction?.('sellVehicle',{}),!f.vehicle);
     section.append(econEl('p','muted small','車両価値は毎月減価し、維持費は家計に反映されます。'));
   }
-  if(screen.id.startsWith('LIFE-')){
+  if(['LIFE-03','LIFE-08'].includes(screen.id)){
     const monthly=[...new Map(f.ledger.filter(x=>x.kind==='収入'||x.kind==='支出').map(x=>[`${x.year}-${x.month}`,{year:x.year,month:x.month}])).values()];
     for(const x of monthly){x.balance=f.ledger.filter(y=>y.year===x.year&&y.month===x.month&&(y.kind==='収入'||y.kind==='支出')).reduce((sum,y)=>sum+y.amount,0);}
     graph(section,'家計の月次収支推移',monthly,'balance');
