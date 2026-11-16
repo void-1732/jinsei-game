@@ -52,7 +52,8 @@ test('カテゴリ分類は健康、友人、学業、住まい、仕事、社�
  assert.equal(turnActionCategory('setMonthlyRoutine',{domain:'relationships'}),'人物・家族');
  assert.equal(turnActionCategory('buyProperty',{}),'生活・資産');
  assert.equal(turnActionCategory('adultActivity',{id:'job-networking'}),'仕事・経営');
- assert.equal(ONE_OFF_ACTIVITIES.length,8);
+ assert.equal(ONE_OFF_ACTIVITIES.length,9);
+ assert.equal(turnActionCategory('adultActivity',{id:'community-volunteer'}),'社会');
 });
 test('成年前の1ターン1回は維持される',()=>{
  const g=createGameStore({interactiveChoices:true});
