@@ -315,7 +315,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         result=livingAction(state.finances,state.health,action,payload,{age:state.timeline.ageYears,date:state.timeline});break;
       case 'employmentSupport': result=requestEmploymentSupport(state.world,state.finances.career,state.timeline,state.timeline.ageYears);break;
       case 'supportRebuilding': result=supportRebuilding(state.finances,payload.companyId,state.timeline);break;
-      case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
+      case 'setCareerPlan': case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
         result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
         if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
       case 'safetyPrep': result=prepareForSurprise(state,payload.area);break;
