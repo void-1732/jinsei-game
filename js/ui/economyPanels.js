@@ -7,6 +7,7 @@ import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns,PA
 /** 仕事・家計の実データ操作パネル。入力はユーザー操作時のみ反映。 */
 const econEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 const yen=n=>`${Number(n).toLocaleString('ja-JP')}円`;
+let selectedVehicleFleetId=null;
 function line(root,key,value){const r=econEl('div','field-list-item');r.append(econEl('strong','',key),econEl('span','',String(value)));root.append(r);}
 function action(root,label,handler,disabled=false){const b=econEl('button','button button-secondary phase5-action',label);b.type='button';b.disabled=disabled;b.addEventListener('click',handler);root.append(b);return b;}
 function businessAction(root,label,handler,disabled=false){const b=action(root,label,handler,disabled);b.dataset.actionScope='business';return b;}
@@ -313,7 +314,8 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     line(section,'車両の合計評価額',yen(fleet.reduce((sum,v)=>sum+v.value,0)));
     line(section,'車両維持費（月額）',yen(fleet.reduce((sum,v)=>sum+(VEHICLE_OPTIONS.find(m=>m.id===v.id)?.monthlyCost??0),0)));
     if(fleet.length){
-      const fleetChoice=choiceButtons('管理する車',fleet.map((v,i)=>({value:i,label:`#${v.fleetId??i+1} ${VEHICLE_OPTIONS.find(m=>m.id===v.id)?.name??'車'}`})),0);
+      const activeIndex=fleet.findIndex(v=>(v.fleetId??-1)===selectedVehicleFleetId);
+      const fleetChoice=choiceButtons('管理する車',fleet.map((v,i)=>({value:i,label:`#${v.fleetId??i+1} ${VEHICLE_OPTIONS.find(m=>m.id===v.id)?.name??'車'}`})),activeIndex>=0?activeIndex:0,i=>{selectedVehicleFleetId=fleet[Number(i)]?.fleetId??-1;});
       const ownedActions=econEl('div','asset-action-row');
       ownedActions.append(fleetChoice.element);
       action(ownedActions,'選んだ車を売却',()=>handlers.onAction?.('sellVehicle',{fleetId:fleet[Number(fleetChoice.getValue())]?.fleetId}),false);
