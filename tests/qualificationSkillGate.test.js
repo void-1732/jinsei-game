@@ -32,8 +32,10 @@ test('画像再現: 16歳の工業高校生は所持金0円でも学校支援で
  assert.equal(g.performAction('prepareQualification',{id:'itEntry'}).ok,true);
  assert.equal(g.getState().finances.cash,0);
  assert.ok(qualificationAbility(g.getState().education,q).relevantSkill>before);
- assert.equal(g.performAction('takeQualificationExam',{id:'itEntry'}).ok,true);
- assert.equal(validateGameState(g.getState()),true);
+ const nextTurn=structuredClone(g.getState());
+ nextTurn.timeline.month=6;nextTurn.timeline.turnsElapsed+=1;nextTurn.timeline.monthsElapsed+=1;
+ assert.equal(qualificationAction(nextTurn,'takeQualificationExam',{id:'itEntry'}).ok,true);
+ assert.equal(validateGameState(nextTurn),true);
 });
 test('16歳の商業高校・高専では専門分野に合う新資格の受験条件を満たす',()=>{
  for(const [track,id] of [['商業高校','officeTools'],['高専','electrical'],['工業高校','quality']]){
