@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGameStore} from '../js/core/gameState.js';
 import {validateGameState} from '../js/core/saveSystems.js';
-import {QUALIFICATION_CATALOG} from '../js/core/qualificationSystems.js';
+import {QUALIFICATION_CATALOG,hasQualification} from '../js/core/qualificationSystems.js';
 import {createRareLifeEvent,resolveRareLifeChoice,createRareLifeProgress,rareEventEligible,validateRareLifeProgress} from '../js/core/rareLifeEvents.js';
 import {PROPERTY_COVERAGE,propertyInsuranceBenefit,livingAction,advanceLiving,validateLiving} from '../js/core/livingSystems.js';
 import {readFileSync} from 'node:fs';
@@ -25,6 +25,8 @@ test('取得済み資格は選択可能な一覧から除外し、取得済み�
  assert.match(panel,/すべて取得済みです/);
  const q=QUALIFICATION_CATALOG.find(x=>x.id==='itEntry');
  assert.ok(q);
+ const legacy=fixture().education;legacy.qualifications=['IT基礎認定（ゲーム内）'];
+ assert.equal(hasQualification(legacy,'itEntry'),true);
 });
 test('希少イベントは誕生日の年1回だけ抽選し、36か月以内には続発しない',()=>{
  const s=fixture();
