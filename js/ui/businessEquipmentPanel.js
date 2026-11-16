@@ -3,6 +3,7 @@ import {choiceButtons} from './choiceButtons.js';
 import {EQUIPMENT_TYPES,estimateEquipmentReturns} from '../core/economySystems.js';
 const el=(tag,klass='',text='')=>{const x=document.createElement(tag);x.className=klass;x.textContent=text;return x;};
 const yen=n=>`${Number(n??0).toLocaleString('ja-JP')}円`;
+let lastSelectedEquipmentId=null;
 const button=(root,text,fn,disabled=false)=>{
  const b=el('button','button button-secondary phase5-action',text);
  b.type='button';b.disabled=disabled;b.dataset.actionScope='business';
@@ -20,7 +21,8 @@ export function renderBusinessEquipmentPanel(root,b,onAction,worldPhase='通常'
  const selector=el('div','business-equipment-selector');
  const detail=el('div','business-equipment-details');
  if(items.length){
-  const choices=choiceButtons('対象設備を選択',items.map(x=>({value:x.id,label:`#${x.id} ${x.name}${x.broken?'（故障）':''}`})),items[0].id,id=>show(id));
+  const initial=items.some(x=>x.id===lastSelectedEquipmentId)?lastSelectedEquipmentId:items[0].id;
+  const choices=choiceButtons('対象設備を選択',items.map(x=>({value:x.id,label:`#${x.id} ${x.name}${x.broken?'（故障）':''}`})),initial,id=>{lastSelectedEquipmentId=id;show(id);});
   choices.element.classList.add('business-machine-choice');
   selector.append(choices.element);
   const returns=estimateEquipmentReturns(b,worldPhase);
@@ -50,7 +52,7 @@ export function renderBusinessEquipmentPanel(root,b,onAction,worldPhase='通常'
    button(controls,'選択設備を売却',()=>onAction?.('sellEquipmentItem',{id:item.id}));
    detail.append(controls);
   }
-  show(items[0].id);
+  show(initial);
  }else selector.append(el('p','muted small','設備は未購入です。下の購入操作から追加できます。'));
  box.append(selector,detail);
  const purchase=el('details','business-machine-purchase');
