@@ -1,4 +1,6 @@
 import {REGIONS, HOME_OPTIONS, INSURANCE_PLANS, REGIONAL_FACTORS, getHousingEquity, mortgageSchedule,assessMortgage,calculatePension,medicalCoverageSummary,estimateInsuranceBenefit,pensionHistoryByYear,auditLivingAccounts} from '../core/livingSystems.js';
+import {renderPropertyPortfolio} from './propertyPortfolioPanel.js';
+import {choiceButtons} from './choiceButtons.js';
 const make=(tag,text,cls='')=>{const x=document.createElement(tag);x.textContent=text;x.className=cls;return x;};
 const yen=n=>`${Number(n).toLocaleString('ja-JP')}円`;
 function field(root,label,value){const line=make('div','','field-list-item');line.append(make('strong',label),make('span',String(value)));root.append(line);}
@@ -35,7 +37,20 @@ export function renderLivingPanel(container,screen,game,handlers={}){
    const price=(REGIONS.find(r=>r.name===region.value)?.rent??0)*180;
    field(panel,'住宅ローンの審査目安','信用評価55点以上・負債と返済余力を確認');
    field(panel,'融資申請で却下された回数',`${l.mortgageRejectedApplications??0}回`);
-   if(l.housing==='持ち家'&&(l.mortgageBalance??0)>0){const repayment=selector(panel,'繰上返済額',['10000','50000','100000',String(l.mortgageBalance)] ,'10000');button(panel,'住宅ローンを繰上返済',()=>handlers.onAction?.('repayMortgage',{amount:Number(repayment.value)}),age<18);}
+   if(l.housing==='持ち家'&&(l.mortgageBalance??0)>0){
+     const mortgageControls=make('div','','asset-action-row');
+     const preset=choiceButtons('繰上返済の金額を選択',[10000,50000,100000].filter(n=>n<=l.mortgageBalance).map(n=>({label:`${yen(n)}`,value:n})).concat({value:l.mortgageBalance,label:'残額を全額'}),Math.min(10000,l.mortgageBalance));
+     const repayment=make('input','','phase5-number');repayment.type='number';repayment.inputMode='numeric';repayment.min='1';repayment.max=String(l.mortgageBalance);repayment.step='1000';repayment.value=String(Math.min(10000,l.mortgageBalance));
+     repayment.setAttribute('aria-label','自宅ローンの任意繰上返済額（円）');
+     preset.group.addEventListener('click',()=>{repayment.value=String(preset.getValue());});
+     const repayLabel=make('label','自分で繰上返済額を決める（円）','asset-money-label');repayLabel.append(repayment);
+     mortgageControls.append(preset.element,repayLabel);
+     button(mortgageControls,'指定額を繰上返済',()=>handlers.onAction?.('repayMortgage',{amount:Number(repayment.value)}),age<18||game.finances.cash<=0);
+     const monthly=make('input','','phase5-number');monthly.type='number';monthly.inputMode='numeric';monthly.min='1';monthly.max='1000000';monthly.step='1000';monthly.value=String(l.mortgagePayment??0);monthly.setAttribute('aria-label','自宅の毎月の住宅ローン返済額（円）');
+     const monthlyLabel=make('label','毎月の返済金額を変更（円）','asset-money-label');monthlyLabel.append(monthly);mortgageControls.append(monthlyLabel);
+     button(mortgageControls,'毎月の返済額を設定',()=>handlers.onAction?.('setMortgagePayment',{amount:Number(monthly.value)}),age<18);
+     panel.append(mortgageControls);
+   }
    if((l.mortgageArrears??0)>0){
      const values=[10000,50000,100000,l.mortgageArrears].filter((n,i,a)=>n<=l.mortgageArrears&&a.indexOf(n)===i).map(String);
      const arrears=selector(panel,'延滞解消額',values,values[0]);
@@ -51,6 +66,7 @@ export function renderLivingPanel(container,screen,game,handlers={}){
      panel.append(make('h3','実際の返済履歴'));
      for(const r of (l.mortgageHistory??[]).slice(-6).reverse())field(panel,`${r.year}年${r.month}月`,`予定 ${yen(r.scheduled)} ／ 支払 ${yen(r.paid)} ／ 不足 ${yen(r.shortage)}`);
    }
+   renderPropertyPortfolio(panel,game,handlers.onAction);
    panel.append(make('h3','引越しの履歴'));
    for(const m of (l.moves??[]).slice(-5).reverse())field(panel,`${m.year}年${m.month}月`,`${m.region}／${m.housing}・費用${yen(m.cost)}`);
  }

@@ -7,6 +7,7 @@ import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns,PA
 /** 仕事・家計の実データ操作パネル。入力はユーザー操作時のみ反映。 */
 const econEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 const yen=n=>`${Number(n).toLocaleString('ja-JP')}円`;
+let selectedVehicleFleetId=null;
 function line(root,key,value){const r=econEl('div','field-list-item');r.append(econEl('strong','',key),econEl('span','',String(value)));root.append(r);}
 function action(root,label,handler,disabled=false){const b=econEl('button','button button-secondary phase5-action',label);b.type='button';b.disabled=disabled;b.addEventListener('click',handler);root.append(b);return b;}
 function businessAction(root,label,handler,disabled=false){const b=action(root,label,handler,disabled);b.dataset.actionScope='business';return b;}
@@ -308,19 +309,23 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   }
   if(screen.id==='LIFE-02'){
     section.append(econEl('h3','','マイカーの購入・売却'));
-    const owned=VEHICLE_OPTIONS.find(v=>v.id===f.vehicle?.id);
-    line(section,'所有車',owned?.name??'なし');
-    if(owned){line(section,'現在の車両評価額',yen(f.vehicle.value));line(section,'維持費（月額）',yen(owned.monthlyCost));}
-    const vehicles=econEl('div','phase10-job-grid');
-    for(const model of VEHICLE_OPTIONS){
-      const card=econEl('div','phase10-job');
-      card.append(econEl('strong','',model.name),
-        econEl('p','muted small',`購入費${yen(model.price)} ／ 維持費${yen(model.monthlyCost)}/月`));
-      action(card,'購入',()=>handlers.onAction?.('buyVehicle',{vehicleId:model.id}),age<18||Boolean(f.vehicle)||f.cash<model.price);
-      vehicles.append(card);
+    const fleet=[f.vehicle,...(f.vehicles??[])].filter(Boolean);
+    line(section,'所有車',`${fleet.length}/5台`);
+    line(section,'車両の合計評価額',yen(fleet.reduce((sum,v)=>sum+v.value,0)));
+    line(section,'車両維持費（月額）',yen(fleet.reduce((sum,v)=>sum+(VEHICLE_OPTIONS.find(m=>m.id===v.id)?.monthlyCost??0),0)));
+    if(fleet.length){
+      const activeIndex=fleet.findIndex(v=>(v.fleetId??-1)===selectedVehicleFleetId);
+      const fleetChoice=choiceButtons('管理する車',fleet.map((v,i)=>({value:i,label:`#${v.fleetId??i+1} ${VEHICLE_OPTIONS.find(m=>m.id===v.id)?.name??'車'}`})),activeIndex>=0?activeIndex:0,i=>{selectedVehicleFleetId=fleet[Number(i)]?.fleetId??-1;});
+      const ownedActions=econEl('div','asset-action-row');
+      ownedActions.append(fleetChoice.element);
+      action(ownedActions,'選んだ車を売却',()=>handlers.onAction?.('sellVehicle',{fleetId:fleet[Number(fleetChoice.getValue())]?.fleetId}),false);
+      section.append(ownedActions);
     }
-    section.append(vehicles);
-    action(section,'現在の車を売却する',()=>handlers.onAction?.('sellVehicle',{}),!f.vehicle);
+    const models=choiceButtons('購入する車種',VEHICLE_OPTIONS.map(m=>({value:m.id,label:`${m.name}（${yen(m.price)}）`})),VEHICLE_OPTIONS[0].id);
+    const purchase=econEl('div','asset-action-row');purchase.append(models.element);
+    action(purchase,'選択した車を購入',()=>handlers.onAction?.('buyVehicle',{vehicleId:models.getValue()}),age<18||fleet.length>=5);
+    section.append(purchase);
+    section.append(econEl('p','muted small','車は5台まで所有でき、1台ごとに売却できます。購入費用・維持費・価値の減少はそれぞれの車に反映されます。'));
     section.append(econEl('p','muted small','車両価値は毎月減価し、維持費は家計に反映されます。'));
   }
   if(['LIFE-03','LIFE-08'].includes(screen.id)){

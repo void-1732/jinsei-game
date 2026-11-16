@@ -5,11 +5,11 @@ import {calculatePension} from './livingSystems.js';
 const amount = n => Number.isSafeInteger(n) && n >= 0 ? n : 0;
 export function estateBreakdown(finances){
   const f=finances??{}, l=f.living??{}, b=f.business??{};
-  const home=l.housing==='持ち家'?amount(l.propertyValue):0;
-  const mortgage=l.housing==='持ち家'?amount(l.mortgageBalance):0;
+  const home=(l.housing==='持ち家'?amount(l.propertyValue):0)+(l.properties??[]).reduce((sum,p)=>sum+amount(p.value),0);
+  const mortgage=(l.housing==='持ち家'?amount(l.mortgageBalance):0)+(l.properties??[]).reduce((sum,p)=>sum+amount(p.loanBalance)+amount(p.arrears),0);
   // 事業を所有する場合のみ事業口座、設備と債務を引き継ぐ。廃業済みの資金は個人会計に清算済み。
   const ownsBusiness=Boolean(b.active);
-  const entries={cash:amount(f.cash),investments:amount(f.investment),home,...(f.vehicle?{vehicle:amount(f.vehicle.value)}:{}),
+  const entries={cash:amount(f.cash),investments:amount(f.investment),home,...([f.vehicle,...(f.vehicles??[])].filter(Boolean).length?{vehicle:[f.vehicle,...(f.vehicles??[])].filter(Boolean).reduce((sum,v)=>sum+amount(v.value),0)}:{}),
     businessCash:ownsBusiness?amount(b.operatingCash):0,
     businessEquipment:ownsBusiness?amount(b.equipmentValue):0,
     personalDebt:amount(f.debt),mortgage,

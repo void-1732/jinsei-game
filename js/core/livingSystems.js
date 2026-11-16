@@ -1,4 +1,5 @@
 /** 第27段階：日本国内の架空の生活費・住居・任意保険制度。現実の税・保障制度ではない。 */
+import {propertyAction,ensurePropertyPortfolio,propertyCount,advanceProperties,validatePropertyPortfolio,createRegistration} from './propertyPortfolio.js';
 export const REGIONS=Object.freeze([
  ['北海道・札幌',72000],['宮城・仙台',76000],['新潟・新潟',65000],['埼玉・さいたま',94000],
  ['東京・東京23区',125000],['愛知・名古屋',88000],['大阪・大阪',98000],['香川・高松',62000],
@@ -106,6 +107,16 @@ const transfer=(f,date,label,amount,income=false)=>{
 export function livingAction(f,h,action,payload,context){
  const living=ensureMortgage(ensureLiving(f)),date=context.date,age=context.age;
  if(age<18)return {ok:false,reason:'住居変更・保険加入は18歳から利用できます。'};
+ if(['registerHome','buyProperty','sellProperty','setPropertyUse','repayPropertyLoan','setPropertyPayment','clearPropertyArrears'].includes(action))
+  return propertyAction(f,action,payload,context);
+ if(action==='setMortgagePayment'){
+  if(living.housing!=='持ち家'||living.mortgageBalance<=0)return {ok:false,reason:'対象となる自宅ローンがありません。'};
+  const amount=payload.amount,interest=Math.floor(living.mortgageBalance*.003);
+  if(!Number.isSafeInteger(amount)||amount<=interest||amount>1000000)return {ok:false,reason:`毎月の返済額は利息${interest.toLocaleString('ja-JP')}円超、100万円以下に設定してください。`};
+  living.mortgagePayment=amount;
+  f.ledger.push({year:date.year,month:date.month,kind:'記録',label:'自宅ローン月額返済設定',amount:0});
+  return {ok:true,message:`自宅ローンの月額返済額を${amount.toLocaleString('ja-JP')}円に変更しました。`};
+ }
  if(action==='moveHome'){
    const region=findRegion(payload.region),housing=payload.housing;
    if(!region||!['実家','賃貸','持ち家'].includes(housing))return {ok:false,reason:'居住地域または住居種別が不正です。'};
@@ -113,6 +124,8 @@ export function livingAction(f,h,action,payload,context){
    const rent= housing==='賃貸'?region.rent:0;
    const home=HOME_OPTIONS.find(h=>h.id===(payload.homeType??'standard'));
    if(housing==='持ち家'&&!home)return {ok:false,reason:'物件の種類が不正です。'};
+   if(housing==='持ち家'&&living.housing!=='持ち家'&&propertyCount(living)>=5)
+     return {ok:false,reason:'不動産は居住用も含め最大5件です。不要な物件を売却してください。'};
    const price=housing==='持ち家'?Math.round(region.rent*180*home.priceFactor):0;
    const fee=housing==='賃貸'?rent*2:housing==='持ち家'?Math.floor(price*.03):20000;
    const loanWanted=payload.loan===true && housing==='持ち家';
@@ -131,6 +144,8 @@ export function livingAction(f,h,action,payload,context){
    transfer(f,date,'引越し・契約費用',fee);
    if(price) {f.cash-=downPayment;f.ledger.push({year:date.year,month:date.month,kind:'資産移動',label:loanWanted?'持ち家頭金':'持ち家購入',amount:-downPayment});if(f.ledger.length>600)f.ledger.shift();}
    living.region=region.name;living.housing=housing;living.homeType=housing==='持ち家'?home.id:'standard';living.rent=rent;living.propertyValue=price;
+   if(housing==='持ち家')living.primaryRegistration=createRegistration('GAME-H-000',date);
+   else living.primaryRegistration=null;
    living.mortgageArrears=0;living.mortgageOverdueInterest=0;living.mortgageAccounting='従来方式';living.mortgageCredit=70;living.mortgageLateMonths=0;living.mortgageHistory=[];living.propertyAgeMonths=0;living.mortgageBalance=loanAmount;living.mortgageMonths=loanWanted?360:0;
    living.mortgagePayment=loanWanted?Math.ceil(loanAmount*0.003/(1-Math.pow(1.003,-360))):0;
    living.monthlyHousingCost=housing==='賃貸'?rent:housing==='持ち家'?Math.round(region.rent*.12*home.maintenanceFactor):0;
@@ -230,6 +245,7 @@ export function livingAction(f,h,action,payload,context){
 export function advanceLiving(f,date,age){
  const living=ensureMortgage(ensureLiving(f));
  if(age<18)return;
+ advanceProperties(f,date);
  if(living.housing==='持ち家'&&living.mortgageBalance>0){
    const interest=Math.floor(living.mortgageBalance*.003);
    const payment=Math.min(living.mortgageBalance+interest,Math.max(living.mortgagePayment,interest+1));
@@ -297,6 +313,7 @@ export function validateLiving(l){
  if(l===undefined)return true; // 第26段階以前のセーブとの互換性
  if(!l||!findRegion(l.region)||!['実家','賃貸','持ち家'].includes(l.housing)||!Object.hasOwn(INSURANCE_PLANS,l.insurance))return false;
  if(l.homeType!==undefined&&!HOME_OPTIONS.some(h=>h.id===l.homeType))return false;
+ if(!validatePropertyPortfolio(l))return false;
  if(!['rent','propertyValue','monthlyHousingCost'].every(k=>validMoney(l[k])))return false;
  if(l.housing==='実家'&&(l.rent!==0||l.monthlyHousingCost!==0||l.propertyValue!==0))return false;
  if(l.housing==='賃貸'&&(l.rent!==l.monthlyHousingCost||l.propertyValue!==0))return false;
