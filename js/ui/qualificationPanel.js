@@ -1,7 +1,7 @@
 /** Compact, reusable qualification summary and exam controls.
  * EDU-04/EDU-05 and WORK-02 reuse this; no new page or save scheme.
  */
-import {QUALIFICATION_CATALOG,qualificationPreview,qualificationDifficulty,recommendedQualifications} from '../core/qualificationSystems.js';
+import {QUALIFICATION_CATALOG,qualificationPreview,qualificationDifficulty,recommendedQualifications,qualificationCost} from '../core/qualificationSystems.js';
 const el=(tag,cls='',content='')=>{const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=content;return n;};
 const fmt=n=>Number(n).toLocaleString('ja-JP');
 export function renderQualificationPanel(state,onAction,{career=false}={}){
@@ -40,10 +40,20 @@ export function renderQualificationPanel(state,onAction,{career=false}={}){
  const refresh=()=>{
   const p=qualificationPreview(e,select.value,age),q=p.q;
   if(!p.ok)return;
-  description.textContent=`${q.name}｜難易度：${p.difficulty}（基準${q.threshold}点）｜現在の能力${p.readiness}点｜ゲーム内合格見込み${p.chance}%｜受験料${fmt(q.fee)}円｜${p.earned?'取得済み':p.requirement?'受験不可：'+p.requirement:'受験可能'}。 ${q.description}`;
-  prepare.disabled=p.earned||Boolean(p.requirement)||p.preparation>=30||state.finances.cash<2000;
-  exam.disabled=p.earned||Boolean(p.requirement)||state.finances.cash<q.fee;
-  feedback.textContent='';
+  const cost=qualificationCost(e,q,age);
+  const allActionsBlocked=Boolean(state.pendingEvents?.some(x=>x.type==='choice'))||
+    !state.initialized||Boolean(state.ending?.dead);
+  const budget=state.turnActions?.turn===state.timeline.turnsElapsed?state.turnActions:null;
+  const limit=age<18?1:3;
+  const actionSpent=Boolean(budget?.categories?.includes('学業')||(!budget?.categories&&budget?.used>0)||
+    (budget?.used??0)>=limit);
+  const ageReason=p.requirement??p.barrier??(p.earned?'取得済み':'');
+  const fundsReason=state.finances.cash<cost.exam?`所持金不足（残高${fmt(state.finances.cash)}円・必要${fmt(cost.exam)}円）`:'';
+  description.textContent=`${q.name}｜難易度：${p.difficulty}（基準${q.threshold}点）｜${q.focus}${p.focused}点・関連技能${p.relevantSkill}点（${p.skillNames.join('・')}）・総合能力${p.readiness}点｜ゲーム内合格見込み${p.chance}%｜受験料${cost.subsidized?'学校支援で無料':fmt(cost.exam)+'円'}｜${p.earned?'取得済み':p.requirement?'受験不可：'+p.requirement:p.barrier?'能力不足：'+p.barrier:'受験条件を満たしています'}。 ${q.description}`;
+  prepare.disabled=p.earned||Boolean(p.requirement)||p.preparation>=30||state.finances.cash<cost.preparation||allActionsBlocked||actionSpent;
+  exam.disabled=p.earned||Boolean(p.requirement)||Boolean(p.barrier)||state.finances.cash<cost.exam||allActionsBlocked||actionSpent;
+  prepare.textContent=`この資格を勉強する（${cost.subsidized?'学校支援で無料':fmt(cost.preparation)+'円'}）`;
+  feedback.textContent=allActionsBlocked?'現在は行動できません（未処理の出来事・ゲーム終了など）。':actionSpent?'このターンの学業行動は使用済みです。次のターンで実行できます。':p.barrier?'受験に必要な能力：'+p.barrier:fundsReason||'';
  };
  select.addEventListener('change',refresh);
  prepare.addEventListener('click',()=>{const r=onAction?.('prepareQualification',{id:select.value});feedback.textContent=r?.message??r?.reason??'操作できませんでした。';});
