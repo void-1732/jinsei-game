@@ -164,12 +164,12 @@ export function qualificationAction(state,action,payload={}){
  const preview=qualificationPreview(e,q.id,t.ageYears);
  if(preview.earned)return {ok:false,reason:'この資格は取得済みです。'};
  if(preview.requirement)return {ok:false,reason:preview.requirement};
- e.qualificationTrack??={earned:[],preparation:{},attempts:{}};
- const track=e.qualificationTrack;
+ const track=e.qualificationTrack??{earned:[],preparation:{},attempts:{}};
  if(action==='prepareQualification'){
    const previous=track.preparation[q.id]??0;
    if(previous>=30)return {ok:false,reason:'この資格の対策は十分です。受験に進んでください。'};
    if(f.cash<2000)return {ok:false,reason:'試験対策費2,000円が必要です。'};
+   e.qualificationTrack=track;
    f.cash-=2000;f.totals.expenses+=2000;
    track.preparation[q.id]=Math.min(30,previous+10);
    h.energy=Math.max(0,h.energy-3);
@@ -182,6 +182,7 @@ export function qualificationAction(state,action,payload={}){
  if(prev.lastMonth===ym(t))return {ok:false,reason:'同じ資格の試験は1か月に1回までです。'};
  const rand=hiringRoll(q,t,prev.count,Number(state.random?.seed??0));
  const passed=rand<preview.chance;
+ e.qualificationTrack=track;
  f.cash-=q.fee;f.totals.expenses+=q.fee;h.energy=Math.max(0,h.energy-5);
  track.attempts[q.id]={count:prev.count+1,lastMonth:ym(t)};
  if(passed){
