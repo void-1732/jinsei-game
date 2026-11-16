@@ -67,7 +67,7 @@ test('前バージョンのセーブは回数制限を補完し、不正な回�
   const old=structuredClone(g.getState());delete old.turnActions;
   assert.equal(validateGameState(old),true);
   assert.equal(g.loadState(old).ok,true);
-  assert.deepEqual(g.getState().turnActions,{turn:0,used:0,lastAction:null});
+  assert.deepEqual(g.getState().turnActions,{turn:0,used:0,lastAction:null,categories:[]});
   const bad=structuredClone(g.getState());bad.turnActions.used=7;
   assert.equal(validateGameState(bad),false);
 });
