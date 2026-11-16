@@ -61,7 +61,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
       if(['中学校','高校'].includes(e.stage)){
         const stage=e.stage==='中学校'?'高校':'大学';
         const select=lifeEl('select','phase4-select');
-        for(const school of stage==='高校'?['自動','進学校','県立高校','地域高校']:['自動','難関大学','総合大学','地域大学']){
+        for(const school of stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校']:['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校']){
           const option=lifeEl('option','',school);option.value=school;select.append(option);
         }
         select.value=e.schoolPreference?.[stage]??'自動';controls.append(select);
