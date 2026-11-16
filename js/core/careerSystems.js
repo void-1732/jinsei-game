@@ -54,6 +54,23 @@ export function employmentScore(education,posting,experience=0){
  const certified=course && (education?.qualifications??[]).includes(`${course.name}技能認定（ゲーム内）`);
  return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id)+Math.min(8,trained*.12)+(certified?4:0)+schoolRecommendationBonus(education,posting)+jobQualificationInfo(education,posting.id).bonus)));
 }
+/** Read-only explanation of the next training session's real hiring effect. */
+export function careerTrainingPreview(education,postingId,experience=0){
+ const course=CAREER_TRAINING.find(x=>x.id===postingId);
+ if(!course)return {ok:false,reason:'研修分野を選んでください。'};
+ const now=Math.max(0,Math.min(100,Number(education?.skills?.[course.skill]??0)));
+ const next=Math.min(100,now+12);
+ const credential=`${course.name}技能認定（ゲーム内）`;
+ const already=(education?.qualifications??[]).includes(credential);
+ const awarded=!already&&next>=40&&(education?.qualifications??[]).length<5;
+ const related=JOB_POSTINGS.find(p=>p.id===postingId);
+ const before=related?employmentScore(education,related,experience):0;
+ const afterEducation={...education,skills:{...(education?.skills??{}),[course.skill]:next},
+  qualifications:awarded?[...(education?.qualifications??[]),credential]:[...(education?.qualifications??[])]};
+ const after=related?employmentScore(afterEducation,related,experience):0;
+ return {ok:true,course,now,next,gain:next-now,credential,already,awarded,
+  relatedJob:related?.job??'',hiringBefore:before,hiringAfter:after,hiringGain:after-before};
+}
 export function careerAction(finances,action,payload,context){
  ensureWorkplace(finances);
  const career=finances.career,date=context.date;
