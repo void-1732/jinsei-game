@@ -359,7 +359,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         break;
       case 'habit': case 'treatment': case 'checkup': result=healthAction(state.health,action,payload,state.timeline,state.finances);break;
       case 'resolveChoice': result=state.pendingEvents.some(e=>e.id===payload.eventId && e.story) ? resolveStoryChoice(state,payload.eventId,payload.choice) : resolveChoice(state,payload.eventId,payload.choice);break;
-      case 'familyBond':case 'courtship':case 'meetFriend':case 'date':case 'marry':case 'haveChild':case 'familyCare':case 'discussFuture':
+      case 'familyBond':case 'courtship':case 'meetFriend':case 'date':case 'marry':case 'haveChild':case 'familyCare':case 'discussFuture':case 'startCohabitation':case 'propose':case 'holdWedding':case 'setChildEducation':
         result=interactiveChoices?familyJourneyAction(state,action,payload):socialAction(state,action,payload);break;
       case 'prepareExam': result=prepareExam(state.education);break;
       case 'chooseSchool': result=chooseSchool(state.education,payload.stage,payload.school);break;
