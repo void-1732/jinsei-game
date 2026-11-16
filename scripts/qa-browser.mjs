@@ -72,6 +72,23 @@ async function runViewport(binary,width){
   await click("document.querySelector('#category-dock button:nth-child(4)')");
   const collapsed=await get("document.querySelector('#category-dock button:nth-child(4)').getAttribute('aria-expanded')==='false'");
   if(!collapsed)throw Error('Category failed to collapse');
+  // Visual regression: a focused topic renders one relevant panel, open by default.
+  await click("document.querySelector('#category-dock button:nth-child(2)')");
+  await until(async()=>get("document.querySelector('#page-title')?.textContent==='住まい・車'"),'housing category opened');
+  const housing=await get("({open:document.querySelector('.topic-detail')?.open,panels:document.querySelectorAll('.topic-legacy-detail .phase27-panel').length,finance:document.querySelectorAll('.topic-legacy-detail .phase5-panel').length,duplicateOverview:document.querySelectorAll('.topic-legacy-detail .quick-overview').length,diagnostics:document.querySelectorAll('.topic-legacy-detail .advanced-details').length,scroll:document.documentElement.scrollWidth,viewport:innerWidth})");
+  if(!housing.open||housing.panels!==1||housing.finance!==1||housing.duplicateOverview!==0||housing.diagnostics!==0||housing.scroll>housing.viewport+3)throw Error('Housing focus has duplicate or hidden panels '+JSON.stringify(housing));
+  await click("document.querySelector('.topic-detail > summary')");
+  if(!(await get("document.querySelector('.topic-detail')?.open===false && document.querySelector('.topic-overview')?.hidden===false")))throw Error('Housing details failed to collapse into overview');
+  await click("document.querySelector('.topic-detail > summary')");
+  if(!(await get("document.querySelector('.topic-detail')?.open===true && document.querySelector('.topic-overview')?.hidden===true")))throw Error('Housing details failed to expand');
+  await click("document.querySelector('#topic-strip .topic-tab:nth-child(2)')");
+  await until(async()=>get("document.querySelector('#page-title')?.textContent==='家計・資産'"),'finance topic opened');
+  const money=await get("({open:document.querySelector('.topic-detail')?.open,housing:document.querySelectorAll('.topic-legacy-detail .phase27-panel').length,finance:document.querySelectorAll('.topic-legacy-detail .phase5-panel').length})");
+  if(!money.open||money.housing!==0||money.finance!==1)throw Error('Finance repeats housing or is not expanded '+JSON.stringify(money));
+  await click("document.querySelector('#topic-strip .topic-tab:nth-child(3)')");
+  await until(async()=>get("document.querySelector('#page-title')?.textContent==='保険・年金'"),'insurance topic opened');
+  const insurance=await get("({open:document.querySelector('.topic-detail')?.open,insurance:document.querySelectorAll('.topic-legacy-detail .phase27-panel').length,finance:document.querySelectorAll('.topic-legacy-detail .phase5-panel').length})");
+  if(!insurance.open||insurance.insurance!==1||insurance.finance!==0)throw Error('Insurance topic is duplicated '+JSON.stringify(insurance));
   await click("document.querySelector('#open-settings')");
   await until(async()=>get("document.querySelector('#settings-dialog').open"),'settings opened');
   if(!(await get("!!document.querySelector('#export-game') && !!document.querySelector('#import-game-file')")))throw Error('Backup controls missing');
