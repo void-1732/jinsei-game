@@ -205,6 +205,34 @@ async function runViewport(binary,width){
   if(!familyJourneyQA.journey||!familyJourneyQA.closed||!familyJourneyQA.plan||
      !familyJourneyQA.care||!familyJourneyQA.adoption||!familyJourneyQA.condensed||familyJourneyQA.overflow)
     throw Error('Family progression desktop/mobile browser UI invalid '+JSON.stringify(familyJourneyQA));
+  // Hard-mode relationship panel: same compact UI, explicit cohabitation/engagement,
+  // wedding and education controls, both desktop and mobile.
+  const familyHardQA=await evaluate(`(async()=>{
+    const [{createGameStore},{renderLifePanel}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/lifePanels.js')
+    ]);
+    const g=createGameStore();g.startNewGame();
+    const state=structuredClone(g.getState());
+    state.timeline={year:2029,month:5,ageYears:29,turnsElapsed:150,monthsElapsed:352};
+    state.finances.cash=700000;state.finances.career.monthlySalary=350000;
+    const id='FRIEND-003';
+    state.people.push({id,name:'交際相手',birth:{year:2000,month:1,day:1},role:'交際相手',relationship:91});
+    state.familyJourney.partnership={personId:id,stage:'婚約中',datingSince:2027*12,cohabitingSince:2028*12,engagedSince:2029*12,weddingMonth:-1,weddingStyle:'未定'};
+    state.familyJourney.connections[id]={knownSince:2027*12-5,datingSince:2027*12,futureTalks:3,lastTalk:-1,lastContact:-1};
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    renderLifePanel(host,{id:'PERSON-04'},state,{onAction:()=>({ok:true})});
+    const box=host.querySelector('details.family-journey');
+    const wedding=box?.querySelector('details[data-fold-key="family-wedding"]');
+    const labels=[...(box?.querySelectorAll('button')??[])].map(x=>x.textContent);
+    const marriage=labels.some(x=>x.includes('結婚する'));
+    const ceremony=labels.some(x=>x.includes('結婚式を挙げる'));
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {marriage,ceremony,wedding:!!wedding,folded:box?.open===false,overflow};
+  })()`);
+  if(!familyHardQA.marriage||!familyHardQA.ceremony||!familyHardQA.wedding||
+     !familyHardQA.folded||familyHardQA.overflow)
+    throw Error('Family hard-mode UI failed '+JSON.stringify(familyHardQA));
   // Qualification system: interactive preview, degree gates, compact layout,
   // and safe controls tested at both PC and mobile viewport widths.
   const qualificationQA=await evaluate(`(async()=>{
