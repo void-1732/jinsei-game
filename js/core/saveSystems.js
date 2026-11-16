@@ -47,6 +47,14 @@ export function validateGameState(s) {
     const v=s.finances.vehicle;
     if(!v||!['compact','economy','family','hybrid'].includes(v.id)||!Number.isSafeInteger(v.value)||v.value<0||v.value>100000000||!Number.isSafeInteger(v.months)||v.months<0||v.months>3000)return false;
   }
+  if(s.finances.vehicles!==undefined){
+    const all=[s.finances.vehicle,...s.finances.vehicles].filter(Boolean);
+    if(!Array.isArray(s.finances.vehicles)||all.length>5||new Set(all.map(v=>v.fleetId)).size!==all.length)return false;
+    if(!all.every(v=>v&&['compact','economy','family','hybrid'].includes(v.id)&&Number.isSafeInteger(v.value)&&v.value>=0&&v.value<=100000000&&Number.isSafeInteger(v.months)&&v.months>=0&&v.months<=3000&&
+      (v.fleetId===undefined||(Number.isSafeInteger(v.fleetId)&&v.fleetId>=1&&v.fleetId<=1000000))))return false;
+  }
+  if(s.finances.nextVehicleId!==undefined&&(!Number.isSafeInteger(s.finances.nextVehicleId)||s.finances.nextVehicleId<1||s.finances.nextVehicleId>1000000||
+    s.finances.nextVehicleId<=Math.max(0,...[s.finances.vehicle,...(s.finances.vehicles??[])].filter(Boolean).map(v=>v.fleetId??0))))return false;
   if(s.finances.investmentHoldings!==undefined){
     const list=s.finances.investmentHoldings;
     if(!Array.isArray(list)||list.length>5||new Set(list.map(x=>x?.id)).size!==list.length||!list.every(x=>x&&['deposit','bond','index','stock','reit'].includes(x.id)&&Number.isSafeInteger(x.value)&&x.value>=0&&x.value<=1000000000))return false;
