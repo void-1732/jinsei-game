@@ -13,8 +13,8 @@ export const JOB_POSTINGS=Object.freeze([
   {id:'pro',company:'日本総合開発',job:'専門職',salary:360000,minAge:22,threshold:73,focus:'英語',sector:'研究',university:true},
   {id:'creative',company:'北星企画',job:'企画職',salary:260000,minAge:18,threshold:55,focus:'国語',sector:'企画'},
   {id:'care',company:'青葉生活支援',job:'生活支援職',salary:215000,minAge:18,threshold:40,focus:'理科',sector:'福祉'},
-  ...EXTENDED_JOB_POSTINGS,
 ]);
+export const ALL_JOB_POSTINGS=Object.freeze([...JOB_POSTINGS,...EXTENDED_JOB_POSTINGS]);
 export const CAREER_TRAINING=Object.freeze([
   {id:'shop',name:'接客・販売',skill:'接客力'},
   {id:'office',name:'事務・会計',skill:'事務力'},
@@ -117,7 +117,7 @@ export function careerAction(finances,action,payload,context){
   return {ok:true,message:`${course.name}の技能 ${education.skills[course.skill]}/100${certified?'、ゲーム内資格を取得':''}`};
  }
  if(action==='applyJob'){
-  const post=JOB_POSTINGS.find(p=>p.id===payload.postingId);
+  const post=ALL_JOB_POSTINGS.find(p=>p.id===payload.postingId);
   if(!post)return {ok:false,reason:'求人を選択してください。'};
   const employer=getCompany(finances,post.id);
   if(employer?.status==='営業停止')return {ok:false,reason:'この企業は営業を停止しています。'};
