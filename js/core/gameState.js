@@ -15,6 +15,7 @@ import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
 import {ensureEraProgress,advanceEra,eraEconomicEffects} from './eraSystems.js';
 import {createSurpriseProgress,ensureSurpriseProgress,prepareForSurprise} from './surpriseSystems.js';
+import {createRareLifeProgress,ensureRareLifeProgress} from './rareLifeEvents.js';
 import {createChoiceEvent,resolveChoice} from './eventSystems.js';
 import {createStoryEvent,resolveStoryChoice} from './storyEvents.js';
 import {createBalanceProgress,ensureBalanceProgress,chooseRoutineOption,hasImportantTurnEvent,TIME_FOCUSES,balancedGrowth} from './balanceSystems.js';
@@ -77,6 +78,7 @@ export const initialGameState = freezeSnapshot({
   lifeGoal49: createLifeGoalProgress(),
   legacy51: createConsequenceProgress(),
   surprise53: createSurpriseProgress(),
+  rareLife: createRareLifeProgress(),
   daily54: createDailySchedule(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
@@ -322,7 +324,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       ? {scores:{...state.education.scores},skills:{...state.education.skills},relations:Object.fromEntries(state.people.map(p=>[p.id,p.relationship]))} : null;
     let result;
     switch(action){
-      case 'registerHome': case 'buyProperty': case 'sellProperty': case 'setPropertyUse': case 'repayPropertyLoan': case 'setPropertyPayment': case 'clearPropertyArrears': case 'setMortgagePayment': case 'enableAccurateMortgage': case 'requestPensionExemption': case 'setInsuranceClaimCap': case 'setPensionMode': case 'backPayPension': case 'moveHome': case 'clearMortgageArrears': case 'repayMortgage': case 'setInsurance': case 'claimInsurance': case 'repairHome':
+      case 'registerHome': case 'buyProperty': case 'sellProperty': case 'setPropertyUse': case 'repayPropertyLoan': case 'setPropertyPayment': case 'clearPropertyArrears': case 'setMortgagePayment': case 'enableAccurateMortgage': case 'requestPensionExemption': case 'setInsuranceClaimCap': case 'setPensionMode': case 'backPayPension': case 'moveHome': case 'clearMortgageArrears': case 'repayMortgage': case 'setInsurance': case 'setPropertyCoverage': case 'claimInsurance': case 'repairHome':
         result=livingAction(state.finances,state.health,action,payload,{age:state.timeline.ageYears,date:state.timeline});break;
       case 'employmentSupport': result=requestEmploymentSupport(state.world,state.finances.career,state.timeline,state.timeline.ageYears);break;
       case 'supportRebuilding': result=supportRebuilding(state.finances,payload.companyId,state.timeline);break;
@@ -430,6 +432,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     ensureLifeGoalProgress(state);
     ensureConsequenceProgress(state);
     ensureSurpriseProgress(state);
+    ensureRareLifeProgress(state);
     ensureDailySchedule(state);
     if(state.ending.dead&&interactiveChoices)finalizeLifeGoals(state);
     else if(interactiveChoices)observeLifeGoals(state,{quiet:true});
