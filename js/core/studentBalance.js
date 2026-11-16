@@ -4,7 +4,7 @@
  */
 export const STUDENT_TIME_BUDGET=8;
 export const STUDENT_HOUR_CHOICES=Object.freeze([0,2,4,6]);
-export const STUDENT_STAGES=Object.freeze(['小学校','中学校','高校','大学']);
+export const STUDENT_STAGES=Object.freeze(['小学校','中学校','高校','高専','高専専攻科','大学','大学院']);
 const clamp=value=>Math.max(0,Math.min(100,Math.round(value)));
 const validHours=value=>STUDENT_HOUR_CHOICES.includes(value);
 

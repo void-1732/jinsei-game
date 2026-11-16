@@ -8,7 +8,7 @@ export function turnActivityOptions(state){
   if(!state?.initialized)return [];
   const age=state.timeline.ageYears;
   const options=[option('読書を練習する','skill',{skill:'読書'}),option('運動を練習する','skill',{skill:'運動'}),option('パソコンを練習する','skill',{skill:'パソコン'}),option('休養を取る','habit',{habit:'休養'})];
-  if(['小学校','中学校','高校','大学'].includes(state.education.stage))
+  if(['小学校','中学校','高校','高専','高専専攻科','大学','大学院'].includes(state.education.stage))
     options.unshift(option('国語を1時間勉強する','study',{subject:'国語',hours:1}));
   if(age>=8){
     const prepared=state.surprise53?.prepared??{};
