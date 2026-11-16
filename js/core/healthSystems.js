@@ -18,8 +18,8 @@ export function advanceHealth(h,date,age,randomValue,{balanced=false,financialSt
    // 自然治癒。治療により直ちに治すことも可能。
    if(h.illness.months>=3){notes.push({type:'recovery',title:'体調が回復',description:'病気から自然に回復しました。'});h.illness=null;}
  }else if(age>=5 && randomValue < (h.physical<45?0.055:age>=65?0.018:0.012)*(1-Math.max(0,Math.min(.35,healthProtection)))){
-   h.illness={name:age<18?'成長期の体調不良':age>=65?'高齢期の体調不良':'体調不良',months:0};h.physical=healthClamp(h.physical-8);h.energy=healthClamp(h.energy-10);
-   notes.push({type:'illness',title:'体調不良',description:'体調を崩しました。健康画面から治療できます。'});
+   h.illness={name:'体調不良',months:0};h.physical=healthClamp(h.physical-8);h.energy=healthClamp(h.energy-10);
+   notes.push({type:'illness',title:'体調不良',description:`${checkupGuidance(age)}の時期に体調を崩しました。健康画面から治療できます。`});
  }
  // Playable-mode quality fix: illness should not make lifelong physical decline
  // irreversible, especially during childhood. Recovery has an age-dependent
