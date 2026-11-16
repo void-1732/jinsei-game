@@ -11,6 +11,7 @@ import {careerAction,JOB_POSTINGS} from './careerSystems.js';
 import {qualificationAction} from './qualificationSystems.js';
 import {socialAction,advanceFamily,familyActivity} from './socialSystems.js';
 import {createFamilyProgress,ensureFamilyProgress,advanceFamilyJourney,familyJourneyAction} from './familyJourney.js';
+import {advanceAcademicPractice,recordAcademicStudy} from './academicPractice.js';
 import {validateGameState} from './saveSystems.js';
 import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
@@ -138,7 +139,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(interactiveChoices && state.pendingEvents.some(event=>event.type==='choice'))return {ok:false,reason:'次へ進む前に、出来事の選択肢を選んでください。'};
     if (state.timeline.year >= MAX_YEAR) return { ok: false, reason: '時間進行の上限に達しました。' };
     const t = state.timeline;
-    const months = t.ageYears < 15 ? 3 : 1;
+    const months = !interactiveChoices && t.ageYears < 15 ? 3 : 1;
     const index = t.year * 12 + (t.month - 1) + months;
     const year = Math.floor(index / 12);
     const month = index % 12 + 1;
@@ -152,7 +153,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     });
     if (age > previousAge) newEvents.push(makeEvent('birthday', `${age}歳の誕生日`, `${state.player.name}は${age}歳になりました。`));
     if (year > t.year) newEvents.push(makeEvent('new-year', `${year}年が始まりました`, '新しい年に入りました。'));
-    if (previousAge < 15 && age >= 15) newEvents.push(makeEvent('monthly-turns', '月次ターンへ切り替え', '次のターンから1か月ずつ進行します。'));
+    if (!interactiveChoices && previousAge < 15 && age >= 15) newEvents.push(makeEvent('monthly-turns', '月次ターンへ切り替え', '次のターンから1か月ずつ進行します。'));
     if (state.education) {
       const educationEvents=advanceEducation(state.education,t,{year,month},turn);
       for (const item of educationEvents) newEvents.push(makeEvent(item.type,item.title,item.description));
@@ -180,6 +181,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         if(interactiveChoices)advanceDailySchedule(state,date,monthAge,homeDiscount);
         if(interactiveChoices)advanceMonthlyRoutines(state,date,monthAge);
         if(interactiveChoices)advanceOpportunityMonth(state,date);
+        if(interactiveChoices)advanceAcademicPractice(state.education,date);
         if(interactiveChoices){
           for(const item of advanceFamilyJourney(state,date))newEvents.push(makeEvent(item.type,item.title,item.description));
         }
@@ -257,7 +259,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     balance.focus=focus;
     let turns=0,auto=0,months=0,reason='指定期間まで進みました';
     while(months<maxMonths){
-      const stepMonths=state.timeline.ageYears<15?3:1;
+      const stepMonths=!interactiveChoices&&state.timeline.ageYears<15?3:1;
       if(months+stepMonths>maxMonths)break;
       const advanced=advanceTurn();
       if(!advanced.ok){reason=advanced.reason;break;}
@@ -378,6 +380,10 @@ export function createGameStore({interactiveChoices=false} = {}) {
       default: result={ok:false,reason:'未対応の操作です。'};
     }
     if(result.ok){
+      if(interactiveChoices){
+        const academicSubjects=action==='study'?[payload.subject]:action==='studentDay'&&payload.studyHours>0?[payload.subject]:action==='prepareExam'?Object.keys(state.education.scores):[];
+        if(academicSubjects.length)recordAcademicStudy(state.education,state.timeline,academicSubjects);
+      }
       if(admin){
         if(state.businessTurn?.turn!==state.timeline.turnsElapsed)state.businessTurn={turn:state.timeline.turnsElapsed,used:0};
         state.businessTurn.used++;

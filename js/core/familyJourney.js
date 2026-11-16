@@ -10,7 +10,19 @@ const money=n=>Math.round(n).toLocaleString('ja-JP')+'円';
 export function createFamilyProgress(){
  return {connections:{},plan:null,lastBirthMonth:-120,totalChildExpenses:0,monthsParenting:0,lastFamilyTime:-1,history:[],partnership:null,educationPlans:{},lastAppliedMonth:-1};
 }
-export function ensureFamilyProgress(state){state.familyJourney??=createFamilyProgress();return state.familyJourney;}
+export function ensureFamilyProgress(state){
+ state.familyJourney??=createFamilyProgress();
+ const progress=state.familyJourney;
+ const partner=state.people?.find(p=>p.role==='交際相手'||p.role==='配偶者');
+ if(partner&&(!progress.partnership||progress.partnership.personId!==partner.id)){
+   const now=index(state.timeline),c=progress.connections[partner.id];
+   progress.partnership={personId:partner.id,
+     stage:partner.role==='配偶者'?'結婚済み':'交際中',
+     datingSince:c?.datingSince>=0?c.datingSince:Math.max(0,now-12),
+     cohabitingSince:-1,engagedSince:-1,weddingMonth:-1,weddingStyle:'未定'};
+ }
+ return progress;
+}
 export function validateFamilyProgress(p){
  if(p===undefined)return true;
  if(!p||typeof p!=='object'||Array.isArray(p)||!p.connections||typeof p.connections!=='object'||Array.isArray(p.connections))return false;
@@ -107,7 +119,7 @@ export function familyEligibility(state,action,personId=null){
   if(state.people.some(x=>['配偶者','交際相手'].includes(x.role)))return 'すでに交際相手・配偶者がいます';
   if(now-since<3)return `出会いから最低3か月が必要（あと${3-(now-since)}か月）`;
   if(action==='date'&&p.relationship<60)return '親密度60以上が必要です';
-  if(action==='date'&&(c?.futureTalks??2)<2)return '相手と将来の話を2回以上する必要があります';
+  if(action==='date'&&(c?.futureTalks??0)<2)return '相手と将来の話を2回以上する必要があります';
  }else if(['discussFuture','cohabit','engage','holdWedding','marry'].includes(action)){
   if(age<18||!p||p.role!=='交際相手'||ageAt(date,p)<18)return '18歳以上の交際相手が必要です';
   if(action==='cohabit'){

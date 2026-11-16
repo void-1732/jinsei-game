@@ -1,3 +1,4 @@
+import {recordAcademicStudy} from './academicPractice.js';
 /** Optional monthly routines and one-off adult activities.
  * Recurring plans spend money automatically in a capped, deterministic monthly loop.
  * Choosing or stopping a plan consumes the corresponding category action once.
@@ -82,7 +83,8 @@ export function advanceMonthlyRoutines(state,date,age){
   }else if(domain==='learning'){
     const skill=planId==='reading'?'読書':'パソコン';
     if(planId==='language'&&e.scores?.英語!==undefined)
-      e.scores.英語=balancedGrowth(state,'score:英語',e.scores.英語,1);
+      {e.scores.英語=balancedGrowth(state,'score:英語',e.scores.英語,1);
+       recordAcademicStudy(e,date,['英語']);}
     else if(planId!=='language'||!('英語' in (e.scores??{})))
       e.skills[skill]=balancedGrowth(state,`skill:${skill}`,e.skills[skill]??0,1);
   }

@@ -123,7 +123,7 @@ test('STEP45の重要な連続イベントが通常イベントより優先さ�
 
 test('実プレイで新イベントを選択し保存・読込後も進行できる',()=>{
   const g=game();const selected=[];
-  for(let i=0;i<33;i++){
+  for(let i=0;i<99;i++){
     const event=choose(g);
     if(event.catalogKey)selected.push(event.catalogKey);
     assert.equal(g.advanceTurn().ok,true);
@@ -135,7 +135,7 @@ test('実プレイで新イベントを選択し保存・読込後も進行で�
   assert.equal(repo.save('手動保存1',g.getState()).ok,true);
   const loaded=repo.load('手動保存1');assert.equal(loaded.ok,true);
   const copy=createGameStore({interactiveChoices:true});assert.equal(copy.loadState(loaded.state).ok,true);
-  assert.equal(copy.getState().timeline.turnsElapsed,33);
+  assert.equal(copy.getState().timeline.turnsElapsed,99);
   assert.ok(pending(copy));choose(copy);assert.equal(copy.advanceTurn().ok,true);
 });
 

@@ -176,6 +176,44 @@ async function runViewport(binary,width){
   if(!careerExpansion.drawer||!careerExpansion.closed||careerExpansion.registered!==30||
      !careerExpansion.original||!careerExpansion.count||!careerExpansion.after||!careerExpansion.filtered||careerExpansion.overflow)
     throw Error('Expanded job market browser UI failed '+JSON.stringify(careerExpansion));
+  // Regression: friend with high relationship but no future talks remains able
+  // to advance; child education button reflects the child's age.
+  const familyEdgeQA=await evaluate(`(async()=>{
+    const [{createGameStore},{renderLifePanel}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/lifePanels.js')
+    ]);
+    const g=createGameStore();g.startNewGame();
+    const state=structuredClone(g.getState());
+    state.timeline={year:2028,month:5,ageYears:28,turnsElapsed:130,monthsElapsed:340};
+    const friend={id:'FRIEND-001',name:'相手',birth:{year:2000,month:1,day:1},role:'友人',relationship:90};
+    state.people.push(friend);
+    state.familyJourney.connections[friend.id]={knownSince:2027*12,datingSince:-1,futureTalks:0,lastTalk:-1,lastContact:-1};
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    renderLifePanel(host,{id:'PERSON-02'},state,{onAction:()=>({ok:true})});
+    const journey=host.querySelector('.family-journey');
+    const talk=[...(journey?.querySelectorAll('button')??[])].find(b=>b.textContent?.includes('親しく話す'));
+    const canTalk=Boolean(talk&&!talk.disabled);
+    const notDating=![...(journey?.querySelectorAll('button')??[])].some(b=>b.textContent?.includes('交際を申し込む'));
+    state.people=state.people.filter(p=>p.id!==friend.id);
+    state.people.push({id:'CHILD-001',name:'子',birth:{year:2027,month:1,day:1},role:'子',relationship:80});
+    host.replaceChildren();
+    renderLifePanel(host,{id:'PERSON-02'},state,{onAction:()=>({ok:true})});
+    const childButton=[...host.querySelectorAll('.family-journey button')].find(b=>b.textContent?.includes('教育方針を変更'));
+    const youngBlocked=Boolean(childButton?.disabled);
+    state.people.find(p=>p.id==='CHILD-001').birth.year=2018;
+    host.replaceChildren();
+    renderLifePanel(host,{id:'PERSON-02'},state,{onAction:()=>({ok:true})});
+    const select=host.querySelector('.family-education-select');
+    if(select){select.value='学習支援';select.dispatchEvent(new Event('change',{bubbles:true}));}
+    const older=[...host.querySelectorAll('.family-journey button')].find(b=>b.textContent?.includes('教育方針を変更'));
+    const olderAllowed=Boolean(older&&!older.disabled);
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {canTalk,notDating,youngBlocked,olderAllowed,overflow};
+  })()`);
+  if(!familyEdgeQA.canTalk||!familyEdgeQA.notDating||!familyEdgeQA.youngBlocked||
+     !familyEdgeQA.olderAllowed||familyEdgeQA.overflow)
+    throw Error('Family edge case UI failed '+JSON.stringify(familyEdgeQA));
   // A single collapsible panel exposes realistic family stages without new screens.
   const familyJourneyQA=await evaluate(`(async()=>{
     const [{createGameStore},{renderLifePanel}]=await Promise.all([

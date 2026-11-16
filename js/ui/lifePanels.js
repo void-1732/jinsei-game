@@ -4,6 +4,7 @@ import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
 import {renderQualificationPanel} from './qualificationPanel.js';
 import {familyEligibility,familyProgressSummary} from '../core/familyJourney.js';
+import {academicPracticeSummary} from '../core/academicPractice.js';
 import {renderStudentBalancePanel} from './studentBalancePanel.js';
 const lifeEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 function line(root,key,value){const row=lifeEl('div','field-list-item');row.append(lifeEl('strong','',key),lifeEl('span','',String(value)));root.append(row);}
@@ -51,7 +52,8 @@ export function renderLifePanel(container,screen,game,handlers={}){
           const id=target.getValue();
           const selected=people.find(p=>p.id===id);
           const phase=summary.partnership;
-          const step=selected?.role==='友人'?(selected.relationship>=60?'date':'courtship'):
+          const connection=game.familyJourney?.connections?.[id];
+          const step=selected?.role==='友人'?(selected.relationship>=60&&(connection?.futureTalks??0)>=2?'date':'courtship'):
             selected?.role==='交際相手'?(phase?.engagedSince>=0?'marry':
              (game.timeline.year*12+game.timeline.month-1-(phase?.datingSince??0)>=12?'engage':'discussFuture')):'familyBond';
           const reason=familyEligibility(game,step,id);
@@ -68,7 +70,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
         });
         if(partner){
           const phase=summary.partnership;
-          if(phase?.cohabitingSince<0){
+          if(phase&&phase.cohabitingSince<0){
             const cohabit=action(controls,'同棲を始める',()=>handlers.onAction?.('cohabit',{personId:target.getValue()}));
             const reason=familyEligibility(game,'cohabit',partner.id);
             cohabit.disabled=Boolean(reason);
@@ -128,7 +130,15 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const explain=lifeEl('p','muted small','公立中心：基本費用／学習支援：毎月追加費用と学習支援／私立中心：学費の負担が大きくなります。');
         education.append(explain);
         const set=action(education,'教育方針を変更',()=>handlers.onAction?.('setChildEducation',{personId:childChoice.getValue(),plan:plans.value}));
-        set.disabled=age<18;
+        const updateChildPlan=()=>{
+          const selected=children.find(x=>x.id===childChoice.getValue())??children[0];
+          const childAge=t.year-selected.birth.year-(t.month<selected.birth.month?1:0);
+          set.disabled=age<18||childAge<3||childAge>=20||plans.value===(summary.educationPlans?.[selected.id]??'公立中心');
+          set.title=childAge<3?'教育方針は3歳から選べます':childAge>=20?'教育方針は19歳まで変更できます':'';
+        };
+        plans.addEventListener('change',updateChildPlan);
+        childChoice.group.addEventListener('click',updateChildPlan);
+        updateChildPlan();
         wrap.append(education);
         wrap.append(childButtons);
       }
@@ -170,6 +180,12 @@ export function renderLifePanel(container,screen,game,handlers={}){
       const scoreArea=lifeEl('div','phase4-scores');
       for(const [name,score] of Object.entries(e.scores))line(scoreArea,name,`${score} / 100`);
       section.append(scoreArea);
+      const practice=academicPracticeSummary(e,t);
+      if(practice){
+        const warning=practice.atRisk.length?`復習推奨：${practice.atRisk.join('・')}。勉強しない期間が続くと学力が少しずつ低下します。`:
+          `学力維持：${e.stage==='小学校'?'6':'3'}か月以上復習しない科目は緩やかに低下します。`;
+        section.append(lifeEl('p','muted small',warning));
+      }
       const controls=lifeEl('details','phase4-actions phase4-choice-actions');
       controls.append(lifeEl('summary','','従来の科目別学習（個別操作）'));
       const subject=choiceButtons('勉強する科目',Object.keys(e.scores),Object.keys(e.scores)[0]);
