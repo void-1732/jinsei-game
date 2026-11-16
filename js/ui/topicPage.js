@@ -49,7 +49,7 @@ function compactValues(state,ids){
 /** Show one overview, then one selected legacy detail panel on demand. */
 export function renderTopicPage(container,screen,state,handlers={}){
   const topic=getTopic(screen.id);
-  if(!topic||topic.screenIds.length<2)return renderScreen(container,screen,state,handlers);
+  if(!topic)return renderScreen(container,screen,state,handlers);
   const root=el('div','topic-page topic-compact');
   const intro=el('header','topic-intro');
   intro.append(el('span','topic-eyebrow',screen.category),
@@ -81,6 +81,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
   details.append(el('summary','','詳細・個別操作を見る（クリックで閉じる／開く）'));
   const body=el('div','topic-detail-content');
   const label=el('label','topic-tool-label','操作する項目');
+  if(topic.screenIds.length===1)label.hidden=true;
   const select=el('select','topic-tool-select');
   select.setAttribute('aria-label','詳細操作の項目を選択');
   for(const id of topic.screenIds){
