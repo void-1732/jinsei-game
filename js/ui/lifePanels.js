@@ -98,9 +98,13 @@ export function renderLifePanel(container,screen,game,handlers={}){
         }
         action(controls,'志望校を設定',()=>handlers.onAction?.('chooseSchool',{stage,school:select.getValue()}));
       }
-      action(controls,'受験対策をする（全科目＋2）',()=>handlers.onAction?.('prepareExam',{}));
-      action(controls,'大学進学を希望',()=>handlers.onAction?.('university',{choice:'進学'}));
-      action(controls,'高校卒業後の就職を希望',()=>handlers.onAction?.('university',{choice:'就職'}));section.append(controls);
+      if(['中学校','高校'].includes(e.stage))
+        action(controls,'受験対策をする（全科目＋2）',()=>handlers.onAction?.('prepareExam',{}));
+      if(e.stage==='高校'){
+        action(controls,'大学進学を希望',()=>handlers.onAction?.('university',{choice:'進学'}));
+        action(controls,'高校卒業後の就職を希望',()=>handlers.onAction?.('university',{choice:'就職'}));
+      }
+      section.append(controls);
     }
     if(screen.id==='EDU-05'){
       for(const [name,val]of Object.entries(e.skills))line(section,name,`習熟度 ${val}`);
