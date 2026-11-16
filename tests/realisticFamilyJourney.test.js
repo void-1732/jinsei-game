@@ -41,10 +41,14 @@ test('結婚には12か月の交際と家計・親密度、将来の話し合い
  s.familyJourney.connections[p.id]={knownSince:0,datingSince:s.timeline.year*12+s.timeline.month-1,futureTalks:2,lastTalk:-1,lastContact:-1};
  assert.match(familyEligibility(s,'marry',p.id),/12か月/);
  months(s,12);
+ assert.match(familyEligibility(s,'marry',p.id),/婚約/);
+ assert.equal(familyJourneyAction(s,'engage',{personId:p.id}).ok,true);
+ assert.match(familyEligibility(s,'marry',p.id),/3か月/);
+ months(s,3);
  assert.equal(familyJourneyAction(s,'marry',{personId:p.id}).ok,true);
  assert.equal(p.role,'配偶者');
  assert.equal(s.household.memberIds.filter(id=>id===p.id).length,1);
- assert.equal(s.finances.cash,260000);
+ assert.equal(s.finances.cash,230000);
  assert.equal(validateGameState(s),true);
 });
 test('子どもを迎えるボタン1回で即出生せず、月次の妊娠・養子縁組経過を要する',()=>{
