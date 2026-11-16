@@ -10,6 +10,7 @@ import {ensureWorkplace,workplaceAction,advanceWorkplace} from './workplaceSyste
 import {careerAction,JOB_POSTINGS} from './careerSystems.js';
 import {qualificationAction} from './qualificationSystems.js';
 import {socialAction,advanceFamily,familyActivity} from './socialSystems.js';
+import {createFamilyProgress,ensureFamilyProgress,advanceFamilyJourney,familyJourneyAction} from './familyJourney.js';
 import {validateGameState} from './saveSystems.js';
 import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
 import {createWorldData,updateWorld,updateLaborMarket,requestEmploymentSupport} from './worldSystems.js';
@@ -79,6 +80,7 @@ export const initialGameState = freezeSnapshot({
   legacy51: createConsequenceProgress(),
   surprise53: createSurpriseProgress(),
   rareLife: createRareLifeProgress(),
+  familyJourney: createFamilyProgress(),
   daily54: createDailySchedule(),
   random: { seed: 20000101, draws: 0 },
   save: { available: false, lastSavedAt: null },
@@ -178,6 +180,9 @@ export function createGameStore({interactiveChoices=false} = {}) {
         if(interactiveChoices)advanceDailySchedule(state,date,monthAge,homeDiscount);
         if(interactiveChoices)advanceMonthlyRoutines(state,date,monthAge);
         if(interactiveChoices)advanceOpportunityMonth(state,date);
+        if(interactiveChoices){
+          for(const item of advanceFamilyJourney(state,date))newEvents.push(makeEvent(item.type,item.title,item.description));
+        }
         advanceWorkplace(state.finances,date);
         advanceCompanyMarket(state.finances,date,state.world);
         const jobNews=updateLaborMarket(state.world,state.finances.companyMarket,date);
@@ -203,7 +208,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         }
       }
     }
-    for(const event of advanceFamily(state,{year,month}))newEvents.push(makeEvent(event.type,event.title,event.description));
+    for(const event of (interactiveChoices?[]:advanceFamily(state,{year,month})))newEvents.push(makeEvent(event.type,event.title,event.description));
     state.timeline = { year, month, ageYears: age, turnsElapsed: turn, monthsElapsed: t.monthsElapsed + months };
     state.turnActions = {turn,used:0,lastAction:null,categories:[]};
     // 40歳以降は健康・年齢に応じた死亡リスク。110歳時点で寿命終了。
@@ -354,12 +359,13 @@ export function createGameStore({interactiveChoices=false} = {}) {
         break;
       case 'habit': case 'treatment': case 'checkup': result=healthAction(state.health,action,payload,state.timeline,state.finances);break;
       case 'resolveChoice': result=state.pendingEvents.some(e=>e.id===payload.eventId && e.story) ? resolveStoryChoice(state,payload.eventId,payload.choice) : resolveChoice(state,payload.eventId,payload.choice);break;
-      case 'familyBond':case 'courtship':case 'meetFriend':case 'date':case 'marry':case 'haveChild':case 'familyCare': result=socialAction(state,action,payload);break;
+      case 'familyBond':case 'courtship':case 'meetFriend':case 'date':case 'marry':case 'haveChild':case 'familyCare':case 'discussFuture':
+        result=interactiveChoices?familyJourneyAction(state,action,payload):socialAction(state,action,payload);break;
       case 'prepareExam': result=prepareExam(state.education);break;
       case 'chooseSchool': result=chooseSchool(state.education,payload.stage,payload.school);break;
       case 'chooseMajor': result=chooseMajor(state.education,payload.majorId);break;
        case 'chooseFurtherEducation': result=chooseFurtherEducation(state.education,payload.choice);break;
-      case 'familyActivity': result=familyActivity(state,payload);break;
+      case 'familyActivity': result=interactiveChoices?familyJourneyAction(state,action,payload):familyActivity(state,payload);break;
       case 'studentDay': result=performStudentDay(state,payload);break;
        case 'study': result=study(state.education,payload.subject,payload.hours);break;
       case 'socialize': result=socialize(state.people,payload.personId);break;
@@ -433,6 +439,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     ensureConsequenceProgress(state);
     ensureSurpriseProgress(state);
     ensureRareLifeProgress(state);
+    ensureFamilyProgress(state);
     ensureDailySchedule(state);
     if(state.ending.dead&&interactiveChoices)finalizeLifeGoals(state);
     else if(interactiveChoices)observeLifeGoals(state,{quiet:true});
