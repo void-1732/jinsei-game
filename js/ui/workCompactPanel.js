@@ -280,7 +280,7 @@ export function renderBusinessWorkspace(section,game,onAction){
  const allowedAdmin=adminRemaining>0;
  const allowedLife=categoryActionAvailable(game,'仕事・経営');
  const equipment=el('section','business-subsection');
- renderBusinessEquipmentPanel(equipment,b,onAction,phase);
+ renderBusinessEquipmentPanel(equipment,b,onAction,phase,allowedAdmin);
  setupTabs(section,{
   management:managementPane(game,onAction,allowedAdmin,allowedLife,figures),
   equipment,
