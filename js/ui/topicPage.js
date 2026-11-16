@@ -61,7 +61,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
     el('h2','',topic.title),
     el('p','','詳細は見出しから開閉できます。'));
   leading.append(intro);root.append(leading);
-  const businessFocus=screen.id==='WORK-04';
+  const businessFocus=['WORK-03','WORK-04'].includes(screen.id);
   if(screen.category==='履歴'&&state?.initialized)root.append(renderLifeReview(state,{expanded:Boolean(state.ending?.dead)}));
   const actions=null; // Single free-action workspace is opened from the persistent header.
   if(state?.initialized&&['人生','生活・資産','人物・家族','学業','仕事・経営','健康','社会'].includes(screen.category)){

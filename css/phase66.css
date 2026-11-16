@@ -1,0 +1,54 @@
+/* Work compact layout: one business summary, one active management pane. */
+.work-compact{display:grid;gap:9px;padding:12px 14px;min-width:0;}
+.work-compact>h2{margin:0;font-size:18px}
+.work-compact h3{font-size:15px;margin:0 0 8px}
+.work-compact-note{font-size:12px;color:#c2dceb;line-height:1.55;margin:0}
+.work-compact-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;min-width:0}
+.business-compact .work-compact-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.work-compact-stat{display:flex;flex-direction:column;min-width:0;gap:3px;padding:9px 11px;background:#122a41;border:1px solid #4c7597;border-radius:9px;overflow-wrap:anywhere}
+.work-compact-stat small{font-size:11px;color:#bed9ea}
+.work-compact-stat strong{font-size:14px;font-weight:800}
+.work-compact-card,.business-subsection{display:grid;align-content:start;gap:9px;min-width:0;padding:12px;background:#1b3750;border:1px solid #557d9b;border-radius:11px}
+.work-compact-choice .choice-button-group{gap:7px}
+.work-compact-choice .choice-button{min-height:42px}
+.work-compact-preview{font-size:13px;margin:0;color:#d1e9f8}
+.work-compact-controls{display:flex;flex-wrap:wrap;align-items:center;gap:7px;min-width:0}
+.work-compact-action{min-height:42px;max-width:100%;white-space:normal;overflow-wrap:anywhere;padding:8px 12px}
+.business-compact-status{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px;font-size:13px}
+.business-compact-status>span{padding:6px 11px;border-radius:8px;border:1px solid #58819d;font-weight:700}
+.business-compact-alert{margin:0;padding:8px;border:1px solid #c69a63;color:#ffdfb2;border-radius:8px;font-size:12px}
+.business-compact-tabs{display:flex;flex-wrap:wrap;gap:6px;min-width:0;border-bottom:1px solid #52718b;padding-bottom:8px}
+.business-compact-tab{appearance:none;border:1px solid #517b9b;border-radius:9px;padding:8px 13px;min-height:42px;background:#122d44;color:#d6eafa;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.business-compact-tab.active,.business-compact-tab[aria-selected=true]{background:#bddff0;color:#14334a;border-color:#eefaff}
+.business-compact-tab:focus-visible,.work-compact-action:focus-visible{outline:3px solid #f1d79a;outline-offset:2px}
+.business-compact-panes{min-width:0}
+.business-compact-pane[hidden]{display:none!important}
+.business-compact-pane>.business-subsection{margin:0}
+.work-compact-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;min-width:0}
+.work-compact-row{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;padding:7px 10px;background:#142e46;border:1px solid #426988;border-radius:8px;font-size:12px;overflow-wrap:anywhere}
+.work-compact-row strong{text-align:right;font-size:12px}
+.work-compact-form{display:grid;gap:8px;min-width:0}
+.work-compact-amount{display:grid;gap:5px;font-size:12px;font-weight:700;max-width:330px}
+.work-compact-amount input{min-height:42px;width:100%}
+.work-compact-fold{border:1px solid #507896;border-radius:9px;padding:8px 10px;min-width:0}
+.work-compact-fold>summary{font-size:12px;font-weight:700;cursor:pointer}
+.work-compact-fold[open]>summary{margin-bottom:10px}
+.work-compact-table{display:grid;gap:5px;max-height:300px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.business-contract,.business-staff-card{border:1px solid #426a88;padding:10px;border-radius:9px;display:grid;gap:7px;min-width:0}
+.business-staff-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.business-compact .business-equipment-panel{padding:10px;background:transparent;border:0}
+.business-compact .business-machine-facts{grid-template-columns:repeat(3,minmax(0,1fr))}
+.business-compact .business-equipment-panel>h3{margin:0}
+.business-compact .topic-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:760px){
+ .work-compact{padding:9px}
+ .work-compact-stats,.business-compact .work-compact-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .work-compact-rows,.business-staff-grid{grid-template-columns:1fr}
+ .work-compact-card,.business-subsection{padding:9px}
+ .business-compact .business-machine-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:390px){
+ .work-compact-stat strong{font-size:12px}
+ .business-compact-tab{flex:1 1 29%;padding:8px}
+ .work-compact-action{min-height:44px}
+}

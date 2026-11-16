@@ -9,7 +9,8 @@ const button=(root,text,fn,disabled=false)=>{
  b.type='button';b.disabled=disabled;b.dataset.actionScope='business';
  b.addEventListener('click',fn);root.append(b);return b;
 };
-export function renderBusinessEquipmentPanel(root,b,onAction,worldPhase='通常'){
+export function renderBusinessEquipmentPanel(root,b,onAction,worldPhase='通常',allowOperations=true){
+ const operate=(parent,text,fn,disabled=false)=>button(parent,text,fn,disabled||!allowOperations);
  const box=el('section','business-equipment-panel');
  box.append(el('h3','','設備管理'));
  const items=b.equipmentItems??[],funds=b.operatingCash??0;
@@ -45,11 +46,11 @@ export function renderBusinessEquipmentPanel(root,b,onAction,worldPhase='通常'
    if(forecast)detail.append(el('p','muted small',`売上寄与の参考値：月${yen(forecast.monthlyContribution)} ／ 保守費：月${yen(forecast.monthlyMaintenance)}。あくまでゲーム内の概算です。`));
    if(item.broken&&!item.repairMonths)detail.append(el('p','business-equipment-warning','故障中です。「今すぐ修理」か「翌月修理」を選択してください。'));
    const controls=el('div','business-machine-actions');
-   button(controls,'点検 5,000円',()=>onAction?.('serviceEquipment',{id:item.id}),funds<5000||item.repairMonths>0);
-   button(controls,'今すぐ修理 20,000円',()=>onAction?.('repairEquipment',{id:item.id}),!item.broken||item.repairMonths>0||funds<20000);
-   button(controls,`保守を${item.maintenance?'終了':'開始'}`,()=>onAction?.('toggleEquipmentMaintenance',{id:item.id}));
-   button(controls,`翌月修理 ${yen(repairCost)}`,()=>onAction?.('scheduleEquipmentRepair',{id:item.id}),!item.broken||item.repairMonths>0||funds<repairCost);
-   button(controls,'選択設備を売却',()=>onAction?.('sellEquipmentItem',{id:item.id}));
+   operate(controls,'点検 5,000円',()=>onAction?.('serviceEquipment',{id:item.id}),funds<5000||item.repairMonths>0);
+   operate(controls,'今すぐ修理 20,000円',()=>onAction?.('repairEquipment',{id:item.id}),!item.broken||item.repairMonths>0||funds<20000);
+   operate(controls,`保守を${item.maintenance?'終了':'開始'}`,()=>onAction?.('toggleEquipmentMaintenance',{id:item.id}));
+   operate(controls,`翌月修理 ${yen(repairCost)}`,()=>onAction?.('scheduleEquipmentRepair',{id:item.id}),!item.broken||item.repairMonths>0||funds<repairCost);
+   operate(controls,'選択設備を売却',()=>onAction?.('sellEquipmentItem',{id:item.id}));
    detail.append(controls);
   }
   show(initial);
@@ -65,9 +66,9 @@ export function renderBusinessEquipmentPanel(root,b,onAction,worldPhase='通常'
  amountLabel.append(amount);form.append(amountLabel);
  const buttons=el('div','business-machine-actions');
  const getAmount=()=>Number(amount.value);
- button(buttons,'新しい設備を購入',()=>onAction?.('purchaseEquipment',{amount:getAmount(),type:type.getValue()}),b.status!=='営業中');
+ operate(buttons,'新しい設備を購入',()=>onAction?.('purchaseEquipment',{amount:getAmount(),type:type.getValue()}),b.status!=='営業中');
  if(items.length){
-   button(buttons,'選択した設備を買い替える',()=>{
+   operate(buttons,'選択した設備を買い替える',()=>{
      const selected=selector.querySelector('.business-machine-choice [aria-pressed="true"]');
      onAction?.('replaceEquipment',{id:Number(selected?.dataset.value),amount:getAmount(),type:type.getValue()});
    },b.status!=='営業中');
