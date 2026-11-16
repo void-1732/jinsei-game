@@ -78,7 +78,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
   }
   const details=el('details','topic-detail');
   details.open=true;
-  details.append(el('summary','','詳しい情報・操作を閉じる／開く'));
+  details.append(el('summary','','詳細・個別操作を見る（クリックで閉じる／開く）'));
   const body=el('div','topic-detail-content');
   const label=el('label','topic-tool-label','操作する項目');
   const select=el('select','topic-tool-select');
