@@ -1,0 +1,45 @@
+/* U4/U5 compact balance sheet and actionable, nonintrusive guidance. */
+.asset-pulse{display:grid;gap:10px;min-width:0;padding:12px}
+.asset-pulse>h2{margin:0;font-size:19px}
+.asset-pulse-hint,.asset-pulse-disclaimer{font-size:12px;line-height:1.55;color:#b9d6eb;margin:0}
+.asset-pulse-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;min-width:0}
+.asset-pulse-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.asset-pulse-item{display:flex;flex-direction:column;gap:4px;min-width:0;padding:10px 11px;border:1px solid #547b97;border-radius:9px;background:#152e46;overflow-wrap:anywhere}
+.asset-pulse-item small{font-size:11px;color:#b9d8ec}
+.asset-pulse-item strong{font-size:14px;line-height:1.35}
+.asset-pulse-flow>.asset-pulse-item:last-child{background:#1d4354}
+.asset-pulse-forecast{display:grid;gap:8px;padding:10px;border:1px solid #5a839e;border-radius:9px;background:#193a50}
+.asset-pulse-forecast h3{font-size:14px;margin:0}
+.asset-pulse-forecast .choice-button-group{gap:6px}
+.asset-pulse-forecast .choice-button{min-height:41px}
+.asset-pulse-result{font-size:21px}
+.asset-pulse-result.negative{color:#ffd0ab}
+.asset-pulse-warning{margin:0;color:#ffd4ab;font-size:12px;font-weight:700}
+.asset-pulse-fold{border:1px solid #547993;border-radius:10px;padding:9px 11px;min-width:0}
+.asset-pulse-fold>summary{font-weight:700;font-size:12px;cursor:pointer;min-height:25px}
+.asset-pulse-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:8px;min-width:0}
+.asset-pulse-row{display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0;border-radius:7px;border:1px solid #456f8d;background:#16324b;padding:8px 10px;font-size:12px;overflow-wrap:anywhere}
+.asset-pulse-row strong{text-align:right}
+.asset-pulse-budget{display:flex;gap:9px;flex-wrap:wrap;align-items:end;margin:10px 0}
+.asset-pulse-budget label{display:grid;gap:5px;flex:1 1 200px;max-width:300px;font-size:12px}
+.asset-pulse-budget input{width:100%;min-height:42px}
+.asset-pulse-budget button{min-height:42px}
+.asset-pulse .asset-pulse-fold .phase18-graph{margin:10px 0}
+.life-guidance-card{display:grid;gap:9px}
+.life-guidance-card>h3{margin:0;font-size:15px}
+.life-guidance-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.life-guidance-item{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;padding:9px;border:1px solid #446e8e;border-radius:9px}
+.life-guidance-item.is-warning{border-color:#b88a63}
+.life-guidance-copy{min-width:0;flex:1}
+.life-guidance-copy strong{display:block;font-size:12px;line-height:1.4}
+.life-guidance-copy p,.life-guidance-hint{font-size:11px;line-height:1.45;color:#bedbec;margin:4px 0 0}
+.life-guidance-link{min-height:40px;flex-shrink:0;padding:7px 10px;font-size:12px}
+.life-guidance-hint{margin:0}
+@media(max-width:760px){
+ .asset-pulse{padding:9px}
+ .asset-pulse-metrics,.asset-pulse-flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .asset-pulse-rows,.life-guidance-list{grid-template-columns:1fr}
+ .asset-pulse-item strong{font-size:12px}
+ .life-guidance-link{min-height:44px}
+}
+@media(max-width:390px){.asset-pulse-item{padding:8px}.asset-pulse-forecast .choice-button{min-height:44px}}
