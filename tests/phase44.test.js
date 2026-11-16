@@ -28,7 +28,7 @@ test('選択前はカテゴリで自由行動ができず、選択後はでき�
   assert.equal(hasFreeAction(state),true);
   assert.ok(categoryActivities(state,'学業').some(x=>x.action==='skill'));
   assert.ok(categoryActivities(state,'健康').some(x=>x.action==='habit'));
-  assert.ok(categoryActivities(state,'仕事・経営').some(x=>x.action==='skill'));
+  assert.ok(!categoryActivities(state,'仕事・経営').some(x=>x.action==='skill'));// A single action belongs to one category only.
   assert.equal(categoryActivities(state,'履歴').length,0);
   assert.equal(g.performAction('skill',{skill:'読書'}).ok,true);
   assert.equal(hasFreeAction(g.getState()),false);
