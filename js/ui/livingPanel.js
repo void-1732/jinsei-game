@@ -1,4 +1,4 @@
-import {REGIONS, INSURANCE_PLANS, REGIONAL_FACTORS, getHousingEquity, mortgageSchedule,assessMortgage,calculatePension,medicalCoverageSummary,estimateInsuranceBenefit,pensionHistoryByYear,auditLivingAccounts} from '../core/livingSystems.js';
+import {REGIONS, HOME_OPTIONS, INSURANCE_PLANS, REGIONAL_FACTORS, getHousingEquity, mortgageSchedule,assessMortgage,calculatePension,medicalCoverageSummary,estimateInsuranceBenefit,pensionHistoryByYear,auditLivingAccounts} from '../core/livingSystems.js';
 const make=(tag,text,cls='')=>{const x=document.createElement(tag);x.textContent=text;x.className=cls;return x;};
 const yen=n=>`${Number(n).toLocaleString('ja-JP')}円`;
 function field(root,label,value){const line=make('div','','field-list-item');line.append(make('strong',label),make('span',String(value)));root.append(line);}
@@ -10,15 +10,26 @@ export function renderLivingPanel(container,screen,game,handlers={}){
  if(!game?.initialized){panel.append(make('p','人生を開始すると住居・保障を確認できます。','muted'));container.prepend(panel);return true;}
  const l=game.finances.living??{region:'東京・東京23区',housing:'実家',monthlyHousingCost:0,propertyValue:0,insurance:'未加入',moves:[],claims:[]};
  const age=game.timeline.ageYears;
- field(panel,'居住地域',l.region);field(panel,'住居',l.housing);field(panel,'住居費（月額）',yen(l.monthlyHousingCost));
+ field(panel,'居住地域',l.region);field(panel,'住居',l.housing);if(l.housing==='持ち家')field(panel,'購入した物件',HOME_OPTIONS.find(h=>h.id===(l.homeType??'standard'))?.name??'標準的な住宅');field(panel,'住居費（月額）',yen(l.monthlyHousingCost));
  field(panel,'持ち家の参考評価額',yen(l.propertyValue));field(panel,'住宅ローン残高',yen(l.mortgageBalance??0));field(panel,'住宅純資産',yen(getHousingEquity(l)));field(panel,'住宅ローン毎月返済',yen(l.mortgagePayment??0));field(panel,'返済不足累計',yen(l.mortgageArrears??0));field(panel,'延滞月数',`${l.mortgageLateMonths??0}か月`);field(panel,'ローン計算方式',l.mortgageAccounting??'従来方式');field(panel,'未払利息',yen(l.mortgageOverdueInterest??0));const audit=auditLivingAccounts(game.finances);field(panel,'会計整合性',audit.ok?'確認済み':`要確認：${audit.issues.join('／')}`);field(panel,'住宅ローン信用評価',`${l.mortgageCredit??70}点`);field(panel,'任意保障',l.insurance);field(panel,'月額保険料',yen(INSURANCE_PLANS[l.insurance]?.premium??0));
  if(['LIFE-02','SOCIETY-06'].includes(screen.id)){
    const form=make('div','','phase27-form');form.append(make('h3','地域と住まいを変更'));
    const region=selector(form,'居住地域',REGIONS.map(r=>r.name),l.region);
    const housing=selector(form,'住居区分',['実家','賃貸','持ち家'],l.housing);
+   const house=selector(form,'購入する住宅の種類',HOME_OPTIONS.map(h=>h.name),HOME_OPTIONS.find(h=>h.id===(l.homeType??'standard'))?.name??'標準的な住宅');
+   const costPreview=make('p','','muted small');
+   const updatePreview=()=>{
+     const regionData=REGIONS.find(r=>r.name===region.value);
+     const model=HOME_OPTIONS.find(h=>h.name===house.value);
+     house.parentElement.hidden=housing.value!=='持ち家';
+     const estimated= Math.round((regionData?.rent??0)*180*(model?.priceFactor??1));
+     costPreview.textContent=housing.value==='持ち家'?`参考購入価格：${yen(estimated)}（別途諸費用・頭金）`:'持ち家を選ぶと物件別の価格を比較できます。';
+   };
+   region.addEventListener('change',updatePreview);housing.addEventListener('change',updatePreview);house.addEventListener('change',updatePreview);
+   updatePreview();form.append(costPreview);
    const financing=selector(form,'持ち家の支払方法',['現金購入','住宅ローン（頭金20%）'],'現金購入');
    const cost=make('p','賃貸は家賃2か月分の契約費用、持ち家は購入額と諸費用が必要です。','muted small');form.append(cost);
-   button(form,'引越し・住居変更を確定',()=>handlers.onAction?.('moveHome',{region:region.value,housing:housing.value,loan:financing.value.startsWith('住宅ローン')}),age<18);
+   button(form,'引越し・住居変更を確定',()=>handlers.onAction?.('moveHome',{region:region.value,housing:housing.value,loan:financing.value.startsWith('住宅ローン'),homeType:HOME_OPTIONS.find(h=>h.name===house.value)?.id??'standard'}),age<18);
    panel.append(form);
    const price=(REGIONS.find(r=>r.name===region.value)?.rent??0)*180;
    field(panel,'住宅ローンの審査目安','信用評価55点以上・負債と返済余力を確認');
