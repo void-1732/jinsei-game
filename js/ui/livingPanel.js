@@ -5,14 +5,15 @@ function field(root,label,value){const line=make('div','','field-list-item');lin
 function selector(root,label,values,selected){const wrap=make('label',label+'　','phase27-label'),sel=make('select','','phase27-select');for(const value of values){const option=make('option',value);option.value=value;sel.append(option);}sel.value=selected;wrap.append(sel);root.append(wrap);return sel;}
 function button(root,label,fn,disabled){const b=make('button',label,'button button-secondary');b.type='button';b.disabled=disabled;b.addEventListener('click',fn);root.append(b);}
 export function renderLivingPanel(container,screen,game,handlers={}){
- if(!['LIFE-02','LIFE-03','LIFE-07','SOCIETY-06'].includes(screen.id))return false;
- const panel=make('section','','content-card phase4-panel phase27-panel');panel.append(make('h2','住まい・居住地域・任意保障'));
+ if(!['LIFE-02','LIFE-07','SOCIETY-06'].includes(screen.id))return false;
+ const panel=make('section','','content-card phase4-panel phase27-panel');panel.append(make('h2',screen.id==='LIFE-02'?'住居・住宅':screen.id==='LIFE-07'?'保険・年金':'居住地域の経済指標'));
  if(!game?.initialized){panel.append(make('p','人生を開始すると住居・保障を確認できます。','muted'));container.prepend(panel);return true;}
  const l=game.finances.living??{region:'東京・東京23区',housing:'実家',monthlyHousingCost:0,propertyValue:0,insurance:'未加入',moves:[],claims:[]};
  const age=game.timeline.ageYears;
- field(panel,'居住地域',l.region);field(panel,'住居',l.housing);if(l.housing==='持ち家')field(panel,'購入した物件',HOME_OPTIONS.find(h=>h.id===(l.homeType??'standard'))?.name??'標準的な住宅');field(panel,'住居費（月額）',yen(l.monthlyHousingCost));
- field(panel,'持ち家の参考評価額',yen(l.propertyValue));field(panel,'住宅ローン残高',yen(l.mortgageBalance??0));field(panel,'住宅純資産',yen(getHousingEquity(l)));field(panel,'住宅ローン毎月返済',yen(l.mortgagePayment??0));field(panel,'返済不足累計',yen(l.mortgageArrears??0));field(panel,'延滞月数',`${l.mortgageLateMonths??0}か月`);field(panel,'ローン計算方式',l.mortgageAccounting??'従来方式');field(panel,'未払利息',yen(l.mortgageOverdueInterest??0));const audit=auditLivingAccounts(game.finances);field(panel,'会計整合性',audit.ok?'確認済み':`要確認：${audit.issues.join('／')}`);field(panel,'住宅ローン信用評価',`${l.mortgageCredit??70}点`);field(panel,'任意保障',l.insurance);field(panel,'月額保険料',yen(INSURANCE_PLANS[l.insurance]?.premium??0));
- if(['LIFE-02','SOCIETY-06'].includes(screen.id)){
+ if(screen.id==='LIFE-02'){field(panel,'居住地域',l.region);field(panel,'住居',l.housing);if(l.housing==='持ち家')field(panel,'購入した物件',HOME_OPTIONS.find(h=>h.id===(l.homeType??'standard'))?.name??'標準的な住宅');field(panel,'住居費（月額）',yen(l.monthlyHousingCost));
+ field(panel,'持ち家の参考評価額',yen(l.propertyValue));field(panel,'住宅ローン残高',yen(l.mortgageBalance??0));field(panel,'住宅純資産',yen(getHousingEquity(l)));field(panel,'住宅ローン毎月返済',yen(l.mortgagePayment??0));field(panel,'返済不足累計',yen(l.mortgageArrears??0));field(panel,'延滞月数',`${l.mortgageLateMonths??0}か月`);field(panel,'ローン計算方式',l.mortgageAccounting??'従来方式');field(panel,'未払利息',yen(l.mortgageOverdueInterest??0));const audit=auditLivingAccounts(game.finances);field(panel,'会計整合性',audit.ok?'確認済み':`要確認：${audit.issues.join('／')}`);field(panel,'住宅ローン信用評価',`${l.mortgageCredit??70}点`);}
+ if(screen.id==='LIFE-07'){field(panel,'任意保障',l.insurance);field(panel,'月額保険料',yen(INSURANCE_PLANS[l.insurance]?.premium??0));}
+ if(screen.id==='LIFE-02'){
    const form=make('div','','phase27-form');form.append(make('h3','地域と住まいを変更'));
    const region=selector(form,'居住地域',REGIONS.map(r=>r.name),l.region);
    const housing=selector(form,'住居区分',['実家','賃貸','持ち家'],l.housing);
@@ -64,8 +65,8 @@ export function renderLivingPanel(container,screen,game,handlers={}){
    const medical=medicalCoverageSummary(l);field(panel,'診療費の標準額',yen(medical.standard));field(panel,'簡易公的医療保障',yen(medical.publicSupport));field(panel,'治療時の本人負担',yen(medical.outOfPocket));field(panel,'任意保障の給付額（別途請求）',yen(medical.optionalBenefit));field(panel,'設定に応じた給付見込み',yen(estimateInsuranceBenefit(l)));
    panel.append(make('p','保険は任意加入のゲーム独自の制度です。簡易老齢年金は65歳以降、加入120か月以上で支給します。加入期間が長い場合は簡易加算があります。治療費にはゲーム独自の簡易医療保障が適用されます。現実の公的医療保険制度とは異なります。','muted small'));
  }
- if(screen.id==='SOCIETY-06'){const r=REGIONAL_FACTORS[l.region];field(panel,'生活費の地域係数',`${Math.round((r?.living??1)*100)}%`);field(panel,'就業環境の参考係数',`${Math.round((r?.jobs??1)*100)}%`);}
- if(screen.id==='LIFE-03'){field(panel,'老齢年金の累計受給',yen(l.pensionPaid??0));field(panel,'年金加入月数',`${l.pensionMonths??0}か月`);field(panel,'年金加入記録',`${l.pensionContributions??l.pensionMonths??0}か月`);field(panel,'年金保険料の累計',yen(l.pensionPremiumPaid??0));
+ if(screen.id==='SOCIETY-06'){field(panel,'居住地域',l.region);const r=REGIONAL_FACTORS[l.region];field(panel,'生活費の地域係数',`${Math.round((r?.living??1)*100)}%`);field(panel,'就業環境の参考係数',`${Math.round((r?.jobs??1)*100)}%`);}
+ if(screen.id==='LIFE-07'){field(panel,'老齢年金の累計受給',yen(l.pensionPaid??0));field(panel,'年金加入月数',`${l.pensionMonths??0}か月`);field(panel,'年金加入記録',`${l.pensionContributions??l.pensionMonths??0}か月`);field(panel,'年金保険料の累計',yen(l.pensionPremiumPaid??0));
    field(panel,'年金の納付区分',l.pensionMode??'通常納付');field(panel,'免除月数',`${l.pensionExemptMonths??0}か月`);
    field(panel,'未納月数',`${l.pensionUnpaidMonths??0}か月`);field(panel,'追納可能な未納記録',`${l.pensionUnpaidRecords?.length??0}か月`);field(panel,'追納済み月数',`${l.pensionBackPaidMonths??0}か月`);
    field(panel,'受給見込（月額）',yen(calculatePension(l)));
@@ -78,6 +79,6 @@ export function renderLivingPanel(container,screen,game,handlers={}){
      button(panel,'未納保険料を追納する',()=>handlers.onAction?.('backPayPension',{months:Number(count.value)}),age<18);
    }
  }
- if(screen.id==='LIFE-03')panel.append(make('p','基本生活費とは別に、住居費と任意保険料を毎月精算します。18歳未満は保護者負担です。','muted small'));
+ 
  container.prepend(panel);return true;
 }
