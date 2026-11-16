@@ -2,6 +2,7 @@ import {estateBreakdown} from './estateSystems.js';
 import {getHousingEquity} from './livingSystems.js';
 import {advanceLiving} from './livingSystems.js';
 import {businessMonthlyFigures} from './careerSystems.js';
+import {canApplyUniversityRole} from './educationPaths.js';
 import {eraEconomicEffects} from './eraSystems.js';
 /** 第5段階：すべて整数円で扱う簡易経済システム。現実の税制・相場を再現しない。 */
 export const PART_TIME_JOBS=Object.freeze([
