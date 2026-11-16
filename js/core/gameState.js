@@ -21,7 +21,7 @@ import {createOpportunityProgress,ensureOpportunityProgress,advanceOpportunityMo
 import {createStoryProgress,ensureStoryProgress} from './branchingStories.js';
 import {createConsequenceProgress,ensureConsequenceProgress,rememberConsequence,consequenceHiringBonus,consequenceHealthProtection} from './consequenceSystems.js';
 import { createEconomyData, advanceEconomy, economyAction } from './economySystems.js';
-import { createLifeData, advanceEducation, study, socialize, gainSkill, prepareExam, chooseSchool, chooseMajor } from './lifeSystems.js';
+import { createLifeData, advanceEducation, study, socialize, gainSkill, prepareExam, chooseSchool, chooseMajor, chooseFurtherEducation } from './lifeSystems.js';
 import {performStudentDay} from './studentBalance.js';
 /** PHASE 3: game-domain store. Independent of presentation and navigation. */
 const MAX_YEAR = 2200;
@@ -180,6 +180,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const jobNews=updateLaborMarket(state.world,state.finances.companyMarket,date);
         if(jobNews)newEvents.push(makeEvent(jobNews.type,jobNews.title,jobNews.description));
         const career=state.finances.career;
+        if(career.job&&career.sector==='政治')career.politicalExperience=Math.min(2400,(career.politicalExperience??0)+1);
         const employer=state.finances.companyMarket.find(c=>c.name===career.company);
         if(career.job&&employer?.status==='営業停止'){
           const previousCompany=career.company;
@@ -324,8 +325,8 @@ export function createGameStore({interactiveChoices=false} = {}) {
         result=livingAction(state.finances,state.health,action,payload,{age:state.timeline.ageYears,date:state.timeline});break;
       case 'employmentSupport': result=requestEmploymentSupport(state.world,state.finances.career,state.timeline,state.timeline.ageYears);break;
       case 'supportRebuilding': result=supportRebuilding(state.finances,payload.companyId,state.timeline);break;
-      case 'careerTraining': case 'setCareerPlan': case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
-        result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
+      case 'careerProject': case 'professionalExam': case 'internship': case 'setCareerTarget': case 'careerTraining': case 'setCareerPlan': case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
+        result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,marketState:state,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
         if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
       case 'safetyPrep': result=prepareForSurprise(state,payload.area);break;
       case 'setMonthlyRoutine':result=setMonthlyRoutine(state,payload);break;
@@ -339,7 +340,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         if(interactiveChoices&&action==='setBudget'&&payload.amount<60_000){result={ok:false,reason:'生活費は最低60,000円を確保してください。'};break;}
         if(interactiveChoices&&action==='findJob'){
           const posting=JOB_POSTINGS.find(p=>p.job===payload.job);
-          result=posting?careerAction(state.finances,'applyJob',{postingId:posting.id},{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interviewBonus(state)}):{ok:false,reason:'求人が見つかりません。'};
+          result=posting?careerAction(state.finances,'applyJob',{postingId:posting.id},{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,marketState:state,interviewBonus:interviewBonus(state)}):{ok:false,reason:'求人が見つかりません。'};
           if(result.ok)afterJobApplication(state,result.passed);
           break;
         }
@@ -353,6 +354,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'prepareExam': result=prepareExam(state.education);break;
       case 'chooseSchool': result=chooseSchool(state.education,payload.stage,payload.school);break;
       case 'chooseMajor': result=chooseMajor(state.education,payload.majorId);break;
+       case 'chooseFurtherEducation': result=chooseFurtherEducation(state.education,payload.choice);break;
       case 'familyActivity': result=familyActivity(state,payload);break;
       case 'studentDay': result=performStudentDay(state,payload);break;
        case 'study': result=study(state.education,payload.subject,payload.hours);break;
@@ -392,7 +394,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const success=action!=='applyJob'||result.passed;
         if(success)rememberConsequence(state,{title:action==='marry'?'結婚という選択':action==='haveChild'?'家族が増えた日':'仕事の節目'}, {label:result.message??action,impact:{}},{source:'action',forceDomain:['marry','haveChild'].includes(action)?'bonds':'career'});
       }
-      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='setTimePlan'?'時間配分':action==='habit'?'生活習慣':action==='treatment'?'治療':action==='checkup'?'健康診断':action==='careerTraining'?'職業研修':action==='resolveChoice'?'人生選択':action==='studentDay'?'学生生活':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['familyBond','courtship','meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='chooseMajor'?'専攻選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
+      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='setTimePlan'?'時間配分':action==='habit'?'生活習慣':action==='treatment'?'治療':action==='checkup'?'健康診断':action==='careerTraining'?'職業研修':action==='resolveChoice'?'人生選択':action==='chooseFurtherEducation'?'進路選択':action==='internship'?'インターン':action==='professionalExam'?'資格試験':action==='careerProject'?'職業活動':action==='setCareerTarget'?'就職希望':action==='studentDay'?'学生生活':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['familyBond','courtship','meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='chooseMajor'?'専攻選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
       if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
       if(interactiveChoices){
         const highlight=choiceBeingResolved?.branch||choiceBeingResolved?.consequence
