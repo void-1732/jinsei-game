@@ -9,13 +9,13 @@ export function estateBreakdown(finances){
   const mortgage=l.housing==='持ち家'?amount(l.mortgageBalance):0;
   // 事業を所有する場合のみ事業口座、設備と債務を引き継ぐ。廃業済みの資金は個人会計に清算済み。
   const ownsBusiness=Boolean(b.active);
-  const entries={cash:amount(f.cash),investments:amount(f.investment),home,vehicle:amount(f.vehicle?.value),
+  const entries={cash:amount(f.cash),investments:amount(f.investment),home,...(f.vehicle?{vehicle:amount(f.vehicle.value)}:{}),
     businessCash:ownsBusiness?amount(b.operatingCash):0,
     businessEquipment:ownsBusiness?amount(b.equipmentValue):0,
     personalDebt:amount(f.debt),mortgage,
     businessDebt:ownsBusiness?amount(b.operatingDebt):0,
     businessLoans:ownsBusiness?amount(b.loanBalance):0};
-  const grossAssets=entries.cash+entries.investments+entries.home+entries.vehicle+entries.businessCash+entries.businessEquipment;
+  const grossAssets=entries.cash+entries.investments+entries.home+(entries.vehicle??0)+entries.businessCash+entries.businessEquipment;
   const liabilities=entries.personalDebt+entries.mortgage+entries.businessDebt+entries.businessLoans;
   const netAssets=grossAssets-liabilities;
   return {...entries,grossAssets,liabilities,netAssets,distributableBase:Math.max(0,netAssets),
