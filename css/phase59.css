@@ -1,0 +1,14 @@
+/* Adult choices / simplified topic details. Opt-in appearance changes only. */
+.topic-compact{max-width:1100px;gap:12px}
+.topic-compact .topic-summary-card{max-width:100%;padding:18px}
+.topic-compact .topic-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 22px}
+.topic-compact .topic-value{min-width:0;gap:6px}
+.topic-compact .topic-detail{margin-top:16px;padding-top:12px}
+.topic-tool-label{display:block;font-size:13px;font-weight:700;color:#d6eaff;margin:8px 0 12px}
+.topic-tool-select{display:block;margin-top:8px;width:min(100%,560px);min-height:44px;border:1px solid #8fb3cf;background:#152e47;color:#fff;border-radius:10px;padding:10px 12px;font:inherit}
+.topic-legacy-detail{margin-top:12px;min-width:0}
+.topic-compact .topic-detail-content .phase4-panel{max-height:none;overflow:visible}
+.topic-compact .topic-detail-content .content-card{margin:0 0 12px}
+.topic-compact .topic-detail-content .page-body{max-width:none}
+.topic-compact .topic-tool-select:focus-visible{outline:3px solid #f4d399;outline-offset:3px}
+@media(max-width:760px){.topic-compact .topic-values{grid-template-columns:1fr}.topic-compact .topic-summary-card{padding:14px}.topic-tool-select{width:100%}}

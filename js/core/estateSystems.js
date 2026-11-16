@@ -9,13 +9,13 @@ export function estateBreakdown(finances){
   const mortgage=l.housing==='持ち家'?amount(l.mortgageBalance):0;
   // 事業を所有する場合のみ事業口座、設備と債務を引き継ぐ。廃業済みの資金は個人会計に清算済み。
   const ownsBusiness=Boolean(b.active);
-  const entries={cash:amount(f.cash),investments:amount(f.investment),home,
+  const entries={cash:amount(f.cash),investments:amount(f.investment),home,...(f.vehicle?{vehicle:amount(f.vehicle.value)}:{}),
     businessCash:ownsBusiness?amount(b.operatingCash):0,
     businessEquipment:ownsBusiness?amount(b.equipmentValue):0,
     personalDebt:amount(f.debt),mortgage,
     businessDebt:ownsBusiness?amount(b.operatingDebt):0,
     businessLoans:ownsBusiness?amount(b.loanBalance):0};
-  const grossAssets=entries.cash+entries.investments+entries.home+entries.businessCash+entries.businessEquipment;
+  const grossAssets=entries.cash+entries.investments+entries.home+(entries.vehicle??0)+entries.businessCash+entries.businessEquipment;
   const liabilities=entries.personalDebt+entries.mortgage+entries.businessDebt+entries.businessLoans;
   const netAssets=grossAssets-liabilities;
   return {...entries,grossAssets,liabilities,netAssets,distributableBase:Math.max(0,netAssets),
@@ -42,7 +42,8 @@ export function validateInheritance(inheritance){
  if(inheritance.breakdown!==undefined){
   const b=inheritance.breakdown;
   if(!b||!['cash','investments','home','businessCash','businessEquipment','personalDebt','mortgage','businessDebt','businessLoans','grossAssets','liabilities','distributableBase','estimatedMonthlyPension'].every(k=>money(b[k]))||!Number.isSafeInteger(b.netAssets)||Math.abs(b.netAssets)>1e12)return false;
-  if(b.grossAssets!==b.cash+b.investments+b.home+b.businessCash+b.businessEquipment)return false;
+  if(b.vehicle!==undefined&&!money(b.vehicle))return false;
+  if(b.grossAssets!==b.cash+b.investments+b.home+(b.vehicle??0)+b.businessCash+b.businessEquipment)return false;
   if(b.liabilities!==b.personalDebt+b.mortgage+b.businessDebt+b.businessLoans)return false;
   if(b.netAssets!==b.grossAssets-b.liabilities||b.distributableBase!==Math.max(0,b.netAssets)||b.distributableBase!==inheritance.netAssets)return false;
  }

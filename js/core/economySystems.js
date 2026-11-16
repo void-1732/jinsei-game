@@ -4,6 +4,27 @@ import {advanceLiving} from './livingSystems.js';
 import {businessMonthlyFigures} from './careerSystems.js';
 import {eraEconomicEffects} from './eraSystems.js';
 /** 第5段階：すべて整数円で扱う簡易経済システム。現実の税制・相場を再現しない。 */
+export const PART_TIME_JOBS=Object.freeze([
+  {id:'retail',name:'店舗スタッフ',hours:32,hourlyWage:1150,minAge:18},
+  {id:'cafe',name:'カフェ接客',hours:40,hourlyWage:1200,minAge:18},
+  {id:'tutor',name:'家庭教師',hours:24,hourlyWage:1900,minAge:18},
+  {id:'delivery',name:'配送補助',hours:40,hourlyWage:1350,minAge:18},
+  {id:'remote',name:'在宅データ入力',hours:36,hourlyWage:1250,minAge:18},
+  {id:'design',name:'デザイン制作',hours:28,hourlyWage:1700,minAge:18},
+]);
+export const INVESTMENT_PRODUCTS=Object.freeze([
+  {id:'deposit',name:'定期預金型',monthlyRate:0.0002,risk:'低'},
+  {id:'bond',name:'債券型',monthlyRate:0.001,risk:'低〜中'},
+  {id:'index',name:'株式インデックス型',monthlyRate:0.002,risk:'中'},
+  {id:'stock',name:'個別株型',monthlyRate:0.003,risk:'高'},
+  {id:'reit',name:'不動産投資信託型',monthlyRate:0.0016,risk:'中〜高'},
+]);
+export const VEHICLE_OPTIONS=Object.freeze([
+  {id:'compact',name:'軽自動車',price:850000,monthlyCost:12000},
+  {id:'economy',name:'コンパクトカー',price:1550000,monthlyCost:18000},
+  {id:'family',name:'ファミリーカー',price:2850000,monthlyCost:26000},
+  {id:'hybrid',name:'ハイブリッド車',price:3500000,monthlyCost:21000},
+]);
 const JOBS=Object.freeze({
   '販売スタッフ':{salary:195000,age:18,academic:'不問'},
   '事務職':{salary:235000,age:18,academic:'不問'},
@@ -30,7 +51,7 @@ export function livingExpenseWithHardship(finances,age,priceMultiplier=1,discoun
 export function createEconomyData(){return {
   cash:0,investment:0,debt:0,monthlyBudget:85000,
   career:{job:null,company:null,monthlySalary:0,experience:0,promotions:0,jobChanges:0,unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,benefitEligible:true,insuredMonths:0},
-  sideJob:{active:false,monthlyIncome:35000},business:{active:false,name:null,monthlyRevenue:0,monthlyCosts:0,capitalSpent:0,operatingCash:0,operatingDebt:0,lossMonths:0,status:'未設立',cashFlowHistory:[],ownerDraws:0,loanBalance:0,loanInterestPaid:0,equipmentValue:0,businessLedger:[],monthlyRepayment:0,equipmentDepreciation:0,loanApplications:0,loanDueIndex:0,loanOverdueMonths:0,creditScore:70,equipmentItems:[],nextEquipmentId:1,loanContracts:[],nextLoanId:1,loanPaymentHistory:[],loanScheduleHistory:[]},
+  sideJob:{active:false,monthlyIncome:35000},investmentHoldings:[],vehicle:null,business:{active:false,name:null,monthlyRevenue:0,monthlyCosts:0,capitalSpent:0,operatingCash:0,operatingDebt:0,lossMonths:0,status:'未設立',cashFlowHistory:[],ownerDraws:0,loanBalance:0,loanInterestPaid:0,equipmentValue:0,businessLedger:[],monthlyRepayment:0,equipmentDepreciation:0,loanApplications:0,loanDueIndex:0,loanOverdueMonths:0,creditScore:70,equipmentItems:[],nextEquipmentId:1,loanContracts:[],nextLoanId:1,loanPaymentHistory:[],loanScheduleHistory:[]},
   ledger:[],totals:{income:0,expenses:0,tax:0},
 };}
 export const EQUIPMENT_TYPES=Object.freeze({'標準設備':100,'事務機器':60,'製造機械':120,'車両':72,'店舗設備':96});
@@ -119,8 +140,17 @@ export function economyAction(e,action,payload,context){
     }
     case 'resign':if(!e.career.job)return {ok:false,reason:'現在の勤務先はありません。'};
       log(e,date,'記録',`${e.career.job}を退職`,0);e.career.previousSalary=0;e.career.benefitMonths=0;e.career.unemploymentMonths=0;e.career.job=null;e.career.company=null;e.career.monthlySalary=0;e.career.experience=0;return {ok:true};
-    case 'sideJob':if(age<18)return {ok:false,reason:'副業は18歳から利用できます。'};
-      e.sideJob.active=Boolean(payload.active);return {ok:true};
+    case 'sideJob':{
+      if(age<18)return {ok:false,reason:'アルバイトは18歳から利用できます。'};
+      if(payload.active===false){e.sideJob.active=false;return {ok:true,message:'アルバイト・副業を停止しました。'};}
+      const selected=PART_TIME_JOBS.find(x=>x.id===payload.jobId);
+      if(payload.jobId!==undefined&&!selected)return {ok:false,reason:'アルバイトの種類が不正です。'};
+      const job=selected??PART_TIME_JOBS[0];
+      e.sideJob.active=true;e.sideJob.jobId=job.id;
+      e.sideJob.hours=job.hours;e.sideJob.hourlyWage=job.hourlyWage;
+      e.sideJob.monthlyIncome=payload.jobId===undefined?e.sideJob.monthlyIncome:job.hours*job.hourlyWage;
+      return {ok:true,message:`${job.name}を開始しました（月${job.hours}時間・月収見込${e.sideJob.monthlyIncome.toLocaleString('ja-JP')}円）。`};
+    }
     case 'startBusiness':if(age<20)return {ok:false,reason:'起業は20歳から利用できます。'};
       if(e.business.active)return {ok:false,reason:'すでに事業を経営しています。'};
       if(e.cash<300000)return {ok:false,reason:'起業資金30万円が必要です。'};
@@ -317,11 +347,55 @@ export function economyAction(e,action,payload,context){
     }
     case 'setBudget':if(!validAmount(payload.amount)||payload.amount>500000)return {ok:false,reason:'生活費は1～50万円の整数円で設定してください。'};
       e.monthlyBudget=payload.amount;return {ok:true};
-    case 'buyInvestment':if(age<18)return {ok:false,reason:'投資は18歳から利用できます。'};
+    case 'buyInvestment':{
+      if(age<18)return {ok:false,reason:'投資は18歳から利用できます。'};
       if(!validAmount(payload.amount)||e.cash<payload.amount)return {ok:false,reason:'投資額が不正か現金が不足しています。'};
-      e.cash-=payload.amount;e.investment+=payload.amount;log(e,date,'資産移動','投資商品を購入',-payload.amount);return {ok:true};
-    case 'sellInvestment':if(!validAmount(payload.amount)||e.investment<payload.amount)return {ok:false,reason:'売却額が不正か投資残高が不足しています。'};
-      e.investment-=payload.amount;e.cash+=payload.amount;log(e,date,'資産移動','投資商品を売却',payload.amount);return {ok:true};
+      const product=payload.productId===undefined?null:INVESTMENT_PRODUCTS.find(p=>p.id===payload.productId);
+      if(payload.productId!==undefined&&!product)return {ok:false,reason:'投資商品の種類が不正です。'};
+      if(product){
+        e.investmentHoldings??=[];
+        const existing=e.investmentHoldings.find(p=>p.id===product.id);
+        if(existing)existing.value+=payload.amount;
+        else e.investmentHoldings.push({id:product.id,value:payload.amount});
+      }
+      e.cash-=payload.amount;e.investment+=payload.amount;
+      log(e,date,'資産移動',product?`${product.name}を購入`:'投資商品を購入',-payload.amount);
+      return {ok:true,message:product?`${product.name}を購入しました。`:'投資商品を購入しました。'};
+    }
+    case 'sellInvestment':{
+      if(!validAmount(payload.amount)||e.investment<payload.amount)return {ok:false,reason:'売却額が不正か投資残高が不足しています。'};
+      const holdings=e.investmentHoldings??=[];
+      if(payload.productId!==undefined&&!INVESTMENT_PRODUCTS.some(p=>p.id===payload.productId))return {ok:false,reason:'投資商品の種類が不正です。'};
+      const selected=payload.productId?holdings.find(p=>p.id===payload.productId):null;
+      if(selected&&selected.value<payload.amount)return {ok:false,reason:'指定した商品の保有額が足りません。'};
+      if(payload.productId&&!selected)return {ok:false,reason:'指定した商品を保有していません。'};
+      let remaining=payload.amount;
+      for(const row of (selected?[selected]:holdings)){
+        const used=Math.min(remaining,row.value);row.value-=used;remaining-=used;
+        if(remaining===0)break;
+      }
+      // Legacy saves may contain unallocated investment value. Sell from it last.
+      e.investment-=payload.amount;e.cash+=payload.amount;
+      e.investmentHoldings=holdings.filter(p=>p.value>0);
+      log(e,date,'資産移動','投資商品を売却',payload.amount);
+      return {ok:true};
+    }
+    case 'buyVehicle':{
+      if(age<18)return {ok:false,reason:'車の購入は18歳から利用できます。'};
+      const option=VEHICLE_OPTIONS.find(v=>v.id===payload.vehicleId);
+      if(!option)return {ok:false,reason:'車種を選択してください。'};
+      if(e.vehicle)return {ok:false,reason:'先に現在の車を売却してください。'};
+      if(e.cash<option.price)return {ok:false,reason:'購入費用が不足しています。'};
+      e.cash-=option.price;e.vehicle={id:option.id,value:option.price,months:0};
+      log(e,date,'資産移動',`${option.name}を購入`,-option.price);
+      return {ok:true,message:`${option.name}を購入しました。月額維持費${option.monthlyCost.toLocaleString('ja-JP')}円。`};
+    }
+    case 'sellVehicle':{
+      if(!e.vehicle)return {ok:false,reason:'所有している車がありません。'};
+      const value=e.vehicle.value;
+      e.cash+=value;e.vehicle=null;log(e,date,'資産移動','車を売却',value);
+      return {ok:true,message:`${value.toLocaleString('ja-JP')}円で車を売却しました。`};
+    }
     case 'repayDebt':if(!validAmount(payload.amount)||e.debt<payload.amount||e.cash<payload.amount)return {ok:false,reason:'返済額または返済可能残高を確認してください。'};
       e.debt-=payload.amount;e.cash-=payload.amount;log(e,date,'資産移動','借入金を返済',-payload.amount);return {ok:true};
     default:return {ok:false,reason:'未対応の経済操作です。'};
@@ -471,7 +545,28 @@ export function advanceEconomy(e,from,months,playerBirth,world=null,options={}){
     const livingCost=livingExpenseWithHardship(e,age,era.living,options.livingDiscount??0);
     debit(e,date,'生活費',livingCost);
     advanceLiving(e,date,age);
-    if(e.investment>0){const gain=Math.floor(e.investment*0.002);if(gain){e.investment+=gain;log(e,date,'評価増減','投資評価額の増加',gain);}}
+    if(e.vehicle){
+      const option=VEHICLE_OPTIONS.find(v=>v.id===e.vehicle.id);
+      if(option)debit(e,date,'車の維持費',option.monthlyCost);
+      e.vehicle.months=(e.vehicle.months??0)+1;
+      e.vehicle.value=Math.max(0,Math.floor(e.vehicle.value*0.992));
+    }
+    const holdings=e.investmentHoldings??[];
+    const tracked=holdings.reduce((sum,row)=>sum+row.value,0);
+    const legacy=Math.max(0,e.investment-tracked);
+    let gains=0;
+    if(legacy>0)gains+=Math.floor(legacy*0.002);
+    for(const h of holdings){
+      const product=INVESTMENT_PRODUCTS.find(p=>p.id===h.id);
+      const base=product?.monthlyRate??0.002;
+      // A deterministic, bounded swing; product risk changes monthly volatility.
+      const variance=product?.risk==='高'?0.035:product?.risk==='中〜高'?0.020:product?.risk==='中'?0.012:0;
+      const wave=variance?Math.sin((index+h.id.length*13)*0.37)*variance:0;
+      const previous=h.value;const gain=Math.floor(previous*(base+wave));
+      h.value=Math.max(0,previous+gain);gains+=h.value-previous;
+    }
+    e.investment=Math.max(0,legacy+Math.floor(legacy*0.002)+holdings.reduce((sum,row)=>sum+row.value,0));
+    if(gains)log(e,date,'評価増減','投資商品の評価増減',gains);
   }
   return notices;
 }

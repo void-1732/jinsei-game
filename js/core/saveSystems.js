@@ -40,6 +40,19 @@ export function validateGameState(s) {
   const finite = value => typeof value==='number' && Number.isFinite(value);
   if(!['cash','investment','debt','monthlyBudget'].every(k=>finite(s.finances[k]) && s.finances[k]>=0)) return false;
   if(!validateLiving(s.finances.living))return false;
+  if(s.finances.vehicle!==undefined&&s.finances.vehicle!==null){
+    const v=s.finances.vehicle;
+    if(!v||!['compact','economy','family','hybrid'].includes(v.id)||!Number.isSafeInteger(v.value)||v.value<0||v.value>100000000||!Number.isSafeInteger(v.months)||v.months<0||v.months>3000)return false;
+  }
+  if(s.finances.investmentHoldings!==undefined){
+    const list=s.finances.investmentHoldings;
+    if(!Array.isArray(list)||list.length>5||new Set(list.map(x=>x?.id)).size!==list.length||!list.every(x=>x&&['deposit','bond','index','stock','reit'].includes(x.id)&&Number.isSafeInteger(x.value)&&x.value>=0&&x.value<=1000000000))return false;
+    if(list.reduce((sum,x)=>sum+x.value,0)>s.finances.investment)return false;
+  }
+  if(s.finances.sideJob?.jobId!==undefined){
+    const j=s.finances.sideJob;
+    if(!['retail','cafe','tutor','delivery','remote','design'].includes(j.jobId)||!Number.isSafeInteger(j.hours)||j.hours<0||j.hours>240||!Number.isSafeInteger(j.hourlyWage)||j.hourlyWage<0||j.hourlyWage>50000)return false;
+  }
   if(s.world.era52!==undefined&&!validateEraProgress(s.world.era52))return false;
   if(s.world.employmentSupport!==undefined){
     const x=s.world.employmentSupport;

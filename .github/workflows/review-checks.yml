@@ -1,0 +1,23 @@
+name: 改善ブランチの検証
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 全自動テスト
+        run: npm test
+      - name: GitHub Pages参照検査
+        run: node scripts/check-pages.mjs
+      - name: 正式版の整合性検査
+        run: node scripts/check-release.mjs
+      - name: PC・スマートフォン画面検査
+        run: node scripts/qa-browser.mjs

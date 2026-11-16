@@ -41,7 +41,7 @@ export function advanceEducation(education,previous,next,turn){
   if((stage==='高校' && grade===1 && oldStage==='中学校')||(stage==='大学' && grade===1 && oldStage==='高校')){
     const result=evaluateSchool(education.scores,stage);
     const preference=education.schoolPreference?.[stage]??'自動';
-    const thresholds=stage==='高校'?{'進学校':75,'県立高校':55,'地域高校':0}:{'難関大学':80,'総合大学':60,'地域大学':0};
+    const thresholds=stage==='高校'?{'進学校':75,'県立高校':55,'地域高校':0,'工業高校':48,'商業高校':45,'通信制高校':0}:{'難関大学':80,'総合大学':60,'地域大学':0,'国公立大学':72,'私立大学':55,'短期大学':38,'専門学校':35};
     const preparationBonus=Math.min(8,Math.max(0,(education.examPreparation??0)*2));
     const passed=preference==='自動'||result.average+preparationBonus>=thresholds[preference];
     school=passed&&preference!=='自動'?preference:result.school;
@@ -83,7 +83,7 @@ export function prepareExam(education){
 
 /** 志望校は進学先を保証しない。成績基準に未達の場合は従来の自動進学先へ進む。 */
 export function chooseSchool(education,stage,school){
-  const options=stage==='高校'?['自動','進学校','県立高校','地域高校']:stage==='大学'?['自動','難関大学','総合大学','地域大学']:[];
+  const options=stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校']:stage==='大学'?['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校']:[];
   if(!options.includes(school))return {ok:false,reason:'志望校が不正です。'};
   if(stage==='高校'&&education.stage!=='中学校'||stage==='大学'&&education.stage!=='高校')return {ok:false,reason:'志望校を選択できる学年ではありません。'};
   education.schoolPreference??={高校:'自動',大学:'自動'};
