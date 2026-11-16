@@ -3,6 +3,7 @@
  * Persistent data is optional, so a STEP 46 save can be loaded without resetting a life.
  */
 import {JOB_POSTINGS} from './careerSystems.js';
+import {canApplyUniversityRole} from './educationPaths.js';
 import {eraEconomicEffects,eraScholarshipAdjustment} from './eraSystems.js';
 const integer=(x,max=1_000_000_000)=>Number.isSafeInteger(x)&&x>=0&&x<=max;
 const monthIndex=date=>date.year*12+date.month-1;
@@ -39,7 +40,7 @@ export const SCHOLARSHIP_PER_MONTH=18_000;
 export function advanceOpportunityMonth(state,date){
  const p=ensureOpportunityProgress(state),e=p.education,f=state.finances;
  if(state.education.stage==='大学'){
-   const tuition=Math.round(TUITION_PER_MONTH*eraEconomicEffects(state.world).tuition);
+   const tuition=Math.round((state.education.program?.tuition??TUITION_PER_MONTH)*eraEconomicEffects(state.world).tuition);
    const charged=Math.max(0,tuition-e.grantMonthly);
    p.education.tuitionCharged+=tuition;
    if(e.grantMonthly){e.scholarshipPaid+=e.grantMonthly;record(state,date,'給付奨学金を学費に直接充当',0,'記録');}
@@ -182,7 +183,7 @@ export function opportunityOptions(state,category){
    if(!f.career.job){
      if(p.career.interviewPrep<6)add('面接の練習','prepareInterview',{},'採用評価を上げる・疲労あり');
      if(age>=18)for(const job of JOB_POSTINGS){
-       if(age>=job.minAge&&(!job.university||stage==='卒業'&&state.education.universityChoice==='進学'))
+       if(age>=job.minAge&&(!job.university||canApplyUniversityRole(state.education)))
          add(`${job.job}へ応募`,'applyJob',{postingId:job.id},`月給${job.salary.toLocaleString('ja-JP')}円・採用は能力と募集状況次第`);
      }
    }else if(f.career.experience>=12&&(p.career.negotiatedIndex<0||monthIndex(state.timeline)-p.career.negotiatedIndex>=12)){
