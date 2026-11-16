@@ -13,6 +13,13 @@
   min-width:0;
 }
 .topic-leading>*{min-width:0;margin:0}
+.topic-leading.has-context:not(.has-actions){
+  grid-template-columns:minmax(210px,.75fr) minmax(0,2fr);
+}
+.topic-leading.has-context:not(.has-actions) .topic-context{
+  grid-column:2;
+  grid-row:1;
+}
 .topic-leading.has-context .topic-context{grid-column:1/-1}
 .topic-leading .topic-intro{
   display:flex;
