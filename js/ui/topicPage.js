@@ -3,6 +3,7 @@ import {getTopic,categoryActivities,hasFreeAction} from './topicGroups.js';
 import {getScreenFieldValues} from '../core/screenFieldValues.js';
 import {findScreen} from '../core/screenCatalog.js';
 import {renderScreen} from './screenRenderer.js';
+import {foldState} from './foldState.js';
 import {renderOpportunityPanel} from './opportunityPanel.js';
 import {renderLifeReview} from './lifeGoalPanel.js';
 import {choiceButtons} from './choiceButtons.js';
@@ -121,8 +122,11 @@ export function renderTopicPage(container,screen,state,handlers={}){
   }
   const full=el('div','topic-legacy-detail');
   const show=(selectedId=screen.id)=>{
+    if(full.dataset.renderedScreenId)foldState.capture(full,full.dataset.renderedScreenId);
     const target=findScreen(selectedId);full.replaceChildren();
     renderScreen(full,target,state,{...handlers,embedded:true,filter:'',onFilterChange:()=>{}});
+    foldState.restore(full,selectedId);
+    full.dataset.renderedScreenId=selectedId;
   };
   // Detailed screen navigation is now rendered only in the persistent top topic strip.
   details.addEventListener('toggle',()=>{
