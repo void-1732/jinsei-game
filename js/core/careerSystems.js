@@ -1,5 +1,5 @@
 import {REGIONAL_FACTORS} from './livingSystems.js';
-import {jobQualificationInfo,hiringProbability,hiringRoll} from './qualificationSystems.js';
+import {jobQualificationInfo,hiringProbability,hiringRoll,getQualification,qualificationAbilityBarrier} from './qualificationSystems.js';
 import {employmentQualificationBonus,canApplyUniversityRole} from './educationPaths.js';
 import {getCompany} from './companySystems.js';
 import {jobMarketAdjustment} from './worldSystems.js';
@@ -101,6 +101,8 @@ export function careerAction(finances,action,payload,context){
   const expected={'医師':'医学課程修了','歯科医師':'歯学課程修了'}[license];
   if(!expected)return {ok:false,reason:'ゲーム内の国家試験を選んでください。'};
   if(context.education.degree!==expected)return {ok:false,reason:`${expected}が受験条件です。`};
+  const gate=qualificationAbilityBarrier(context.education,getQualification(license==='医師'?'physician':'dentist'));
+  if(gate)return {ok:false,reason:`専門免許の受験条件を満たしていません：${gate}`};
   context.education.licenses??=[];
   if(context.education.licenses.includes(license))return {ok:false,reason:'この資格は取得済みです。'};
   const testScore=Math.round((context.education.scores.理科+context.education.scores.数学)/2)+(context.education.examPreparation??0)*2;
