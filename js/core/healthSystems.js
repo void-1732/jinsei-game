@@ -1,6 +1,7 @@
 /** 第6段階：健康・生活習慣・治療。すべてゲーム内の架空モデル。 */
 const healthClamp=(n,lower=0,upper=100)=>Math.max(lower,Math.min(upper,Math.round(n)));
 const HABITS=['運動','休養','食生活'];
+export const checkupGuidance=age=>age<6?'乳幼児の発育確認':age<18?'成長期の健康確認':age<40?'成人の健康確認':age<65?'生活習慣の確認':'高齢期の健康確認';
 export function createHealthData(){return {physical:85,mental:80,energy:85,habits:{運動:0,休養:0,食生活:0},illness:null,medicalVisits:0,healthHistory:[],lastActionMonth:null};}
 export function advanceHealth(h,date,age,randomValue,{balanced=false,financialStress=false,healthProtection=0}={}){
  const notes=[];
@@ -17,7 +18,7 @@ export function advanceHealth(h,date,age,randomValue,{balanced=false,financialSt
    // 自然治癒。治療により直ちに治すことも可能。
    if(h.illness.months>=3){notes.push({type:'recovery',title:'体調が回復',description:'病気から自然に回復しました。'});h.illness=null;}
  }else if(age>=5 && randomValue < (h.physical<45?0.055:age>=65?0.018:0.012)*(1-Math.max(0,Math.min(.35,healthProtection)))){
-   h.illness={name:'体調不良',months:0};h.physical=healthClamp(h.physical-8);h.energy=healthClamp(h.energy-10);
+   h.illness={name:age<18?'成長期の体調不良':age>=65?'高齢期の体調不良':'体調不良',months:0};h.physical=healthClamp(h.physical-8);h.energy=healthClamp(h.energy-10);
    notes.push({type:'illness',title:'体調不良',description:'体調を崩しました。健康画面から治療できます。'});
  }
  // Playable-mode quality fix: illness should not make lifelong physical decline
@@ -46,6 +47,20 @@ export function healthAction(h,action,payload,date,finance){
    h.mental=healthClamp(h.mental+(payload.habit==='休養'?5:1));
    h.energy=healthClamp(h.energy+(payload.habit==='休養'?8:0));
    h.lastActionMonth=thisMonth;return {ok:true};
+ }
+ if(action==='checkup'){
+   const month=`${date.year}-${date.month}`;
+   if(h.lastCheckupMonth===month)return {ok:false,reason:'健康診断は同じ月に繰り返せません。'};
+   const cost=1000;
+   if(finance && finance.cash<cost)return {ok:false,reason:'健康診断の費用が不足しています。'};
+   if(finance){
+     finance.cash-=cost;finance.totals.expenses+=cost;
+     finance.ledger.push({year:date.year,month:date.month,kind:'支出',label:'健康診断（ゲーム内）',amount:-cost});
+     if(finance.ledger.length>600)finance.ledger.shift();
+   }
+   h.lastCheckupMonth=month;h.medicalVisits++;
+   const warning=h.illness?'治療を検討してください。':h.physical<45||h.mental<40?'生活習慣と休養に注意してください。':'大きな異常は見つかりませんでした。';
+   return {ok:true,cost,message:`${checkupGuidance(date.ageYears??(date.year-2000))}：${warning}`};
  }
  if(action==='treatment'){
    if(!h.illness)return {ok:false,reason:'現在、治療対象の病気はありません。'};
