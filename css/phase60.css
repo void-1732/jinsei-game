@@ -94,6 +94,8 @@
 }
 @media(max-width:980px){
   .topic-leading{grid-template-columns:minmax(0,1fr)}
+  .topic-leading.has-context:not(.has-actions){grid-template-columns:minmax(0,1fr)}
+  .topic-leading.has-context:not(.has-actions) .topic-context{grid-column:auto;grid-row:auto}
   .topic-leading.has-context .topic-context{grid-column:auto}
   .topic-leading .opportunity-facts{grid-template-columns:repeat(3,minmax(0,1fr))}
   .topic-leading .topic-intro{padding:11px 13px}
