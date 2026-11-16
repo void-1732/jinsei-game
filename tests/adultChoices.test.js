@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createEconomyData,economyAction,advanceEconomy,netWorth,PART_TIME_JOBS,INVESTMENT_PRODUCTS,VEHICLE_OPTIONS} from '../js/core/economySystems.js';
-import {createLivingData,INSURANCE_PLANS,validateLiving} from '../js/core/livingSystems.js';
+import {createLivingData,INSURANCE_PLANS,HOME_OPTIONS,validateLiving,livingAction} from '../js/core/livingSystems.js';
 import {createLifeData,chooseSchool} from '../js/core/lifeSystems.js';
 import {createGameStore} from '../js/core/gameState.js';
 import {validateGameState} from '../js/core/saveSystems.js';
@@ -81,4 +81,14 @@ test('統合画面は情報サマリー1つ、詳細描画1つに限定される
   assert.match(text,/compactValues/);
   assert.match(text,/topic-tool-select/);
   assert.ok(!text.includes('for(const id of topic.screenIds){\n    const target=findScreen(id);\n    const card='));
+});
+
+test('物件3種類は価格・維持費が異なり従来の標準物件を維持',()=>{
+  assert.equal(HOME_OPTIONS.length,3);
+  const finances=createEconomyData();finances.cash=50000000;
+  assert.equal(livingAction(finances,{},'moveHome',{region:'香川・高松',housing:'持ち家',homeType:'small'},{age:18,date:{year:2018,month:5}}).ok,true);
+  assert.equal(finances.living.propertyValue,Math.round(62000*180*.65));
+  assert.equal(finances.living.homeType,'small');
+  assert.equal(validateLiving(finances.living),true);
+  assert.equal(livingAction(finances,{},'moveHome',{region:'新潟・新潟',housing:'持ち家',homeType:'invalid'},{age:18,date:{year:2018,month:6}}).ok,false);
 });
