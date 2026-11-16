@@ -17,11 +17,11 @@ function adult(){
  assert.equal(g.loadState(s).ok,true);
  return g;
 }
-test('資格22種類と5段階難易度、専攻・医学部などのおすすめを表示',()=>{
- assert.equal(QUALIFICATION_CATALOG.length,22);
+test('資格40種類と5段階難易度、専攻・医学部などのおすすめを表示',()=>{
+ assert.equal(QUALIFICATION_CATALOG.length,40);
  assert.ok(QUALIFICATION_CATALOG.some(q=>q.id==='physician'&&q.level===5));
  assert.ok(QUALIFICATION_CATALOG.some(q=>q.id==='dentist'&&q.level===5));
- assert.equal(new Set(QUALIFICATION_CATALOG.map(q=>q.id)).size,22);
+ assert.equal(new Set(QUALIFICATION_CATALOG.map(q=>q.id)).size,40);
  const e=structuredClone(adult().getState().education);
  e.program={school:'医学部',years:6,tuition:75000,type:'6年制医学課程',startYear:2018};
  assert.equal(recommendedQualifications(e)[0].id,'physician');

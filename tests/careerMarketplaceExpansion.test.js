@@ -61,6 +61,7 @@ test('6年制の医・歯学課程とゲーム内資格試験は別の関門に�
   progress(e,2024,2024);
   assert.equal(e.stage,'卒業');
   assert.match(careerEligibility(post(id),e,{},24),/ゲーム内資格試験/);
+  e.skills.専門力=65;e.skills.技術力=65;e.skills.支援力=65;
   const finance=createEconomyData();
   const passed=careerAction(finance,'professionalExam',{license},{age:24,date:{year:2024,month:5},education:e});
   assert.equal(passed.ok,true,passed.reason);

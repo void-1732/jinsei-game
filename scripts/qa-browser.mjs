@@ -202,7 +202,7 @@ async function runViewport(binary,width){
     return {count:QUALIFICATION_CATALOG.length,root:!!root,closed:root?.open===false,original,
       doctor,examDisabled,examEnabled,earned,overflow};
   })()`);
-  if(qualificationQA.count!==22||!qualificationQA.root||!qualificationQA.closed||
+  if(qualificationQA.count!==40||!qualificationQA.root||!qualificationQA.closed||
      !qualificationQA.original?.includes('難易度')||!qualificationQA.doctor.includes('医学課程修了')||
      !qualificationQA.examDisabled||!qualificationQA.examEnabled||!qualificationQA.earned||qualificationQA.overflow)
     throw Error('Qualification UI broken at this viewport '+JSON.stringify(qualificationQA));
@@ -223,6 +223,13 @@ async function runViewport(binary,width){
     let picker=host.querySelector('.qualification-picker');picker.value='industrial';
     picker.dispatchEvent(new Event('change',{bubbles:true}));
     const allowed=!host.querySelector('.qualification-panel button:last-child')?.disabled;
+    state.finances.cash=0;
+    host.replaceChildren(renderQualificationPanel(state,()=>({ok:true})));
+    picker=host.querySelector('.qualification-picker');picker.value='industrial';
+    picker.dispatchEvent(new Event('change',{bubbles:true}));
+    const zeroCashFree=!host.querySelector('.qualification-panel button:last-child')?.disabled &&
+      host.querySelector('.qualification-preview')?.textContent.includes('学校支援で無料');
+    state.finances.cash=150000;
     state.education.school='普通高校';state.education.highSchoolTrack='普通高校';
     host.replaceChildren(renderQualificationPanel(state,()=>({ok:true})));
     picker=host.querySelector('.qualification-picker');picker.value='industrial';
@@ -249,9 +256,9 @@ async function runViewport(binary,width){
     const retainedClosed=!host.querySelector('details[data-fold-key="career-training"]').open;
     const overflow=document.documentElement.scrollWidth>innerWidth+3;
     host.remove();
-    return {allowed,ordinaryBlocked,training:!!training,effect,retainedOpen,retainedClosed,overflow};
+    return {allowed,zeroCashFree,ordinaryBlocked,training:!!training,effect,retainedOpen,retainedClosed,overflow};
   })()`);
-  if(!youthCareerQA.allowed||!youthCareerQA.ordinaryBlocked||!youthCareerQA.training||
+  if(!youthCareerQA.allowed||!youthCareerQA.zeroCashFree||!youthCareerQA.ordinaryBlocked||!youthCareerQA.training||
       !youthCareerQA.effect.includes('採用評価')||!youthCareerQA.effect.includes('技能')||
       !youthCareerQA.retainedOpen||!youthCareerQA.retainedClosed||youthCareerQA.overflow)
     throw Error('Student qualification, training preview or fold persistence invalid '+JSON.stringify(youthCareerQA));
