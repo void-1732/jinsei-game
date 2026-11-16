@@ -1,4 +1,5 @@
 import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
+import {CAREER_SECTORS,EXTENDED_JOB_POSTINGS,marketListings,careerEligibility} from '../core/careerMarketplace.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures,CAREER_PLANS,careerStage} from '../core/careerSystems.js';
 import {choiceButtons} from './choiceButtons.js';
 import {renderBusinessEquipmentPanel} from './businessEquipmentPanel.js';
@@ -102,7 +103,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   if(screen.id==='WORK-01'){
     section.append(econEl('h3','','求人・採用選考'));
     const choices=econEl('div','phase10-job-grid');
-    for(const post of JOB_POSTINGS){
+    for(const post of JOB_POSTINGS.filter(p=>!EXTENDED_JOB_POSTINGS.some(e=>e.id===p.id))){
       const item=econEl('div','phase10-job');
       const score=employmentScore(game.education,post,job.experience);
       const company=getCompany(f,post.id);
@@ -116,6 +117,49 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
       choices.append(item);
     }
     section.append(choices);
+    const market=econEl('details','phase4-extra career-market');
+    market.append(econEl('summary','','今月の追加求人・職種別キャリア（毎ターン更新）'));
+    market.append(econEl('p','muted small',`掲載企業${marketListings(game).length}社／追加登録企業${EXTENDED_JOB_POSTINGS.length}社。希望業種・インターン・前職の経験で表示が変わります。`));
+    const marketControls=econEl('div','phase4-actions');
+    const industry=econEl('label','career-sector-label','希望業種・求人の絞り込み');
+    const sectorSelect=econEl('select','phase4-select career-sector-select');
+    const any=econEl('option','','全業種');any.value='';sectorSelect.append(any);
+    for(const sector of CAREER_SECTORS){const opt=econEl('option','',sector);opt.value=sector;sectorSelect.append(opt);}
+    sectorSelect.value=job.targetSector??'';
+    industry.append(sectorSelect);marketControls.append(industry);
+    const listingLabel=econEl('label','career-posting-label','今月応募できる会社');
+    const listingSelect=econEl('select','phase4-select career-posting-select');
+    listingLabel.append(listingSelect);marketControls.append(listingLabel);
+    const status=econEl('p','muted small career-posting-status');
+    const apply=action(marketControls,'選んだ求人へ応募',()=>handlers.onAction?.('applyJob',{postingId:listingSelect.value}));
+    const target=action(marketControls,'この業種を志望',()=>handlers.onAction?.('setCareerTarget',{sector:sectorSelect.value}));
+    const intern=action(marketControls,'この業種でインターン',()=>handlers.onAction?.('internship',{sector:sectorSelect.value}));
+    const update=()=>{
+      listingSelect.replaceChildren();
+      const listings=marketListings(game).filter(p=>!sectorSelect.value||p.sector===sectorSelect.value);
+      for(const item of listings){
+        const opt=econEl('option','',`${item.company}／${item.job}（${item.openings}枠）`);
+        opt.value=item.id;listingSelect.append(opt);
+      }
+      const selected=EXTENDED_JOB_POSTINGS.find(p=>p.id===listingSelect.value);
+      const offer=listings.find(p=>p.id===listingSelect.value);
+      const eligibility=selected?careerEligibility(selected,game.education,job,age):'この条件の求人はありません。';
+      status.textContent=selected?`${selected.job}｜月給${yen(selected.salary)}｜選考の目安${selected.threshold}点｜${eligibility??'応募条件を満たしています'}｜${offer?.phase??'募集中'}`:'この条件の求人はありません。';
+      apply.disabled=!selected||!offer?.openings||Boolean(eligibility);
+      target.disabled=!sectorSelect.value||job.targetSector===sectorSelect.value;
+      intern.disabled=!sectorSelect.value||Boolean(job.job)||age<16||age>35||(job.internships?.[sectorSelect.value]??0)>=5;
+    };
+    listingSelect.addEventListener('change',update);
+    sectorSelect.addEventListener('change',update);
+    market.append(marketControls,status);
+    if(['医学課程修了','歯学課程修了'].includes(game.education.degree)){
+      const exam=econEl('div','phase4-actions');
+      const license=game.education.degree==='医学課程修了'?'医師':'歯科医師';
+      action(exam,`${license}のゲーム内資格試験`,()=>handlers.onAction?.('professionalExam',{license}), (game.education.licenses??[]).includes(license));
+      market.append(exam);
+    }
+    section.append(market);
+    update();
     section.append(econEl('h3','','企業別の財務・求人状況（第14段階）'));
     for(const firm of ensureCompanyMarket(f)){
       const entry=econEl('div','phase11-staff');
@@ -132,6 +176,15 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   }
   if(screen.id==='WORK-02'){
     const milestone=careerStage(job);
+    if(job.sector)line(section,'現在の業界',job.sector);
+    if(job.targetSector)line(section,'希望する業界',job.targetSector);
+    if(job.politicalRank)line(section,'政治キャリア',`${job.politicalRank===3?'国会':job.politicalRank===2?'都道府県':'市区町村'}議員／議員経験${job.politicalExperience??0}か月`);
+    if(job.reputation)line(section,'業界での実績',`${job.reputation}/100`);
+    if(['創作','出版','飲食','金融','スポーツ','政治'].includes(job.sector)){
+      const projects=econEl('details','phase4-extra');projects.append(econEl('summary','','職業固有の実績を積む'));
+      action(projects,'作品・専門技能・実績を高める',()=>handlers.onAction?.('careerProject',{}));
+      section.append(projects);
+    }
     section.append(econEl('h3','','社会人キャリアの段階'));
     line(section,'現在の段階',milestone.name);
     line(section,'次に目指すこと',milestone.next);
