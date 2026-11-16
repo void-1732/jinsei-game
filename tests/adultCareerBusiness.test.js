@@ -96,3 +96,22 @@ test('設備選択は一か所で、重複のある画面下部の切替を表�
  assert.ok(!topic.includes("choiceButtons('操作する項目'"));
  assert.match(dock,/topic-screen-tabs/);
 });
+
+test('故障設備の修理と翌月修理の受付が実際の資金・設備状態を更新する',()=>{
+ const g=adultBusiness(),data=json(g.getState());
+ const ctx={age:25,date:data.timeline,education:data.education};
+ assert.equal(economyAction(data.finances,'purchaseEquipment',{amount:50000,type:'製造機械'},ctx).ok,true);
+ const item=data.finances.business.equipmentItems[0];item.broken=true;item.condition=20;
+ assert.equal(g.loadState(data).ok,true);
+ const before=g.getState().finances.business.operatingCash;
+ assert.equal(g.performAction('repairEquipment',{id:1}).ok,true);
+ assert.equal(g.getState().finances.business.operatingCash,before-20000);
+ assert.equal(g.getState().finances.business.equipmentItems[0].broken,false);
+ const after=json(g.getState());after.finances.business.equipmentItems[0].broken=true;
+ assert.equal(g.loadState(after).ok,true);
+ assert.equal(g.performAction('scheduleEquipmentRepair',{id:1}).ok,true);
+ assert.equal(g.getState().finances.business.equipmentItems[0].repairMonths,1);
+ assert.equal(g.performAction('sellEquipmentItem',{id:1}).ok,true);
+ assert.equal(g.getState().finances.business.equipmentItems.length,0);
+ assert.equal(validateGameState(g.getState()),true);
+});
