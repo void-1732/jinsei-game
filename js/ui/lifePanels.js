@@ -1,7 +1,7 @@
 /** 第4段階：実ゲームデータに接続した人物・学業パネル。DOM生成はテキスト限定。 */
 import {choiceButtons} from './choiceButtons.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
-import {CAREER_TRAINING} from '../core/careerSystems.js';
+import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
 import {renderQualificationPanel} from './qualificationPanel.js';
 import {renderStudentBalancePanel} from './studentBalancePanel.js';
 const lifeEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
@@ -165,8 +165,20 @@ export function renderLifePanel(container,screen,game,handlers={}){
       if(t.ageYears>=15){
         const courses=choiceButtons('職業別研修',CAREER_TRAINING.map(c=>({value:c.id,label:c.name})),CAREER_TRAINING[0].id);
         const extra=lifeEl('details','phase4-extra');
+        extra.dataset.foldKey='career-training';
         extra.append(lifeEl('summary','','職業別研修・技能認定'));
         extra.append(courses.element);
+        const effect=lifeEl('p','muted small career-training-effect');
+        const updateEffect=()=>{
+          const p=careerTrainingPreview(e,courses.getValue(),game.finances?.career?.experience??0);
+          effect.textContent=!p.ok?p.reason:
+            `${p.course.name}：${p.course.skill} ${p.now}→${p.next}（+${p.gain}） ／
+              ${p.relatedJob}の採用評価 ${p.hiringBefore}→${p.hiringAfter}点（+${p.hiringGain}） ／
+              ${p.awarded?'今回の研修でゲーム内技能認定を取得':p.already?'技能認定取得済み':p.next<40?'技能40点で認定の対象':'技能認定の登録枠が上限'}`;
+        };
+        courses.group.addEventListener('click',updateEffect);
+        updateEffect();
+        extra.append(effect);
         action(extra,'選んだ職業技能を研修',()=>handlers.onAction?.('careerTraining',{postingId:courses.getValue()}));
         controls.append(extra);
       }

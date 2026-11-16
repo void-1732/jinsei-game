@@ -7,6 +7,7 @@ const fmt=n=>Number(n).toLocaleString('ja-JP');
 export function renderQualificationPanel(state,onAction,{career=false}={}){
  const e=state.education,age=state.timeline.ageYears;
  const root=el('details','phase4-extra qualification-panel');
+ root.dataset.foldKey=career?'qualifications-career':'qualifications-school';
  root.append(el('summary','','資格・能力・受験難易度'));
  const result=el('div','qualification-body');
  const degree=e.degree??(e.stage==='卒業'?'学歴記録を確認':'在学中');
@@ -40,14 +41,14 @@ export function renderQualificationPanel(state,onAction,{career=false}={}){
   const p=qualificationPreview(e,select.value,age),q=p.q;
   if(!p.ok)return;
   description.textContent=`${q.name}｜難易度：${p.difficulty}（基準${q.threshold}点）｜現在の能力${p.readiness}点｜ゲーム内合格見込み${p.chance}%｜受験料${fmt(q.fee)}円｜${p.earned?'取得済み':p.requirement?'受験不可：'+p.requirement:'受験可能'}。 ${q.description}`;
-  prepare.disabled=p.earned||Boolean(p.requirement)||age<18||p.preparation>=30||state.finances.cash<2000;
-  exam.disabled=p.earned||Boolean(p.requirement)||age<18||state.finances.cash<q.fee;
+  prepare.disabled=p.earned||Boolean(p.requirement)||p.preparation>=30||state.finances.cash<2000;
+  exam.disabled=p.earned||Boolean(p.requirement)||state.finances.cash<q.fee;
   feedback.textContent='';
  };
  select.addEventListener('change',refresh);
  prepare.addEventListener('click',()=>{const r=onAction?.('prepareQualification',{id:select.value});feedback.textContent=r?.message??r?.reason??'操作できませんでした。';});
  exam.addEventListener('click',()=>{const r=onAction?.('takeQualificationExam',{id:select.value});feedback.textContent=r?.message??r?.reason??'操作できませんでした。';});
  result.append(description,controls,feedback);
- if(!career)result.append(el('p','muted small','社会人の資格受験は18歳以上で利用できます。学歴と専門課程による受験制限は残ります。'));
+ if(!career)result.append(el('p','muted small','工業高校・商業高校・高専では15歳から対応資格に挑戦できます。その他の資格は原則18歳以降で、専門課程などの受験条件は維持されます。'));
  root.append(result);refresh();return root;
 }

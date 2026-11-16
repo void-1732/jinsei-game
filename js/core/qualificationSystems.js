@@ -41,8 +41,21 @@ export function hasQualification(education,id){
  return Boolean(q&&((education.qualificationTrack?.earned??[]).includes(id)||
   (q.license&&(education.licenses??[]).includes(q.license))));
 }
+/** 15–17歳の職業系高校・高専生は対応するゲーム内技能資格に挑戦できる。
+ * 医師免許などの専門免許や高学歴必須資格には適用しない。 */
+export const STUDENT_QUALIFICATIONS=freeze({
+ '工業高校':freeze(['itEntry','itFundamental','industrial','industrialAdvanced','building']),
+ '商業高校':freeze(['bookkeeping3','bookkeeping2','itEntry','itFundamental']),
+ '高専':freeze(['itEntry','itFundamental','industrial','industrialAdvanced','building']),
+});
+export function eligibleStudentQualification(education,q,age){
+ if(!q||!Number.isInteger(age)||age<15||age>=18)return false;
+ const school=education?.stage==='高専'?'高専':
+  education?.stage==='高校'?(education.highSchoolTrack??education.school):null;
+ return Boolean(school&&STUDENT_QUALIFICATIONS[school]?.includes(q.id)&&!q.license&&!q.degree);
+}
 export function qualificationRequirements(q,education,age){
- if(age<q.minAge)return `${q.minAge}歳以上で受験できます`;
+ if(age<q.minAge&&!eligibleStudentQualification(education,q,age))return `${q.minAge}歳以上で受験できます（工業高校・商業高校・高専では一部の資格が15歳から受験可能）`;
  if(q.degree==='学士相当'&&!qualifiedBachelor(education))return '大学卒業相当の学歴が必要';
  if(q.degree&&q.degree!=='学士相当'&&education.degree!==q.degree)return `${q.degree}が必要`;
  if(q.prerequisite&&!hasQualification(education,q.prerequisite))return `${byId(q.prerequisite).name}の取得が必要`;
@@ -160,7 +173,7 @@ const record=(s,label,amount=0)=>{
 export function qualificationAction(state,action,payload={}){
  const q=byId(payload.id),t=state.timeline,e=state.education,h=state.health,f=state.finances;
  if(!q)return {ok:false,reason:'資格を選んでください。'};
- if(t.ageYears<18)return {ok:false,reason:'資格の自由受験・試験対策は18歳からです。'};
+ if(t.ageYears<18&&!eligibleStudentQualification(e,q,t.ageYears))return {ok:false,reason:'この資格は18歳からです。職業系高校・高専の対応資格は15歳から利用できます。'};
  const preview=qualificationPreview(e,q.id,t.ageYears);
  if(preview.earned)return {ok:false,reason:'この資格は取得済みです。'};
  if(preview.requirement)return {ok:false,reason:preview.requirement};
