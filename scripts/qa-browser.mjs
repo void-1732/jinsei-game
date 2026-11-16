@@ -53,6 +53,13 @@ async function runViewport(binary,width){
   await evaluate("document.querySelector('#player-name').value='STEP55ブラウザ確認'");
   await click("document.querySelector('#start-game')");
   await until(async()=>get("document.querySelector('#start-game').disabled===true && document.querySelector('#advance-turn').disabled===false"),'new life started');
+  // Persistent action center is available from the header without navigation.
+  await click("document.querySelector('#open-action-center')");
+  await until(async()=>get("document.querySelector('#action-center-dialog')?.open && document.querySelectorAll('#action-center-content .action-center-category').length===7"),'action center opened');
+  const centerInitial=await get("({choices:document.querySelectorAll('#action-center-content .action-center-option').length,disabled:document.querySelector('#action-center-content .action-center-confirm')?.disabled,overflow:document.documentElement.scrollWidth>innerWidth+3})");
+  if(centerInitial.choices<3||!centerInitial.disabled||centerInitial.overflow)throw Error('Action center initial layout invalid '+JSON.stringify(centerInitial));
+  await click("document.querySelector('#close-action-center')");
+  if(await get("document.querySelector('#action-center-dialog').open"))throw Error('Action center could not be closed');
   await click("document.querySelector('#advance-turn')");
   await until(async()=>get("document.querySelector('#story-dialog').open && document.querySelectorAll('#story-content .story-choices button').length>=3"),'story popup opened');
    const modalAccessible=await get("document.activeElement?.id==='story-title' && !!document.querySelector('#story-action-error[role=alert]')");
@@ -187,6 +194,46 @@ async function runViewport(binary,width){
      adultBudget.fourth||adultBudget.remaining!==0||adultBudget.unique!==3||
      adultBudget.buttonCount!==4||adultBudget.mobileOverflow)
     throw Error('Adult three-category and recurring button test failed '+JSON.stringify(adultBudget));
+  // Use a detached adult store to exercise three actual actions through the
+  // same buttons, including re-render and category-usage lockout.
+  const centerAdult=await evaluate(`(async()=>{
+    const [{createGameStore},{renderActionCenter}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/actionCenter.js')
+    ]);
+    const store=createGameStore({interactiveChoices:true});store.startNewGame();
+    const snapshot=structuredClone(store.getState());snapshot.pendingEvents=[];
+    snapshot.timeline={year:2026,month:5,ageYears:26,turnsElapsed:101,monthsElapsed:316};
+    snapshot.turnActions={turn:101,used:0,lastAction:null,categories:[]};
+    snapshot.finances.cash=300000;
+    if(!store.loadState(snapshot).ok)return {error:'fixture failed'};
+    const host=document.createElement('div');host.style.width='min(95%,920px)';
+    document.body.append(host);
+    let successful=0,attempts=0;
+    const draw=()=>renderActionCenter(host,store.getState(),{
+      onAction:(a,p)=>{attempts++;return store.performAction(a,p)},
+      onSuccessfulAction:()=>{successful++;draw()},
+      onNavigate:()=>{}
+    });
+    draw();
+    const clickAction=(action,category)=>{
+      const button=[...host.querySelectorAll('.action-center-option')].find(b=>b.dataset.action===action&&b.dataset.category===category&&!b.disabled);
+      if(!button)return false;
+      button.click();host.querySelector('.action-center-confirm')?.click();return true;
+    };
+    const first=clickAction('adultActivity','健康');
+    const usedHealth=[...host.querySelectorAll('.action-center-category')].find(c=>c.dataset.category==='健康');
+    const disabledAfter=usedHealth?.querySelector('.action-center-option')?.disabled;
+    const second=clickAction('adultActivity','人物・家族');
+    const third=clickAction('adultActivity','学業');
+    const fourth=[...host.querySelectorAll('.action-center-option')].some(b=>!b.disabled);
+    const result={first,second,third,disabledAfter,remaining:3-store.getState().turnActions.used,
+      used:store.getState().turnActions.used,success:successful,attempts,fourth,overflow:document.documentElement.scrollWidth>innerWidth+3};
+    host.remove();return result;
+  })()`);
+  if(centerAdult.error||!centerAdult.first||!centerAdult.second||!centerAdult.third||
+    !centerAdult.disabledAfter||centerAdult.remaining!==0||centerAdult.used!==3||
+    centerAdult.success!==3||centerAdult.attempts!==3||centerAdult.fourth||centerAdult.overflow)
+    throw Error('Adult action center buttons failed '+JSON.stringify(centerAdult));
   await click("document.querySelector('#open-settings')");
   await until(async()=>get("document.querySelector('#settings-dialog').open"),'settings opened');
   if(!(await get("!!document.querySelector('#export-game') && !!document.querySelector('#import-game-file')")))throw Error('Backup controls missing');

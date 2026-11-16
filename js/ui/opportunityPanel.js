@@ -2,6 +2,7 @@
  * Primary actions remain in the shared one-action-per-turn selector above.
  */
 import {createOpportunityProgress,opportunityOptions} from '../core/opportunitySystems.js';
+import {actionBudget,categoryActionAvailable} from '../core/adultActionBudget.js';
 const el=(tag,cls='',text='')=>{const node=document.createElement(tag);node.className=cls;node.textContent=text;return node;};
 const yen=n=>Math.round(n??0).toLocaleString('ja-JP')+'円';
 export function renderOpportunityPanel(state,category){
@@ -36,8 +37,13 @@ export function renderOpportunityPanel(state,category){
  box.append(dl);
  const actions=opportunityOptions(state,category);
  const pending=state.pendingEvents.some(e=>e.type==='choice');
- const used=state.turnActions?.turn===state.timeline.turnsElapsed&&state.turnActions.used>=1;
- const guidance=pending?'先に「次のターンへ進む」から人生イベントを選択してください。':used?'今のターンの自由行動は実行済みです。次のターンで新しい行動を選べます。':actions.length?`このカテゴリで選べる進路・仕事・家計の判断は${actions.length}件です。上の行動欄から1件選べます。`:'新しい選択は条件を満たしたときに表示されます。人生イベントも将来の選択肢に影響します。';
+ const budget=actionBudget(state);
+ const canAct=categoryActionAvailable(state,category);
+ const guidance=pending?'先に重要な出来事を選択してください。':
+  budget.remaining===0?'今月の自由行動は完了しました。次のターンで再び選べます。':
+  !canAct?'このカテゴリは今月使用済みです。別のカテゴリから行動できます。':
+  actions.length?`このカテゴリの候補は${actions.length}件です。画面上部の「今月の行動」から選べます。`:
+  '新しい選択は条件を満たしたときに表示されます。人生イベントも将来の選択肢に影響します。';
  box.append(el('p','opportunity-guidance',guidance));
  if(p.history.length){const last=p.history.at(-1);box.append(el('p','opportunity-last',`最近の決断：${last.title}（${last.year}年${last.month}月）`));}
  return box;

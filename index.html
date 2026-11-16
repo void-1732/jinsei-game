@@ -43,6 +43,7 @@
   <link rel="stylesheet" href="css/phase62.css">
   <link rel="stylesheet" href="css/phase63.css">
   <link rel="stylesheet" href="css/phase64.css">
+  <link rel="stylesheet" href="css/phase65.css">
 </head>
 <body>
   <a class="skip-navigation" href="#main-content">本文へ移動</a>
@@ -58,6 +59,7 @@
       </div>
       <div class="topbar-actions">
         <button class="button button-secondary" id="toggle-nav" type="button" aria-controls="sidebar" aria-expanded="false">全画面検索</button>
+        <button class="button button-primary" id="open-action-center" type="button">今月の行動</button>
         <button class="button button-secondary" id="open-settings" type="button">設定・保存</button>
         <span class="save-indicator" id="save-status">保存待ち</span>
       </div>
@@ -129,6 +131,10 @@
     <footer class="statusbar"><span id="system-message" role="status" aria-live="polite" aria-atomic="true">システム準備完了</span><span>第58段階 · 正式版</span></footer>
   </div>
 
+  <dialog id="action-center-dialog" class="modal action-center-dialog" aria-labelledby="action-center-dialog-title">
+    <div class="modal-header"><h2 id="action-center-dialog-title">今月の自由行動</h2><button class="icon-button" id="close-action-center" type="button">閉じる</button></div>
+    <div id="action-center-content"></div>
+  </dialog>
   <dialog id="help-dialog" class="modal" aria-labelledby="help-title">
     <div class="modal-header"><h2 id="help-title">画面ガイド</h2><button class="icon-button" id="close-help" type="button">閉じる</button></div>
     <p>ページ上部の9カテゴリから移動できます。似た項目は同じページにまとめています。全61画面の個別表示は「全画面検索」から探せます。</p>
