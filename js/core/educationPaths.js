@@ -53,7 +53,7 @@ export function employmentQualificationBonus(education,postingId){
 }
 export function canApplyUniversityRole(education){
  if(!education?.graduated||education.universityChoice!=='進学')return false;
- if(education.degree)return ['学士','修士','医学課程修了','歯学課程修了','専攻科修了'].includes(education.degree);
+ if(education.degree)return ['学士','修士','医学課程修了','歯学課程修了'].includes(education.degree);
  // Old saves never included program; preserve their historical university eligibility.
  return !education.program||education.program.years===4;
 }
