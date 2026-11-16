@@ -41,6 +41,8 @@ test('結婚には12か月の交際と家計・親密度、将来の話し合い
  s.familyJourney.connections[p.id]={knownSince:0,datingSince:s.timeline.year*12+s.timeline.month-1,futureTalks:2,lastTalk:-1,lastContact:-1};
  assert.match(familyEligibility(s,'marry',p.id),/12か月/);
  months(s,12);
+ s.familyJourney.relationshipDepth={[p.id]:{cohabitingSince:-1,engagedSince:s.timeline.year*12+s.timeline.month-4,
+  marriedSince:-1,weddingMonth:-1,weddingStyle:null,trust:85,conflict:0}};
  assert.equal(familyJourneyAction(s,'marry',{personId:p.id}).ok,true);
  assert.equal(p.role,'配偶者');
  assert.equal(s.household.memberIds.filter(id=>id===p.id).length,1);
