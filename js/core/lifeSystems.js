@@ -1,4 +1,5 @@
 import {evaluateSchool} from './socialSystems.js';
+import {assignProgram,chooseMajor as selectMajor,graduateProgram} from './educationPaths.js';
 /** 人物・学業の独立したドメイン規則。全データはシリアライズ可能。 */
 const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
 export function createLifeData(name){
@@ -9,7 +10,7 @@ export function createLifeData(name){
       {id:'FAMILY-002',name:'母',birth:{year:1975,month:9,day:1},role:'母',relationship:70},
     ],
     relationships:[],
-    education:{stage:'未就学',grade:0,school:'',scores:{国語:50,数学:50,英語:50,理科:50,社会:50},studyHours:0,attendance:100,skills:{},history:[],entrance:{status:'未実施',destination:null},examPreparation:0,schoolPreference:{高校:'自動',大学:'自動'},universityChoice:'進学',graduated:false},
+    education:{stage:'未就学',grade:0,school:'',scores:{国語:50,数学:50,英語:50,理科:50,社会:50},studyHours:0,attendance:100,skills:{},history:[],entrance:{status:'未実施',destination:null},examPreparation:0,schoolPreference:{高校:'自動',大学:'自動'},universityChoice:'進学',graduated:false,program:null,major:'general',credentialIds:[],qualifications:[]},
   };
 }
 function academicStage(year,month){
@@ -24,11 +25,20 @@ function academicStage(year,month){
 export function advanceEducation(education,previous,next,turn){
   const oldStage=education.stage;
   let [stage,grade,school]=academicStage(next.year,next.month);
+  const schoolYear=next.year-(next.month<4?1:0);
+  // Newly enrolled short courses end in two years. Old saves without a program
+  // continue following the original four-year timeline.
+  if(stage==='大学'&&education.program&&schoolYear>=education.program.startYear+education.program.years)
+    [stage,grade,school]=['卒業',0,''];
   if(stage===oldStage && (stage==='高校'||stage==='大学') && education.school)school=education.school;
   if(stage==='大学' && education.universityChoice==='就職') [stage,grade,school]=['卒業',0,''];
   const notices=[];
   const changes=education.history;
   if(stage!==oldStage){
+    if(oldStage==='大学'&&stage==='卒業'&&education.universityChoice==='進学'&&education.program){
+      graduateProgram(education);
+      notices.push({type:'education',title:'卒業・修了認定',description:`${education.program.school}を修了しました。資格・技能が仕事の採用評価に反映されます。`});
+    }
     if(oldStage!=='未就学' && oldStage!=='卒業') changes.push({year:next.year,month:next.month,text:`${oldStage}を修了`});
     if(stage!=='卒業'){
       const message=`${stage}に進みました`;
@@ -45,6 +55,7 @@ export function advanceEducation(education,previous,next,turn){
     const preparationBonus=Math.min(8,Math.max(0,(education.examPreparation??0)*2));
     const passed=preference==='自動'||result.average+preparationBonus>=thresholds[preference];
     school=passed&&preference!=='自動'?preference:result.school;
+    if(stage==='大学')assignProgram(education,school,schoolYear);
     education.entrance={status:passed?'合格':'第一志望不合格・代替進学',destination:school,average:result.average,preference};
     const message=passed?`${stage}入学：${school}`:`${preference}は不合格となり、${school}へ進学`;
     changes.push({year:next.year,month:next.month,text:message});
@@ -90,3 +101,6 @@ export function chooseSchool(education,stage,school){
   education.schoolPreference[stage]=school;
   return {ok:true,school};
 }
+
+/** A major is picked with a single explicit button confirmation. */
+export const chooseMajor=selectMajor;
