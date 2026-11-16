@@ -1,4 +1,5 @@
 import {eraSummary,eraEconomicEffects} from '../core/eraSystems.js';
+import {checkupGuidance} from '../core/healthSystems.js';
 /** 第6段階の状態・操作パネル。ゲーム状態はhandlers経由でのみ更新。 */
 const node=(tag,cls='',label='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=label;return n;};
 function line(root,k,v){const r=node('div','field-list-item');r.append(node('strong','',k),node('span','',String(v)));root.append(r);}
@@ -15,7 +16,10 @@ export function renderWorldPanel(container,screen,game,handlers={}){
    line(section,'現在の病気',h.illness?.name??'なし');line(section,'診療回数',`${h.medicalVisits}回`);
    if(health){for(const [key,val]of Object.entries(h.habits))line(section,`${key}の習慣`,`${val} / 100`);
      const controls=node('div','phase4-actions');for(const habit of ['運動','休養','食生活'])button(controls,`${habit}を改善`,()=>handlers.onAction?.('habit',{habit}),h.lastActionMonth===`${game.timeline.year}-${game.timeline.month}`);
-     button(controls,'病気を治療する（5,000円）',()=>handlers.onAction?.('treatment',{}),!h.illness);section.append(controls);
+     button(controls,'病気を治療する（自己負担3,500円）',()=>handlers.onAction?.('treatment',{}),!h.illness);
+     const month=`${game.timeline.year}-${game.timeline.month}`;
+     button(controls,`${checkupGuidance(game.timeline.ageYears)}（1,000円）`,()=>handlers.onAction?.('checkup',{}),h.lastCheckupMonth===month);
+     section.append(controls);
      if(screen.id==='HEALTH-08'||screen.id==='HEALTH-01'){
        section.append(node('h3','','最近の健康履歴'));
        for(const entry of h.healthHistory.slice(-6).reverse())line(section,`${entry.year}年${entry.month}月`, `身体 ${entry.physical}・精神 ${entry.mental}${entry.illness?'・'+entry.illness:''}`);
