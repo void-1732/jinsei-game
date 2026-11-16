@@ -80,7 +80,7 @@ export function careerEligibility(post,education,career,age){
  if(post.degree==='medicine'&&degree!=='医学課程修了')return '6年制の医学課程を修了する必要があります。';
  if(post.degree==='dentistry'&&degree!=='歯学課程修了')return '6年制の歯学課程を修了する必要があります。';
  if(post.license&&!(education.licenses??[]).includes(post.license))return `${post.license}のゲーム内資格試験への合格が必要です。`;
- const missing=jobQualificationInfo(education,post.id).missing.filter(q=>q.license!==post.license);
+ const missing=jobQualificationInfo(education,post.id).missing.filter(q=>!post.license||q.license!==post.license);
  if(missing.length)return `必須資格：${missing.map(q=>q.name).join('・')}の取得が必要です。`;
  if(post.athlete&&(education.skills?.運動??0)<30)return 'スポーツ選手には運動技能30点以上が必要です。';
  if(post.politicalRank===2&&((career.politicalRank??0)<1||(career.politicalExperience??0)<24))return '市区町村議員として24か月以上の経験が必要です。';
