@@ -41,21 +41,5 @@ export function renderCategoryDock(container,strip,screen,uiState,gameState,hand
     tabs.append(btn);
   }
   strip.append(tabs);
-  // Each underlying screen is selected from this single top-level navigation,
-  // not via a second repeated switcher below the page's information.
-  if(topic?.screenIds.length>1){
-    const sub=node('div','topic-screen-tabs');
-    sub.setAttribute('role','group');
-    sub.setAttribute('aria-label',`${topic.title}の操作項目`);
-    for(const id of topic.screenIds){
-      const detail=groupScreen(id);
-      const selected=screen.id===id;
-      const btn=node('button','screen-tab'+(selected?' selected':''),detail.title);
-      btn.type='button';
-      btn.setAttribute('aria-pressed',String(selected));
-      btn.addEventListener('click',()=>handlers.onTopic?.(id));
-      sub.append(btn);
-    }
-    strip.append(sub);
-  }
+  // Redundant per-screen tabs are replaced by a single detail selector inside the topic.
 }
