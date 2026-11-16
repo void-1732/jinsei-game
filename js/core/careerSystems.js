@@ -13,6 +13,14 @@ export const JOB_POSTINGS=Object.freeze([
   {id:'creative',company:'北星企画',job:'企画職',salary:260000,minAge:18,threshold:55,focus:'国語'},
   {id:'care',company:'青葉生活支援',job:'生活支援職',salary:215000,minAge:18,threshold:40,focus:'理科'},
 ]);
+export const CAREER_TRAINING=Object.freeze([
+  {id:'shop',name:'接客・販売',skill:'接客力'},
+  {id:'office',name:'事務・会計',skill:'事務力'},
+  {id:'tech',name:'情報技術',skill:'技術力'},
+  {id:'pro',name:'専門研究',skill:'専門力'},
+  {id:'creative',name:'企画・デザイン',skill:'企画力'},
+  {id:'care',name:'生活支援',skill:'支援力'},
+]);
 const integer=(n,min=0,max=1000000)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
 export const CAREER_PLANS=Object.freeze([
  {id:'balanced',name:'安定重視',description:'成果・健康・職場の信頼をバランスよく伸ばす'},
@@ -35,12 +43,32 @@ export function employmentScore(education,posting,experience=0){
  const average=all.length?all.reduce((a,b)=>a+b,0)/all.length:0;
  const related=Number(scores[posting.focus]??0);
  const skill=Math.max(0,...Object.values(education?.skills??{}).filter(Number.isFinite));
- return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id))));
+ const course=CAREER_TRAINING.find(item=>item.id===posting.id);
+ const trained=course?Number(education?.skills?.[course.skill]??0):0;
+ const certified=course && (education?.qualifications??[]).includes(`${course.name}技能認定（ゲーム内）`);
+ return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id)+Math.min(8,trained*.12)+(certified?4:0))));
 }
 export function careerAction(finances,action,payload,context){
  ensureWorkplace(finances);
  const career=finances.career,date=context.date;
  const record=(message)=>{finances.ledger.push({year:date.year,month:date.month,kind:'記録',label:message,amount:0});if(finances.ledger.length>600)finances.ledger.shift();};
+ if(action==='careerTraining'){
+  if(context.age<15)return {ok:false,reason:'職業別の研修は15歳からです。'};
+  const course=CAREER_TRAINING.find(p=>p.id===payload.postingId);
+  if(!course)return {ok:false,reason:'研修分野を選んでください。'};
+  const education=context.education;
+  const old=Number(education.skills[course.skill]??0);
+  if(old>=100)return {ok:false,reason:'この分野は習得済みです。'};
+  education.skills[course.skill]=Math.min(100,old+12);
+  const qualification=`${course.name}技能認定（ゲーム内）`;
+  education.qualifications??=[];
+  let certified=false;
+  if(education.skills[course.skill]>=40 && !education.qualifications.includes(qualification) && education.qualifications.length<5){
+   education.qualifications.push(qualification);certified=true;
+  }
+  record(`${course.name}の研修${certified?'・資格取得':''}`);
+  return {ok:true,message:`${course.name}の技能 ${education.skills[course.skill]}/100${certified?'、ゲーム内資格を取得':''}`};
+ }
  if(action==='applyJob'){
   const post=JOB_POSTINGS.find(p=>p.id===payload.postingId);
   if(!post)return {ok:false,reason:'求人を選択してください。'};
