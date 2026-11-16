@@ -52,7 +52,7 @@ export function livingExpenseWithHardship(finances,age,priceMultiplier=1,discoun
 export function createEconomyData(){return {
   cash:0,investment:0,debt:0,monthlyBudget:85000,
   career:{job:null,company:null,monthlySalary:0,experience:0,promotions:0,jobChanges:0,unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,benefitEligible:true,insuredMonths:0},
-  sideJob:{active:false,monthlyIncome:35000},investmentHoldings:[],vehicle:null,business:{active:false,name:null,monthlyRevenue:0,monthlyCosts:0,capitalSpent:0,operatingCash:0,operatingDebt:0,lossMonths:0,status:'未設立',cashFlowHistory:[],ownerDraws:0,loanBalance:0,loanInterestPaid:0,equipmentValue:0,businessLedger:[],monthlyRepayment:0,equipmentDepreciation:0,loanApplications:0,loanDueIndex:0,loanOverdueMonths:0,creditScore:70,equipmentItems:[],nextEquipmentId:1,loanContracts:[],nextLoanId:1,loanPaymentHistory:[],loanScheduleHistory:[]},
+  sideJob:{active:false,monthlyIncome:35000},investmentHoldings:[],vehicle:null,vehicles:[],nextVehicleId:1,business:{active:false,name:null,monthlyRevenue:0,monthlyCosts:0,capitalSpent:0,operatingCash:0,operatingDebt:0,lossMonths:0,status:'未設立',cashFlowHistory:[],ownerDraws:0,loanBalance:0,loanInterestPaid:0,equipmentValue:0,businessLedger:[],monthlyRepayment:0,equipmentDepreciation:0,loanApplications:0,loanDueIndex:0,loanOverdueMonths:0,creditScore:70,equipmentItems:[],nextEquipmentId:1,loanContracts:[],nextLoanId:1,loanPaymentHistory:[],loanScheduleHistory:[]},
   ledger:[],totals:{income:0,expenses:0,tax:0},
 };}
 export const EQUIPMENT_TYPES=Object.freeze({'標準設備':100,'事務機器':60,'製造機械':120,'車両':72,'店舗設備':96});
@@ -385,16 +385,28 @@ export function economyAction(e,action,payload,context){
       if(age<18)return {ok:false,reason:'車の購入は18歳から利用できます。'};
       const option=VEHICLE_OPTIONS.find(v=>v.id===payload.vehicleId);
       if(!option)return {ok:false,reason:'車種を選択してください。'};
-      if(e.vehicle)return {ok:false,reason:'先に現在の車を売却してください。'};
+      e.vehicles??=[];e.nextVehicleId??=1;
+      if((e.vehicle?1:0)+e.vehicles.length>=5)return {ok:false,reason:'車は最大5台まで所有できます。'};
       if(e.cash<option.price)return {ok:false,reason:'購入費用が不足しています。'};
-      e.cash-=option.price;e.vehicle={id:option.id,value:option.price,months:0};
+      e.cash-=option.price;
+      const vehicle={id:option.id,value:option.price,months:0,fleetId:e.nextVehicleId++};
+      if(!e.vehicle)e.vehicle=vehicle;else e.vehicles.push(vehicle);
       log(e,date,'資産移動',`${option.name}を購入`,-option.price);
       return {ok:true,message:`${option.name}を購入しました。月額維持費${option.monthlyCost.toLocaleString('ja-JP')}円。`};
     }
     case 'sellVehicle':{
-      if(!e.vehicle)return {ok:false,reason:'所有している車がありません。'};
-      const value=e.vehicle.value;
-      e.cash+=value;e.vehicle=null;log(e,date,'資産移動','車を売却',value);
+      e.vehicles??=[];
+      if(!e.vehicle&&!e.vehicles.length)return {ok:false,reason:'所有している車がありません。'};
+      let selected=null;
+      if(payload.fleetId===undefined||payload.fleetId===null)selected=e.vehicle;
+      else if(e.vehicle?.fleetId===payload.fleetId)selected=e.vehicle;
+      else selected=e.vehicles.find(v=>v.fleetId===payload.fleetId);
+      if(!selected)return {ok:false,reason:'売却対象の車を選択してください。'};
+      const value=selected.value;
+      e.cash+=value;
+      if(e.vehicle===selected)e.vehicle=e.vehicles.shift()??null;
+      else e.vehicles=e.vehicles.filter(v=>v!==selected);
+      log(e,date,'資産移動','車を売却',value);
       return {ok:true,message:`${value.toLocaleString('ja-JP')}円で車を売却しました。`};
     }
     case 'repayDebt':if(!validAmount(payload.amount)||e.debt<payload.amount||e.cash<payload.amount)return {ok:false,reason:'返済額または返済可能残高を確認してください。'};
@@ -546,11 +558,11 @@ export function advanceEconomy(e,from,months,playerBirth,world=null,options={}){
     const livingCost=livingExpenseWithHardship(e,age,era.living,options.livingDiscount??0);
     debit(e,date,'生活費',livingCost);
     advanceLiving(e,date,age);
-    if(e.vehicle){
-      const option=VEHICLE_OPTIONS.find(v=>v.id===e.vehicle.id);
+    for(const vehicle of [e.vehicle,...(e.vehicles??[])].filter(Boolean)){
+      const option=VEHICLE_OPTIONS.find(v=>v.id===vehicle.id);
       if(option)debit(e,date,'車の維持費',option.monthlyCost);
-      e.vehicle.months=(e.vehicle.months??0)+1;
-      e.vehicle.value=Math.max(0,Math.floor(e.vehicle.value*0.992));
+      vehicle.months=(vehicle.months??0)+1;
+      vehicle.value=Math.max(0,Math.floor(vehicle.value*0.992));
     }
     const holdings=e.investmentHoldings??[];
     const tracked=holdings.reduce((sum,row)=>sum+row.value,0);
