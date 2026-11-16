@@ -1,0 +1,110 @@
+/* Compact, width-aware layout for topic screens. No state or action changes. */
+.topic-compact{
+  width:100%;
+  max-width:1600px;
+  min-width:0;
+  gap:10px;
+}
+.topic-leading{
+  display:grid;
+  grid-template-columns:minmax(220px,.8fr) minmax(0,1.55fr);
+  gap:10px;
+  align-items:stretch;
+  min-width:0;
+}
+.topic-leading>*{min-width:0;margin:0}
+.topic-leading.has-context:not(.has-actions){
+  grid-template-columns:minmax(210px,.75fr) minmax(0,2fr);
+}
+.topic-leading.has-context:not(.has-actions) .topic-context{
+  grid-column:2;
+  grid-row:1;
+}
+.topic-leading.has-context .topic-context{grid-column:1/-1}
+.topic-leading .topic-intro{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:12px 16px;
+}
+.topic-leading .topic-intro h2{font-size:clamp(16px,1.45vw,20px);line-height:1.25;margin:4px 0}
+.topic-leading .topic-intro p{font-size:11px;line-height:1.5}
+.topic-leading .topic-action{padding:12px 15px}
+.topic-leading .topic-action h2{margin:3px 0 8px;font-size:16px}
+.topic-leading .topic-action-form{gap:8px}
+.topic-leading .topic-action-form label{flex:1 1 170px}
+.topic-leading .topic-action-select{min-height:40px;margin-top:4px;padding:7px 9px}
+.topic-leading .topic-action-form .button{min-height:40px;padding:8px 12px}
+.topic-leading .topic-action .topic-action-foot{margin-top:6px}
+.topic-leading .topic-context{padding:12px 15px}
+.topic-leading .topic-context h3{margin:0 0 8px}
+.topic-leading .opportunity-facts{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.topic-leading .opportunity-facts>div{padding:8px 9px}
+.topic-leading .opportunity-facts dd{font-size:.84rem}
+.topic-leading .opportunity-guidance,
+.topic-leading .opportunity-last{font-size:11px;line-height:1.45;margin-top:7px}
+.topic-compact .topic-summary-card{padding:12px 15px}
+.topic-compact .topic-detail{border-top:0;margin:0;padding:0}
+.topic-compact .topic-detail>summary{
+  padding:8px 10px;
+  border:1px solid #557b9a;
+  border-radius:8px;
+  background:#1b3954;
+  font-size:12px;
+  cursor:pointer;
+}
+.topic-compact .topic-detail[open]>summary{margin-bottom:9px}
+.topic-compact .topic-detail-content .content-card{margin-bottom:8px;padding:12px}
+.topic-compact .topic-tool-label{margin:2px 0 9px;font-size:12px}
+.topic-compact .topic-tool-select{min-height:40px;margin-top:5px;padding:7px 10px}
+.topic-compact .topic-legacy-detail{margin-top:6px}
+.topic-stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,165px),1fr));
+  gap:6px;
+  margin:8px 0;
+  min-width:0;
+}
+.topic-stat-grid>.field-list-item{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+  border:1px solid #466583;
+  background:rgba(13,30,49,.45);
+  border-radius:9px;
+  padding:9px 10px;
+  margin:0;
+}
+.topic-stat-grid>.field-list-item>strong,
+.topic-stat-grid>.field-list-item>span{
+  max-width:100%;
+  overflow-wrap:anywhere;
+  text-align:left;
+  line-height:1.4;
+}
+@media(min-width:1460px){
+  .topic-leading.has-actions.has-context{
+    grid-template-columns:minmax(220px,.8fr) minmax(320px,1.3fr) minmax(390px,1.6fr);
+  }
+  .topic-leading.has-context .topic-context{grid-column:3;grid-row:1}
+  .topic-leading .opportunity-facts{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .topic-leading.has-context:not(.has-actions){grid-template-columns:minmax(220px,.75fr) minmax(0,2fr)}
+  .topic-leading.has-context:not(.has-actions) .topic-context{grid-column:2;grid-row:1}
+}
+@media(max-width:980px){
+  .topic-leading{grid-template-columns:minmax(0,1fr)}
+  .topic-leading.has-context:not(.has-actions){grid-template-columns:minmax(0,1fr)}
+  .topic-leading.has-context:not(.has-actions) .topic-context{grid-column:auto;grid-row:auto}
+  .topic-leading.has-context .topic-context{grid-column:auto}
+  .topic-leading .opportunity-facts{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .topic-leading .topic-intro{padding:11px 13px}
+}
+@media(max-width:600px){
+  .topic-compact{gap:8px}
+  .topic-leading{gap:8px}
+  .topic-leading .opportunity-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .topic-compact .topic-summary-card{padding:10px}
+  .topic-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:370px){.topic-stat-grid{grid-template-columns:minmax(0,1fr)}}
