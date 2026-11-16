@@ -27,18 +27,19 @@ export function createFoldState(store=storage()){
  const save=()=>{
   try{store?.setItem(STORAGE_KEY,JSON.stringify(Object.fromEntries([...states].slice(-MAX_FOLDS))));}catch{}
  };
- const put=(key,opened)=>{
+ const put=(key,opened,persist=true)=>{
   if(states.has(key))states.delete(key);
   states.set(key,Boolean(opened));
   while(states.size>MAX_FOLDS)states.delete(states.keys().next().value);
-  save();
+  if(persist)save();
  };
  const detailsOf=root=>root?[...root.querySelectorAll('details')]:[];
  return {
   /** Snapshot before a screen is replaced, including closed nested details. */
   capture(root,screenId){
    if(!root||!screenId)return;
-   detailsOf(root).forEach((detail,i)=>put(keyOf(detail,screenId,i),detail.open));
+   detailsOf(root).forEach((detail,i)=>put(keyOf(detail,screenId,i),detail.open,false));
+   save();
   },
   /** Restore and observe user toggles. Safe to call on each re-render. */
   restore(root,screenId){
