@@ -1,4 +1,5 @@
 import {REGIONAL_FACTORS} from './livingSystems.js';
+import {employmentQualificationBonus,canApplyUniversityRole} from './educationPaths.js';
 import {getCompany} from './companySystems.js';
 import {jobMarketAdjustment} from './worldSystems.js';
 import {eraHiringAdjustment} from './eraSystems.js';
@@ -18,7 +19,7 @@ export function employmentScore(education,posting,experience=0){
  const average=all.length?all.reduce((a,b)=>a+b,0)/all.length:0;
  const related=Number(scores[posting.focus]??0);
  const skill=Math.max(0,...Object.values(education?.skills??{}).filter(Number.isFinite));
- return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2)));
+ return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id))));
 }
 export function careerAction(finances,action,payload,context){
  ensureWorkplace(finances);
@@ -31,7 +32,7 @@ export function careerAction(finances,action,payload,context){
   if(employer?.status==='営業停止')return {ok:false,reason:'この企業は営業を停止しています。'};
   if(employer?.openings===0)return {ok:false,reason:'現在、この企業に募集枠はありません。'};
   if(context.age<post.minAge)return {ok:false,reason:`${post.minAge}歳から応募できます。`};
-  if(post.university&&!(context.education?.graduated&&context.education?.universityChoice==='進学'))return {ok:false,reason:'大学卒業が必要です。'};
+  if(post.university&&!canApplyUniversityRole(context.education))return {ok:false,reason:'この求人には4年制大学の修了が必要です。'};
   const regionalScore= Math.round(((REGIONAL_FACTORS[finances.living?.region]?.jobs??1)-1)*20);
   const score=Math.max(0,Math.min(100,employmentScore(context.education,post,career.experience)+(career.searchEffort??0)*3+regionalScore+jobMarketAdjustment(context.world)+eraHiringAdjustment(context.world,post.id)+(context.interviewBonus??0)));
   career.applications=Array.isArray(career.applications)?career.applications:[];
