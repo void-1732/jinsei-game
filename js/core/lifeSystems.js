@@ -26,47 +26,109 @@ export function advanceEducation(education,previous,next,turn){
   const oldStage=education.stage;
   let [stage,grade,school]=academicStage(next.year,next.month);
   const schoolYear=next.year-(next.month<4?1:0);
-  // Newly enrolled short courses end in two years. Old saves without a program
-  // continue following the original four-year timeline.
-  if(stage==='大学'&&education.program&&schoolYear>=education.program.startYear+education.program.years)
-    [stage,grade,school]=['卒業',0,''];
-  if(stage===oldStage && (stage==='高校'||stage==='大学') && education.school)school=education.school;
-  if(stage==='大学' && education.universityChoice==='就職') [stage,grade,school]=['卒業',0,''];
-  const notices=[];
-  const changes=education.history;
-  if(stage!==oldStage){
-    if(oldStage==='大学'&&stage==='卒業'&&education.universityChoice==='進学'&&education.program){
-      graduateProgram(education);
-      notices.push({type:'education',title:'卒業・修了認定',description:`${education.program.school}を修了しました。資格・技能が仕事の採用評価に反映されます。`});
+  const oldProgram=education.program;
+  const notices=[],changes=education.history;
+  const add=(title,description)=>notices.push({type:'education',title,description});
+  // Existing saves keep the historic high-school -> university route.
+  // Alternative programs track their own enrollment year and duration.
+  if(oldProgram && schoolYear>=oldProgram.startYear){
+    const elapsed=schoolYear-oldProgram.startYear;
+    const kind=oldProgram.school;
+    if(['高等専門学校','高専専攻科','高専編入大学','大学院修士課程','医学部','歯学部'].includes(kind)
+       ||oldProgram.startYear>=2018){
+      if(elapsed<oldProgram.years){
+        stage=kind==='高等専門学校'?'高専':kind==='高専専攻科'?'高専専攻科':
+          kind==='大学院修士課程'?'大学院': '大学';
+        grade=elapsed+1;school=kind;
+      }else [stage,grade,school]=['卒業',0,''];
     }
-    if(oldStage!=='未就学' && oldStage!=='卒業') changes.push({year:next.year,month:next.month,text:`${oldStage}を修了`});
-    if(stage!=='卒業'){
-      const message=`${stage}に進みました`;
-      changes.push({year:next.year,month:next.month,text:message});
-      notices.push({type:'education',title:message,description:`${school} ${grade}年生になりました。`});
-    } else if(oldStage!=='卒業') notices.push({type:'education',title:'学業課程を修了',description:'学校での学びを終えました。'});
-  }else if(grade!==education.grade && stage!=='未就学' && stage!=='卒業'){
-    notices.push({type:'education',title:`${stage}${grade}年生へ進級`,description:'新しい学年が始まりました。'});
   }
-  if((stage==='高校' && grade===1 && oldStage==='中学校')||(stage==='大学' && grade===1 && oldStage==='高校')){
-    const result=evaluateSchool(education.scores,stage);
-    const preference=education.schoolPreference?.[stage]??'自動';
-    const thresholds=stage==='高校'?{'進学校':75,'県立高校':55,'地域高校':0,'工業高校':48,'商業高校':45,'通信制高校':0}:{'難関大学':80,'総合大学':60,'地域大学':0,'国公立大学':72,'私立大学':55,'短期大学':38,'専門学校':35};
+  if(stage==='大学'&&education.universityChoice==='就職'&&oldStage==='高校'){
+    [stage,grade,school]=['卒業',0,''];
+  }
+  // On leaving a program, first record its earned credential, then optionally
+  // continue to a separate advanced course without skipping a graduation.
+  if(oldProgram&&stage==='卒業'&&oldStage!=='卒業'){
+    if(oldStage==='高専'){
+      education.degree='高専卒';
+      if(education.nextProgram==='高専専攻科'||education.nextProgram==='高専編入大学'){
+        stage=education.nextProgram==='高専専攻科'?'高専専攻科':'大学';
+        grade=1;school=education.nextProgram;
+        assignProgram(education,school,schoolYear);
+      }
+    }else if(oldStage==='高専専攻科')education.degree='専攻科修了';
+    else if(oldStage==='大学院')education.degree='修士';
+    else if(oldStage==='大学'){
+      education.degree=oldProgram.school==='医学部'?'医学課程修了':oldProgram.school==='歯学部'?'歯学課程修了':
+        oldProgram.school==='高専編入大学'?'学士':oldProgram.years===2?'短大卒':'学士';
+      if(education.nextProgram==='大学院修士課程'&&oldProgram.years===4){
+        stage='大学院';grade=1;school='大学院修士課程';
+        const currentMajor=education.major;
+        assignProgram(education,school,schoolYear);
+        education.major=currentMajor;
+      }
+    }
+    if(oldStage==='大学'||oldStage==='大学院'||oldStage==='高専'||oldStage==='高専専攻科'){
+      graduateProgram(education);
+      add('卒業・修了認定',`${oldProgram.school}を修了しました。学歴・技能が進路の応募条件に反映されます。`);
+    }
+    education.nextProgram='就職';
+  }else if(oldStage==='高校'&&stage==='卒業'){
+    education.degree='高卒';
+  }else if(oldStage==='大学'&&stage==='卒業'&&!oldProgram&&education.universityChoice==='進学'){
+    education.degree='学士';
+  }
+  if(stage===oldStage&&(stage==='高校'||stage==='大学'||stage==='高専'||stage==='大学院')&&education.school){
+    school=education.school;
+  }
+  // Entrance decisions occur in April and never guarantee a first choice.
+  const enteringSecondary=stage==='高校'&&grade===1&&oldStage==='中学校';
+  const enteringUniversity=stage==='大学'&&grade===1&&oldStage==='高校';
+  if(enteringSecondary||enteringUniversity){
+    const phase=enteringSecondary?'高校':'大学';
+    const result=evaluateSchool(education.scores,phase);
+    const preference=education.schoolPreference?.[phase]??'自動';
+    const thresholds=phase==='高校'?{'進学校':75,'県立高校':55,'地域高校':0,'工業高校':48,'商業高校':45,'通信制高校':0,'高等専門学校':60}:
+      {'難関大学':80,'総合大学':60,'地域大学':0,'国公立大学':72,'私立大学':55,'短期大学':38,'専門学校':35,'医学部':82,'歯学部':78};
     const preparationBonus=Math.min(8,Math.max(0,(education.examPreparation??0)*2));
-    const passed=preference==='自動'||result.average+preparationBonus>=thresholds[preference];
+    const passed=preference==='自動'||result.average+preparationBonus>=(thresholds[preference]??100);
     school=passed&&preference!=='自動'?preference:result.school;
-    if(stage==='大学')assignProgram(education,school,schoolYear);
+    if(enteringSecondary){
+      education.highSchoolTrack=school==='高等専門学校'?'高専':school;
+      if(school==='高等専門学校'){
+        stage='高専';
+        assignProgram(education,'高等専門学校',schoolYear);
+      }
+    }
+    if(enteringUniversity)assignProgram(education,school,schoolYear);
     education.entrance={status:passed?'合格':'第一志望不合格・代替進学',destination:school,average:result.average,preference};
-    const message=passed?`${stage}入学：${school}`:`${preference}は不合格となり、${school}へ進学`;
+    const message=passed?`${school}へ入学`:`${preference}は不合格となり、${school}へ進学`;
     changes.push({year:next.year,month:next.month,text:message});
-    notices.push({type:'education',title:'進学判定',description:message});
+    add('進学判定',message);
+  }
+  if(stage!==oldStage){
+    if(oldStage!=='未就学'&&oldStage!=='卒業')changes.push({year:next.year,month:next.month,text:`${oldStage}を修了`});
+    if(stage!=='卒業'){
+      changes.push({year:next.year,month:next.month,text:`${stage}に進みました`});
+      add(`${stage}に進みました`,`${school} ${grade}年生になりました。`);
+    }else if(oldStage!=='卒業')add('学業課程を修了','学校での学びを終えました。');
+  }else if(grade!==education.grade&&stage!=='未就学'&&stage!=='卒業'){
+    add(`${stage}${grade}年生へ進級`,'新しい学年が始まりました。');
   }
   education.stage=stage;education.grade=grade;education.school=school;
   education.graduated=stage==='卒業';
   return notices;
 }
+export function chooseFurtherEducation(education,choice){
+  const target=education.stage==='高専'?['就職','高専専攻科','高専編入大学']:
+    education.stage==='大学'&&education.program?.years===4?['就職','大学院修士課程']:[];
+  if(!target.includes(choice))return {ok:false,reason:'現在の在学課程では、その進学先を選べません。'};
+  if(education.nextProgram===choice)return {ok:false,reason:'既に選択中の進路です。'};
+  education.nextProgram=choice;
+  return {ok:true,message:`卒業後の進路を「${choice}」に設定しました。進級・卒業時に反映します。`};
+}
 export function study(education,subject,hours){
-  if(!['小学校','中学校','高校','大学'].includes(education.stage))return {ok:false,reason:'在学中のみ学習できます。'};
+  if(!['小学校','中学校','高校','高専','高専専攻科','大学','大学院'].includes(education.stage))return {ok:false,reason:'在学中のみ学習できます。'};
   if(!Object.hasOwn(education.scores,subject))return {ok:false,reason:'科目が不正です。'};
   if(!Number.isInteger(hours)||hours<1||hours>8)return {ok:false,reason:'学習時間は1～8時間です。'};
   education.scores[subject]=clamp(education.scores[subject]+Math.max(1,Math.floor(hours/2)));
@@ -94,7 +156,7 @@ export function prepareExam(education){
 
 /** 志望校は進学先を保証しない。成績基準に未達の場合は従来の自動進学先へ進む。 */
 export function chooseSchool(education,stage,school){
-  const options=stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校']:stage==='大学'?['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校']:[];
+  const options=stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校','高等専門学校']:stage==='大学'?['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校','医学部','歯学部']:[];
   if(!options.includes(school))return {ok:false,reason:'志望校が不正です。'};
   if(stage==='高校'&&education.stage!=='中学校'||stage==='大学'&&education.stage!=='高校')return {ok:false,reason:'志望校を選択できる学年ではありません。'};
   education.schoolPreference??={高校:'自動',大学:'自動'};
