@@ -111,16 +111,44 @@ async function runViewport(binary,width){
   // Button-first selection: navigation changes the displayed tool without executing actions.
   await click("document.querySelector('#category-dock button:nth-child(4)')");
   await until(async()=>get("document.querySelector('#page-title')?.textContent==='学校・学習'"),'academic category opened');
-  const studyButtons=await get("({count:document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab').length,selected:document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length,duplicate:document.querySelectorAll('.topic-tool-buttons').length})");
-  if(studyButtons.count!==3||studyButtons.selected!==1||studyButtons.duplicate!==0)throw Error('Top academic screen buttons missing or duplicated '+JSON.stringify(studyButtons));
-  await click("document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab')[2]");
-  await until(async()=>get("document.querySelector('.phase4-choice-actions .choice-button-group')?.children.length>=4"),'study subject buttons opened');
-  const academic=await get("({groupCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group').length,subjectCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0]?.children.length,hourCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1]?.children.length,selected:document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length,dropdowns:document.querySelectorAll('.phase4-choice-actions select').length,overflow:document.documentElement.scrollWidth>innerWidth+3})");
-  if(academic.groupCount!==2||academic.subjectCount<4||academic.hourCount!==4||academic.selected!==2||academic.dropdowns!==0||academic.overflow)throw Error('Academic choice groups invalid '+JSON.stringify(academic));
+  const studyNavigation=await get("({legacyTabs:document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab').length,pickers:document.querySelectorAll('.topic-detail-picker select').length,details:document.querySelectorAll('.topic-detail-picker select option').length,overflow:document.documentElement.scrollWidth>innerWidth+3})");
+  if(studyNavigation.legacyTabs!==0||studyNavigation.pickers!==1||studyNavigation.details!==3||studyNavigation.overflow)
+    throw Error('Academic topics were not consolidated '+JSON.stringify(studyNavigation));
+  await evaluate("(()=>{const picker=document.querySelector('.topic-detail-picker select');picker.value='EDU-03';picker.dispatchEvent(new Event('change',{bubbles:true}));return true})()");
+  await until(async()=>get("document.querySelector('.phase4-choice-actions .choice-button-group')?.children.length>=4"),'legacy study tool retained in detail selector');
+  const academic=await get("({groupCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group').length,subjectCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0]?.children.length,hourCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1]?.children.length,selected:document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length,picker:document.querySelector('.topic-detail-picker select')?.value,overflow:document.documentElement.scrollWidth>innerWidth+3})");
+  if(academic.groupCount!==2||academic.subjectCount<4||academic.hourCount!==4||academic.selected!==2||academic.picker!=='EDU-03'||academic.overflow)
+    throw Error('Academic legacy controls were not retained '+JSON.stringify(academic));
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0].children[1]");
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1].children[2]");
-  if(!(await get("document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length===2")))throw Error('Selected button state not updated');
-  if(!(await get("document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length===1")))throw Error('Top screen state not updated');
+  if(!(await get("document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length===2")))
+    throw Error('Legacy study selections no longer respond');
+  const studentPlanner=await evaluate(`(async()=>{
+    const [{createGameStore},{renderStudentBalancePanel}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/studentBalancePanel.js')
+    ]);
+    const game=createGameStore();game.startNewGame();
+    for(let i=0;i<25;i++)game.advanceTurn();
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    host.append(renderStudentBalancePanel(game.getState(),(action,payload)=>game.performAction(action,payload)));
+    const selectors=[...host.querySelectorAll('.student-balance-select')];
+    const initial=host.querySelector('.student-balance-rest')?.textContent;
+    selectors[1].value='6';selectors[1].dispatchEvent(new Event('change',{bubbles:true}));
+    selectors[2].value='6';selectors[2].dispatchEvent(new Event('change',{bubbles:true}));
+    const blocked=host.querySelector('.student-balance-submit')?.disabled;
+    selectors[2].value='2';selectors[2].dispatchEvent(new Event('change',{bubbles:true}));
+    const valid=!host.querySelector('.student-balance-submit')?.disabled;
+    const before=game.getState().health.energy;
+    host.querySelector('.student-balance-submit')?.click();
+    const after=game.getState().health.energy;
+    const message=host.querySelector('.student-balance-feedback')?.textContent;
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {count:selectors.length,initial,blocked,valid,healthCost:after<before,message,overflow};
+  })()`);
+  if(studentPlanner.count!==3||!studentPlanner.initial?.includes('休息 4h')||!studentPlanner.blocked||
+      !studentPlanner.valid||!studentPlanner.healthCost||!studentPlanner.message||studentPlanner.overflow)
+    throw Error('Student balance browser interaction invalid '+JSON.stringify(studentPlanner));
   // U4/U5/U7: isolated adult fixture checks the real responsive game panels
   // and long-term event generation without touching the browser's save slots.
   const newFeatures=await evaluate(`(async()=>{
