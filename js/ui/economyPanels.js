@@ -1,6 +1,6 @@
 import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures} from '../core/careerSystems.js';
-import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns} from '../core/economySystems.js';
+import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns,PART_TIME_JOBS,INVESTMENT_PRODUCTS,VEHICLE_OPTIONS} from '../core/economySystems.js';
 /** 仕事・家計の実データ操作パネル。入力はユーザー操作時のみ反映。 */
 const econEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 const yen=n=>`${Number(n).toLocaleString('ja-JP')}円`;
@@ -104,10 +104,24 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     const promote=econEl('div','phase4-actions');action(promote,'昇進審査を受ける',()=>handlers.onAction?.('promotionExam',{}),!job.job||job.experience<12);section.append(promote);
   }
   if(screen.id==='WORK-03'){
-    const controls=econEl('div','phase4-actions');
-    action(controls,'副業を始める',()=>handlers.onAction?.('sideJob',{active:true}),age<18||f.sideJob.active);
-    action(controls,'副業を停止する',()=>handlers.onAction?.('sideJob',{active:false}),!f.sideJob.active);
-    section.append(controls);line(section,'副業月収（額面）',yen(f.sideJob.monthlyIncome));
+    section.append(econEl('h3','','アルバイト・副業を選ぶ'));
+    const current=PART_TIME_JOBS.find(x=>x.id===f.sideJob?.jobId);
+    line(section,'現在のアルバイト',f.sideJob.active?(current?.name??'従来の副業'):'なし');
+    line(section,'月間勤務時間',`${f.sideJob?.active?(f.sideJob.hours??0):0}時間`);
+    line(section,'副業月収（額面）',yen(f.sideJob?.active?f.sideJob.monthlyIncome:0));
+    const choices=econEl('div','phase10-job-grid');
+    for(const job of PART_TIME_JOBS){
+      const card=econEl('div','phase10-job');
+      card.append(econEl('strong','',job.name),
+        econEl('p','muted small',`月${job.hours}時間 ／ 時給${yen(job.hourlyWage)} ／ 月収見込${yen(job.hours*job.hourlyWage)}`));
+      action(card,f.sideJob?.active&&current?.id===job.id?'選択中':'この仕事を始める',
+        ()=>handlers.onAction?.('sideJob',{active:true,jobId:job.id}),
+        age<18||(f.sideJob?.active&&current?.id===job.id));
+      choices.append(card);
+    }
+    section.append(choices);
+    action(section,'アルバイト・副業を停止',()=>handlers.onAction?.('sideJob',{active:false}),!f.sideJob?.active);
+    section.append(econEl('p','muted small','就職中でも併用可能です。収入は毎月精算され、税金・生活費にも反映されます。時間と給与はゲーム用の架空モデルです。'));
   }
   if(screen.id==='WORK-04'||screen.id==='WORK-05'){
     section.append(econEl('h3','','会社・事業経営（簡易版）'));
@@ -235,10 +249,44 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     const controls=econEl('div','phase4-actions');const value=input(controls,f.monthlyBudget,'毎月の生活費（円）');action(controls,'生活費を設定',()=>handlers.onAction?.('setBudget',{amount:Number(value.value)}));section.append(controls);
   }
   if(['LIFE-05','LIFE-06','LIFE-07'].includes(screen.id)){
-    const controls=econEl('div','phase4-actions');const value=input(controls,10000,'取引金額（円）');
-    action(controls,'投資商品を購入',()=>handlers.onAction?.('buyInvestment',{amount:Number(value.value)}),age<18);
-    action(controls,'投資商品を売却',()=>handlers.onAction?.('sellInvestment',{amount:Number(value.value)}));
-    action(controls,'借入金を返済',()=>handlers.onAction?.('repayDebt',{amount:Number(value.value)}));section.append(controls);
+    section.append(econEl('h3','','商品を選んで投資'));
+    const controls=econEl('div','phase4-actions');
+    const value=input(controls,10000,'取引金額（円）');
+    const product=econEl('select','phase4-select');
+    product.setAttribute('aria-label','投資商品');
+    for(const item of INVESTMENT_PRODUCTS){
+      const option=econEl('option','',`${item.name}（リスク：${item.risk}）`);
+      option.value=item.id;product.append(option);
+    }
+    controls.append(product);
+    action(controls,'購入',()=>handlers.onAction?.('buyInvestment',{amount:Number(value.value),productId:product.value}),age<18);
+    action(controls,'売却',()=>handlers.onAction?.('sellInvestment',{amount:Number(value.value),productId:product.value}));
+    action(controls,'借入金を返済',()=>handlers.onAction?.('repayDebt',{amount:Number(value.value)}));
+    section.append(controls);
+    for(const item of f.investmentHoldings??[]){
+      const definition=INVESTMENT_PRODUCTS.find(x=>x.id===item.id);
+      line(section,definition?.name??item.id, yen(item.value));
+    }
+    const tracked=(f.investmentHoldings??[]).reduce((sum,x)=>sum+x.value,0);
+    if(f.investment>tracked)line(section,'以前の投資残高',yen(f.investment-tracked));
+    section.append(econEl('p','muted small','商品ごとに利回りと変動幅が異なります。旧セーブの投資残高はそのまま保護されます。'));
+  }
+  if(['LIFE-02','LIFE-05'].includes(screen.id)){
+    section.append(econEl('h3','','マイカーの購入・売却'));
+    const owned=VEHICLE_OPTIONS.find(v=>v.id===f.vehicle?.id);
+    line(section,'所有車',owned?.name??'なし');
+    if(owned){line(section,'現在の車両評価額',yen(f.vehicle.value));line(section,'維持費（月額）',yen(owned.monthlyCost));}
+    const vehicles=econEl('div','phase10-job-grid');
+    for(const model of VEHICLE_OPTIONS){
+      const card=econEl('div','phase10-job');
+      card.append(econEl('strong','',model.name),
+        econEl('p','muted small',`購入費${yen(model.price)} ／ 維持費${yen(model.monthlyCost)}/月`));
+      action(card,'購入',()=>handlers.onAction?.('buyVehicle',{vehicleId:model.id}),age<18||Boolean(f.vehicle)||f.cash<model.price);
+      vehicles.append(card);
+    }
+    section.append(vehicles);
+    action(section,'現在の車を売却する',()=>handlers.onAction?.('sellVehicle',{}),!f.vehicle);
+    section.append(econEl('p','muted small','車両価値は毎月減価し、維持費は家計に反映されます。'));
   }
   if(screen.id.startsWith('LIFE-')){
     const monthly=[...new Map(f.ledger.filter(x=>x.kind==='収入'||x.kind==='支出').map(x=>[`${x.year}-${x.month}`,{year:x.year,month:x.month}])).values()];
