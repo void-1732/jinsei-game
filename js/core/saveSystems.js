@@ -12,6 +12,7 @@ import {validateConsequenceProgress} from './consequenceSystems.js';
 import {validateEraProgress} from './eraSystems.js';
 import {validateSurpriseProgress} from './surpriseSystems.js';
 import {validateDailySchedule} from './dailySchedule.js';
+import {validateStudentBalance} from './studentBalance.js';
 /** 第7段階：ローカル保存。外部送信なし。保存データは実行可能コードとして扱わない。 */
 export const SAVE_PREFIX = 'gls:v7:';
 export const SLOT_IDS = Object.freeze(['自動保存','手動保存1','手動保存2','手動保存3','人生記録']);
@@ -147,7 +148,7 @@ export function validateGameState(s) {
   if(!Number.isInteger(t.monthsElapsed) || t.monthsElapsed<0 || (t.year-2000)*12+t.month-1!==t.monthsElapsed) return false;
   if(t.ageYears!==t.year-2000-(t.month<s.player.birth.month?1:0) || t.turnsElapsed>t.monthsElapsed) return false;
   if(!s.education.scores || !Array.isArray(s.education.history) || !Array.isArray(s.finances.ledger))return false;
-  if(!validateEducationPath(s.education))return false;
+  if(!validateEducationPath(s.education)||!validateStudentBalance(s.education.studentBalance,t.turnsElapsed))return false;
   if(s.finances.ledger.length>600 || s.education.history.length>1000 || s.people.length>500) return false;
   if(!s.people.every(p=>p && typeof p.id==='string' && typeof p.name==='string' && p.name.length<=30 && typeof p.role==='string' && Number.isFinite(p.relationship) && p.relationship>=0 && p.relationship<=100 && Number.isInteger(p.birth?.year) && Number.isInteger(p.birth?.month) && p.birth.month>=1 && p.birth.month<=12))return false;
   if(!s.household || !Array.isArray(s.household.memberIds) || !s.household.memberIds.every(id=>typeof id==='string'))return false;
