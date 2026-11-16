@@ -39,7 +39,7 @@ export function graduateProgram(education){
  }
 }
 export function employmentQualificationBonus(education,postingId){
- if(!education?.graduated)return 0;
+ if(!education?.graduated||!education.program)return 0;
  const major=majorFor(education.major);
  let bonus=major.jobs.includes(postingId)?8:0;
  if((education.credentialIds??[]).includes(major.id)&&major.jobs.includes(postingId))bonus+=5;
