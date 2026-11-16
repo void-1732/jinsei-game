@@ -7,6 +7,8 @@ import {renderOpportunityPanel} from './opportunityPanel.js';
 import {renderLifeReview} from './lifeGoalPanel.js';
 
 const el=(tag,klass='',text='')=>{const e=document.createElement(tag);if(klass)e.className=klass;e.textContent=text;return e;};
+// UI-only state; reopening the page defaults to expanded unless explicitly collapsed.
+const expandedByTopic=new Map();
 
 function actionBox(state,category,onAction){
   const actions=categoryActivities(state,category);
@@ -77,7 +79,8 @@ export function renderTopicPage(container,screen,state,handlers={}){
     overview.append(values);
   }
   const details=el('details','topic-detail');
-  details.open=true;
+  const topicKey=topic.screenIds[0];
+  details.open=expandedByTopic.get(topicKey)??true;
   details.append(el('summary','','詳細・個別操作を見る（クリックで閉じる／開く）'));
   const body=el('div','topic-detail-content');
   const label=el('label','topic-tool-label','操作する項目');
@@ -95,9 +98,16 @@ export function renderTopicPage(container,screen,state,handlers={}){
     const target=findScreen(select.value);full.replaceChildren();
     renderScreen(full,target,state,{...handlers,embedded:true,filter:'',onFilterChange:()=>{}});
   };
-  select.addEventListener('change',show);
-  details.addEventListener('toggle',()=>{overview.hidden=details.open;if(details.open)show();});
-  overview.hidden=true;
+  select.addEventListener('change',()=>{
+    if(handlers.onNavigate)handlers.onNavigate(select.value);
+    else show();
+  });
+  details.addEventListener('toggle',()=>{
+    expandedByTopic.set(topicKey,details.open);
+    overview.hidden=details.open;
+    if(details.open)show();
+  });
+  overview.hidden=details.open;
   body.append(full);details.append(body);card.append(overview,details);
   show();
   root.append(card);
