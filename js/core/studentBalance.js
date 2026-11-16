@@ -49,3 +49,13 @@ export function performStudentDay(state,payload={}){
   }
   return {ok:true,message:`勉強${plan.studyHours}時間・遊び${plan.playHours}時間・休息${plan.restHours}時間を過ごしました。学力+${plan.scoreGain}、心${plan.mentalChange>=0?'+':''}${plan.mentalChange}、体力${plan.energyChange>=0?'+':''}${plan.energyChange}。`,plan};
 }
+
+/** New saves may contain this optional field; earlier v7 saves remain valid. */
+export function validateStudentBalance(value,turnsElapsed){
+  if(value===undefined)return true;
+  if(!value||typeof value!=='object'||Array.isArray(value))return false;
+  for(const key of ['sessions','playHours','restHours']){
+    if(!Number.isInteger(value[key])||value[key]<0||value[key]>10000)return false;
+  }
+  return Number.isInteger(value.lastTurn)&&value.lastTurn>=-1&&value.lastTurn<=turnsElapsed;
+}
