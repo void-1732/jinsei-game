@@ -3,6 +3,7 @@ import {choiceButtons} from './choiceButtons.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
 import {renderQualificationPanel} from './qualificationPanel.js';
+import {familyEligibility,familyProgressSummary} from '../core/familyJourney.js';
 import {renderStudentBalancePanel} from './studentBalancePanel.js';
 const lifeEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 function line(root,key,value){const row=lifeEl('div','field-list-item');row.append(lifeEl('strong','',key),lifeEl('span','',String(value)));root.append(row);}
@@ -22,57 +23,95 @@ export function renderLifePanel(container,screen,game,handlers={}){
     }
 
     for(const p of people){const age=t.year-p.birth.year-(t.month<p.birth.month?1:0);line(section,`${p.role}：${p.name}`,`${age}歳 / 関係値 ${p.relationship}${p.role==='子'?` / ${p.lifeStage??'未就学'}`:''}`);}
-    if(screen.id==='PERSON-05'||screen.id==='PERSON-06'||screen.id==='PERSON-01'){
+    if(['PERSON-01','PERSON-02','PERSON-03','PERSON-04','PERSON-05','PERSON-06'].includes(screen.id)){
+      const summary=familyProgressSummary(game);
+      const spouse=people.find(p=>p.role==='配偶者');
+      const partner=people.find(p=>p.role==='交際相手');
+      const friends=people.filter(p=>p.role==='友人'&&t.year-p.birth.year-(t.month<p.birth.month?1:0)>=18);
+      const children=people.filter(p=>p.role==='子');
+      const wrap=lifeEl('details','phase4-extra family-journey');
+      wrap.dataset.foldKey='family-journey';
+      wrap.append(lifeEl('summary','','交際・結婚・子育て（生活に合わせた進路）'));
+      const guide=lifeEl('p','muted small',spouse?'結婚生活：家計・夫婦関係・育児費用に注意':
+        partner?'交際中：時間を重ね、将来の生活を相談しましょう':'出会いと信頼関係を育てると交際できます');
+      wrap.append(guide);
+      if(summary.plan)wrap.append(lifeEl('p','muted small',`家族計画：${summary.plan.mode==='birth'?'妊娠・出産':'養子縁組'}／${summary.plan.stage}。子どもを迎えるまで経過を見守ります。`));
+      if(children.length)wrap.append(lifeEl('p','muted small',`子ども${children.length}人／養育費目安${summary.monthlyCost.toLocaleString('ja-JP')}円・月（家計へ自動反映）`));
       const controls=lifeEl('div','phase4-actions');
-      for(const p of people.filter(v=>v.role!=='本人')) action(controls,`${p.role}と交流する`,()=>handlers.onAction?.('socialize',{personId:p.id}));
+      if(!spouse&&!partner){
+        const meet=action(controls,'新しい人と知り合う',()=>handlers.onAction?.('meetFriend',{}));
+        meet.disabled=age<6;
+      }
+      const candidates=partner?[partner]:spouse?[spouse]:friends;
+      if(candidates.length){
+        const target=choiceButtons('相手',candidates.map(p=>({value:p.id,label:p.name})),candidates[0].id);
+        wrap.append(target.element);
+        const status=lifeEl('p','muted small family-eligibility');
+        const update=()=>{
+          const id=target.getValue();
+          const selected=people.find(p=>p.id===id);
+          const step=selected?.role==='友人'?(selected.relationship>=60?'date':'courtship'):
+            selected?.role==='交際相手'?'marry':'familyBond';
+          const reason=familyEligibility(game,step,id);
+          status.textContent=`${selected?.name??''}：親密度${selected?.relationship??0}/100。 ${reason??(step==='date'?'交際を始められます':step==='marry'?'結婚を申し込めます':'交流を続けられます')}`;
+          if(nextButton)nextButton.textContent=step==='date'?'交際を申し込む':step==='marry'?'結婚を申し込む':step==='courtship'?'将来について話す':'会話する';
+          if(nextButton)nextButton.disabled=Boolean(reason);
+          return step;
+        };
+        let nextButton=null;
+        nextButton=action(controls,'関係を進める',()=>{
+          const step=update();
+          handlers.onAction?.(step==='familyBond'?'familyBond':step,step==='familyBond'?
+            {personId:target.getValue(),activity:'会話'}:{personId:target.getValue()});
+        });
+        if(partner){
+          const talk=action(controls,'将来の暮らしを相談する',()=>handlers.onAction?.('discussFuture',{personId:target.getValue()}));
+          talk.disabled=age<18;
+        }
+        target.group.addEventListener('click',update);
+        wrap.append(status);
+        update();
+      }
+      if(spouse){
+        const bond=action(controls,'夫婦で会話する',()=>handlers.onAction?.('familyBond',{personId:spouse.id,activity:'会話'}));
+        bond.disabled=age<18;
+        if(!summary.plan){
+          const form=lifeEl('div','phase27-form');
+          const name=lifeEl('input','phase4-select');name.placeholder='子どもの名前';name.maxLength=20;name.setAttribute('aria-label','子どもの名前');
+          const mode=lifeEl('select','phase4-select');
+          for(const [val,label] of [['birth','妊娠・出産を希望'],['adopt','養子縁組を希望']]){
+            const o=lifeEl('option','',label);o.value=val;mode.append(o);
+          }
+          mode.setAttribute('aria-label','家族の迎え方');
+          form.append(name,mode);
+          const plan=action(form,'家族計画を始める',()=>handlers.onAction?.('haveChild',{name:name.value,mode:mode.value}));
+          plan.disabled=age<20||children.length>=5;
+          wrap.append(form);
+          const reason=familyEligibility(game,'haveChild');
+          if(reason)wrap.append(lifeEl('p','muted small',`家族計画の条件：${reason}`));
+        }
+      }
+      if(children.length){
+        const childChoice=choiceButtons('子ども',children.map(p=>({value:p.id,label:p.name})),children[0].id);
+        wrap.append(childChoice.element);
+        const childButtons=lifeEl('div','phase4-actions');
+        action(childButtons,'子どもと過ごす',()=>handlers.onAction?.('familyCare',{personId:childChoice.getValue()}));
+        action(childButtons,'勉強を手伝う',()=>handlers.onAction?.('familyActivity',{personId:childChoice.getValue(),activity:'勉強を手伝う'}));
+        wrap.append(childButtons);
+      }
+      wrap.append(controls);
+      section.append(wrap);
       if(screen.id==='PERSON-01'){
-        const bonds=choiceButtons('交流方法',['会話','贈り物','旅行'],'会話');
+        const bonds=lifeEl('details','phase4-extra');bonds.dataset.foldKey='family-bond';
+        bonds.append(lifeEl('summary','','会話・贈り物・旅行'));
         const others=people.filter(p=>p.role!=='本人');
         if(others.length){
-          const target=choiceButtons('交流する相手',others.map(p=>({value:p.id,label:p.name})),others[0].id);
-          const extra=lifeEl('details','phase4-extra');
-          extra.append(lifeEl('summary','','会話・贈り物・旅行'));
-          extra.append(target.element,bonds.element);
-          action(extra,'選んだ相手と交流',()=>handlers.onAction?.('familyBond',{personId:target.getValue(),activity:bonds.getValue()}));
-          controls.append(extra);
+          const person=choiceButtons('相手',others.map(p=>({value:p.id,label:p.name})),others[0].id);
+          const activity=choiceButtons('交流方法',['会話','贈り物','旅行'],'会話');
+          bonds.append(person.element,activity.element);
+          action(bonds,'交流する',()=>handlers.onAction?.('familyBond',{personId:person.getValue(),activity:activity.getValue()}));
         }
-      }
-      section.append(controls);
-    }
-    if(['PERSON-01','PERSON-04','PERSON-05','PERSON-06'].includes(screen.id)){
-      const controls=lifeEl('div','phase4-actions');
-      const meet=action(controls,'新しい友人と知り合う',()=>handlers.onAction?.('meetFriend',{}));
-      meet.disabled=age<6;
-
-      const candidates=people.filter(p=>p.role==='友人'||p.role==='交際相手');
-      for(const p of candidates){
-        if(p.role==='友人'){
-          if(age>=18){
-            const extra=lifeEl('details','phase4-extra');
-            extra.append(lifeEl('summary','',`${p.name}との交際準備`));
-            action(extra,`${p.name}と親しくなる`,()=>handlers.onAction?.('courtship',{personId:p.id}));
-            controls.append(extra);
-          }
-          const dating=action(controls,`${p.name}と交際する（親密度60以上）`,()=>handlers.onAction?.('date',{personId:p.id}));
-          dating.disabled=age<18||p.relationship<60;
-        }
-        if(p.role==='交際相手'){
-          const marrying=action(controls,`${p.name}と結婚する（親密度80以上）`,()=>handlers.onAction?.('marry',{personId:p.id}));
-          marrying.disabled=age<18||p.relationship<80;
-        }
-      }
-      section.append(controls);
-    }
-    if(['PERSON-01','PERSON-02','PERSON-03'].includes(screen.id)){
-      const spouse=people.find(p=>p.role==='配偶者');
-      if(spouse){
-        const controls=lifeEl('div','phase4-actions');const name=lifeEl('input','phase4-select');name.placeholder='子どもの名前';name.maxLength=20;name.setAttribute('aria-label','子どもの名前');
-        controls.append(name);action(controls,'子どもを迎える',()=>handlers.onAction?.('haveChild',{name:name.value}));
-        for(const child of people.filter(p=>p.role==='子')){
-          action(controls,`${child.name}と過ごす`,()=>handlers.onAction?.('familyCare',{personId:child.id}));
-          action(controls,`${child.name}と勉強する`,()=>handlers.onAction?.('familyActivity',{personId:child.id,activity:'勉強を手伝う'}));
-        }
-        section.append(controls);
+        section.append(bonds);
       }
     }
     if(screen.id==='PERSON-07')for(const record of game.eventHistory.filter(v=>v.type==='action'&&v.title==='交流').slice(-12).reverse())line(section,`${record.year}年${record.month}月`,'家族と交流');
