@@ -157,15 +157,16 @@ test('STEP45の重要イベント優先を壊さずに、状況別イベント�
  assert.ok(selectOpportunityEvent(s,20,106,.10));
 });
 
-test('進学・就職・資産は同じカテゴリに集約され、自由行動は全カテゴリで1回',()=>{
+test('進学・就職・資産は分類を保ち、成人は異なるカテゴリの行動を3回まで選べる',()=>{
  const s=stateOf(18,'大学');
  assert.ok(opportunityOptions(s,'学業').some(x=>x.action==='applyScholarship'));
  assert.ok(opportunityOptions(s,'仕事・経営').some(x=>x.action==='prepareInterview'));
  assert.ok(opportunityOptions(s,'生活・資産').some(x=>x.action==='reviewBudget'));
  const g=game();const loaded=g.loadState(s);assert.equal(loaded.ok,true);
  assert.equal(g.performAction('applyScholarship').ok,true);
- const second=g.performAction('reviewBudget');assert.equal(second.ok,false);
- assert.match(second.reason,/自由行動/);
+ const second=g.performAction('reviewBudget');assert.equal(second.ok,true);
+ assert.equal(g.getState().turnActions.used,2);
+ assert.deepEqual(g.getState().turnActions.categories,['学業','生活・資産']);
 });
 
 test('STEP47のUI・版数・公開用ファイルが揃っている',()=>{
