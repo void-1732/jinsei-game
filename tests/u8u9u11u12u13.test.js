@@ -20,7 +20,7 @@ test('U8: 6歳未満は友人登録不可・6歳で解放される',()=>{
  assert.match(ui,/meet.disabled=age<6/);
 });
 test('U9: 家族との会話・贈り物・旅行で親密度と費用が変わる',()=>{
- const g=createGameStore();g.startNewGame();const before=g.getState().finances.cash;
+ const g=createGameStore();g.startNewGame();const loaded=structuredClone(g.getState());loaded.finances.cash=50000;assert.equal(g.loadState(loaded).ok,true);const before=g.getState().finances.cash;
  assert.equal(g.performAction('familyBond',{personId:'FAMILY-001',activity:'会話'}).ok,true);
  assert.equal(g.getState().people[1].relationship,69);
  assert.equal(g.performAction('familyBond',{personId:'FAMILY-001',activity:'贈り物'}).ok,true);
@@ -51,7 +51,7 @@ test('U11: 職種別研修で採用評価が上がり、資格は重複しない
 });
 test('U13: 年齢別の診断・費用・同月再診禁止',()=>{
  assert.notEqual(checkupGuidance(5),checkupGuidance(70));
- const g=createGameStore();g.startNewGame();const before=g.getState().finances.cash;
+ const g=createGameStore();g.startNewGame();const loaded=structuredClone(g.getState());loaded.finances.cash=50000;assert.equal(g.loadState(loaded).ok,true);const before=g.getState().finances.cash;
  assert.equal(g.performAction('checkup').ok,true);
  assert.equal(g.getState().finances.cash,before-1000);
  assert.equal(g.performAction('checkup').ok,false);
