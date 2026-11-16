@@ -1,4 +1,5 @@
 import {validateInheritance} from './estateSystems.js';
+import {validateBusinessTurn} from './businessOperations.js';
 import {validateEducationPath} from './educationPaths.js';
 import {validateLiving} from './livingSystems.js';
 import {validateStoryProgress} from './branchingStories.js';
@@ -28,6 +29,7 @@ export function validateGameState(s) {
         !Number.isInteger(a.used) || a.used<0 || a.used>1 ||
         !(a.lastAction===null || typeof a.lastAction==='string' && a.lastAction.length<=40)) return false;
   }
+  if(s.businessTurn!==undefined&&!validateBusinessTurn(s.businessTurn,t.turnsElapsed))return false;
   if(s.storyProgress!==undefined && !validateStoryProgress(s.storyProgress))return false;
   if(s.opportunity47!==undefined && !validateOpportunityProgress(s.opportunity47))return false;
   if(s.balance48!==undefined && !validateBalanceProgress(s.balance48))return false;
