@@ -58,7 +58,8 @@ const qualifiedBachelor=e=>['学士','修士','医学課程修了','歯学課程
 export function hasQualification(education,id){
  const q=byId(id);
  return Boolean(q&&((education.qualificationTrack?.earned??[]).includes(id)||
-  (q.license&&(education.licenses??[]).includes(q.license))));
+  (q.license&&(education.licenses??[]).includes(q.license))||
+  (education.qualifications??[]).some(name=>name===q.name||name===`${q.name}（ゲーム内）`)));
 }
 /** 15–17歳の職業系高校・高専生は対応するゲーム内技能資格に挑戦できる。
  * 医師免許などの専門免許や高学歴必須資格には適用しない。 */
