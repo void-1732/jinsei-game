@@ -300,7 +300,7 @@ export function advanceFamilyJourney(state,date){
    const educationPlan=progress.educationPlans?.[child.id]??'公立中心';
    monthlyChildExpense+=parentingMonthlyCost(age,educationPlan);
    if(date.month===4&&age>=6&&age<19&&educationPlan==='私立中心')debit(state,date,'新学年の教育準備',65000);
-   if(age>=3&&now%6===0&&educationPlan==='学習支援')child.learningSupport=Math.min(100,(child.learningSupport??0)+2);
+   if(age>=3&&now%6===0&&['学習支援','私立中心'].includes(educationPlan))child.learningSupport=Math.min(100,(child.learningSupport??0)+(educationPlan==='私立中心'?3:2));
    if(now%4===0&&progress.lastFamilyTime<now-2)child.relationship=clamp(child.relationship-1);
   }
  }
