@@ -96,16 +96,16 @@ async function runViewport(binary,width){
   // Button-first selection: navigation changes the displayed tool without executing actions.
   await click("document.querySelector('#category-dock button:nth-child(4)')");
   await until(async()=>get("document.querySelector('#page-title')?.textContent==='学校・学習'"),'academic category opened');
-  const studyButtons=await get("({count:document.querySelectorAll('.topic-tool-buttons .choice-button').length,selected:document.querySelectorAll('.topic-tool-buttons .choice-button[aria-pressed=true]').length,dropdowns:document.querySelectorAll('.topic-tool-select').length})");
-  if(studyButtons.count!==3||studyButtons.selected!==1||studyButtons.dropdowns!==0)throw Error('Academic tool buttons missing '+JSON.stringify(studyButtons));
-  await click("document.querySelectorAll('.topic-tool-buttons .choice-button')[2]");
+  const studyButtons=await get("({count:document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab').length,selected:document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length,duplicate:document.querySelectorAll('.topic-tool-buttons').length})");
+  if(studyButtons.count!==3||studyButtons.selected!==1||studyButtons.duplicate!==0)throw Error('Top academic screen buttons missing or duplicated '+JSON.stringify(studyButtons));
+  await click("document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab')[2]");
   await until(async()=>get("document.querySelector('.phase4-choice-actions .choice-button-group')?.children.length>=4"),'study subject buttons opened');
   const academic=await get("({groupCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group').length,subjectCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0]?.children.length,hourCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1]?.children.length,selected:document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length,dropdowns:document.querySelectorAll('.phase4-choice-actions select').length,overflow:document.documentElement.scrollWidth>innerWidth+3})");
   if(academic.groupCount!==2||academic.subjectCount<4||academic.hourCount!==4||academic.selected!==2||academic.dropdowns!==0||academic.overflow)throw Error('Academic choice groups invalid '+JSON.stringify(academic));
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0].children[1]");
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1].children[2]");
   if(!(await get("document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length===2")))throw Error('Selected button state not updated');
-  if(!(await get("document.querySelectorAll('.topic-tool-buttons .choice-button[aria-pressed=true]').length===1")))throw Error('Tool button state not updated');
+  if(!(await get("document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length===1")))throw Error('Top screen state not updated');
   await click("document.querySelector('#open-settings')");
   await until(async()=>get("document.querySelector('#settings-dialog').open"),'settings opened');
   if(!(await get("!!document.querySelector('#export-game') && !!document.querySelector('#import-game-file')")))throw Error('Backup controls missing');
