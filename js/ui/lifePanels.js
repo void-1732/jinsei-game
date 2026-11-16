@@ -4,6 +4,7 @@ import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
 import {renderQualificationPanel} from './qualificationPanel.js';
 import {familyEligibility,familyProgressSummary} from '../core/familyJourney.js';
+import {familyDepthSummary,familyDepthEligibility,childEducationSummary,CHILD_EDUCATION_MODES,WEDDING_STYLES} from '../core/familyDepth.js';
 import {renderStudentBalancePanel} from './studentBalancePanel.js';
 const lifeEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 function line(root,key,value){const row=lifeEl('div','field-list-item');row.append(lifeEl('strong','',key),lifeEl('span','',String(value)));root.append(row);}
@@ -36,7 +37,8 @@ export function renderLifePanel(container,screen,game,handlers={}){
         partner?'交際中：時間を重ね、将来の生活を相談しましょう':'出会いと信頼関係を育てると交際できます');
       wrap.append(guide);
       if(summary.plan)wrap.append(lifeEl('p','muted small',`家族計画：${summary.plan.mode==='birth'?'妊娠・出産':'養子縁組'}／${summary.plan.stage}。子どもを迎えるまで経過を見守ります。`));
-      if(children.length)wrap.append(lifeEl('p','muted small',`子ども${children.length}人／養育費目安${summary.monthlyCost.toLocaleString('ja-JP')}円・月（家計へ自動反映）`));
+      if(children.length){const cost=children.reduce((total,c)=>total+childEducationSummary(game,c).monthlyCost,0);
+        wrap.append(lifeEl('p','muted small',`子ども${children.length}人／養育費目安${cost.toLocaleString('ja-JP')}円・月（家計へ自動反映）`));}
       const controls=lifeEl('div','phase4-actions');
       if(!spouse&&!partner){
         const meet=action(controls,'新しい人と知り合う',()=>handlers.onAction?.('meetFriend',{}));
@@ -50,11 +52,12 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const update=()=>{
           const id=target.getValue();
           const selected=people.find(p=>p.id===id);
+          const depth=familyDepthSummary(game,selected);
           const step=selected?.role==='友人'?(selected.relationship>=60?'date':'courtship'):
-            selected?.role==='交際相手'?'marry':'familyBond';
-          const reason=familyEligibility(game,step,id);
-          status.textContent=`${selected?.name??''}：親密度${selected?.relationship??0}/100。 ${reason??(step==='date'?'交際を始められます':step==='marry'?'結婚を申し込めます':'交流を続けられます')}`;
-          if(nextButton)nextButton.textContent=step==='date'?'交際を申し込む':step==='marry'?'結婚を申し込む':step==='courtship'?'将来について話す':'会話する';
+            selected?.role==='交際相手'?(depth?.engagedSince>=0?'marry':depth?.datingMonths>=12?'propose':depth?.datingMonths>=6&&depth?.cohabitingSince<0?'startCohabitation':'discussFuture'):'familyBond';
+          const reason=['startCohabitation','propose','marry'].includes(step)?familyDepthEligibility(game,step,id):familyEligibility(game,step,id);
+          status.textContent=`${selected?.name??''}：親密度${selected?.relationship??0}/100${depth?`・信頼度${depth.trust}/100・交際${depth.datingMonths}か月`:''}。 ${reason??(step==='date'?'交際を始められます':step==='marry'?'入籍の準備が整いました':'次の段階へ進めます')}`;
+          if(nextButton)nextButton.textContent=({date:'交際を申し込む',marry:'入籍する',propose:'婚約する',startCohabitation:'同棲を始める',courtship:'将来について話す',discussFuture:'将来について話す',familyBond:'会話する'})[step]??'関係を進める';
           if(nextButton)nextButton.disabled=Boolean(reason);
           return step;
         };
@@ -73,6 +76,19 @@ export function renderLifePanel(container,screen,game,handlers={}){
         update();
       }
       if(spouse){
+        const depth=familyDepthSummary(game,spouse);
+        wrap.append(lifeEl('p','muted small',`結婚生活：信頼度${depth?.trust??spouse.relationship}/100・意見の食い違い${depth?.conflict??0}/100・同棲${depth?.cohabitingSince>=0?'あり':'なし'}`));
+        if(depth?.weddingMonth<0){
+          const weddingSelect=lifeEl('select','phase4-select family-wedding-style');
+          weddingSelect.setAttribute('aria-label','結婚式の形式');
+          for(const [id,style] of Object.entries(WEDDING_STYLES)){
+            const o=lifeEl('option','',`${style.name}（${style.cost.toLocaleString('ja-JP')}円）`);o.value=id;weddingSelect.append(o);
+          }
+          wrap.append(weddingSelect);
+          const wedding=action(controls,'結婚式を開く',()=>handlers.onAction?.('holdWedding',{personId:spouse.id,style:weddingSelect.value}));
+          const updateWedding=()=>{wedding.disabled=Boolean(familyDepthEligibility(game,'holdWedding',spouse.id,{style:weddingSelect.value}));};
+          weddingSelect.addEventListener('change',updateWedding);updateWedding();
+        }
         const bond=action(controls,'夫婦で会話する',()=>handlers.onAction?.('familyBond',{personId:spouse.id,activity:'会話'}));
         bond.disabled=age<18;
         if(!summary.plan){
@@ -94,7 +110,24 @@ export function renderLifePanel(container,screen,game,handlers={}){
       if(children.length){
         const childChoice=choiceButtons('子ども',children.map(p=>({value:p.id,label:p.name})),children[0].id);
         wrap.append(childChoice.element);
+        const childInfo=lifeEl('p','muted small family-child-education-summary');
+        const educationMode=lifeEl('select','phase4-select family-child-education');
+        educationMode.setAttribute('aria-label','子どもの教育方針');
+        for(const [key,choice] of Object.entries(CHILD_EDUCATION_MODES)){
+          const o=lifeEl('option','',`${choice.label}（追加${choice.cost.toLocaleString('ja-JP')}円／月）`);o.value=key;educationMode.append(o);
+        }
+        const educationCheck=()=>{
+          const kid=people.find(x=>x.id===childChoice.getValue());
+          if(!kid)return;
+          const data=childEducationSummary(game,kid);
+          educationMode.value=data.mode;
+          childInfo.textContent=`${kid.name}：${data.age}歳／教育${data.label}／学習${data.learning}・自信${data.confidence}・自立${data.independence}。月額養育費${data.monthlyCost.toLocaleString('ja-JP')}円。`;
+        };
+        childChoice.group.addEventListener('click',educationCheck);
+        wrap.append(childInfo,educationMode);
         const childButtons=lifeEl('div','phase4-actions');
+        action(childButtons,'教育方針を変更',()=>handlers.onAction?.('setChildEducation',{personId:childChoice.getValue(),mode:educationMode.value}));
+        educationCheck();
         action(childButtons,'子どもと過ごす',()=>handlers.onAction?.('familyCare',{personId:childChoice.getValue()}));
         action(childButtons,'勉強を手伝う',()=>handlers.onAction?.('familyActivity',{personId:childChoice.getValue(),activity:'勉強を手伝う'}));
         wrap.append(childButtons);
