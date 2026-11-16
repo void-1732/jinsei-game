@@ -39,7 +39,7 @@ export const SCHOLARSHIP_PER_MONTH=18_000;
 /** Monthly tuition and repayment are additional to the existing household cashflow. */
 export function advanceOpportunityMonth(state,date){
  const p=ensureOpportunityProgress(state),e=p.education,f=state.finances;
- if(['大学','大学院','高専','高専専攻科'].includes(state.education.stage)){
+ if(['大学','大学院','高専','高専専攻科'].includes(state.education.stage)&&(!state.education.program||date.year*12+date.month>=state.education.program.startYear*12+4)){
    const tuition=Math.round((state.education.program?.tuition??TUITION_PER_MONTH)*eraEconomicEffects(state.world).tuition);
    const charged=Math.max(0,tuition-e.grantMonthly);
    p.education.tuitionCharged+=tuition;
