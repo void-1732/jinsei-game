@@ -1,5 +1,6 @@
 import {screenGroups} from '../core/screenCatalog.js';
 import {categoryActivities,hasFreeAction,categoryLanding} from './topicGroups.js';
+import {actionBudget} from '../core/adultActionBudget.js';
 import {renderTurnActivity} from './turnActivities.js';
 import {renderDailySchedulePanel} from './dailySchedulePanel.js';
 import {latestTurnRecap} from './turnRecap.js';
@@ -127,14 +128,16 @@ export function renderPlayDashboard(container,state,handlers={}){
   // Show playable destinations at first glance, not only a next-turn button.
   const opportunities=el('section','play-card play-opportunities');
   const ready=hasFreeAction(state);
-  opportunities.append(el('h3','',ready?'今できること — カテゴリから選ぼう':'人生を選んだら、カテゴリでも行動できます'));
-  opportunities.append(el('p','',ready?'光っているカテゴリは行動できます。どこかで1回行動すると、そのターンの自由行動は終了します。':'「次のターンへ進む」で出来事を選択すると、カテゴリから自由行動ができるようになります。'));
+  const budget=actionBudget(state);
+  opportunities.append(el('h3','',ready?`今できること：残り${budget.remaining}/${budget.limit}回`:'人生を選んだら、カテゴリでも行動できます'));
+  opportunities.append(el('p','',ready?'光っているカテゴリでは行動できます。18歳以降は違うカテゴリで最大3回、同じカテゴリは月1回です。':'現在の出来事を選択すると、カテゴリから自由行動ができるようになります。'));
   const choices=el('div','category-opportunities');
   for(const group of screenGroups){
     if(!categoryActivities(state,group.category).length)continue;
     const btn=el('button','',group.category+' →');btn.type='button';
     btn.addEventListener('click',()=>handlers.onNavigate?.(categoryLanding(group.category)));
-    if(ready)btn.append(el('small','','● 行動可'));
+    if(hasFreeAction(state,group.category))btn.append(el('small','','● 行動可'));
+    else if(!budget.pending)btn.append(el('small','','このカテゴリは完了'));
     choices.append(btn);
   }
   opportunities.append(choices);root.append(opportunities);
