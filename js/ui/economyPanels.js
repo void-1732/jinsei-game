@@ -154,8 +154,8 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     section.classList.add('business-focused');
     section.append(econEl('h3','','会社・事業経営'));
     line(section,'事業売上／月',yen(b.monthlyRevenue));line(section,'事業経費／月',yen(b.monthlyCosts));
-    const controls=econEl('div','phase4-actions');businessAction(controls,'30万円で事業を開始',()=>handlers.onAction?.('startBusiness',{}),b.active||age<20);
-    businessAction(controls,'事業を終了',()=>handlers.onAction?.('closeBusiness',{}),!b.active);section.append(controls);
+    const controls=econEl('div','phase4-actions');action(controls,'30万円で事業を開始',()=>handlers.onAction?.('startBusiness',{}),b.active||age<20);
+    action(controls,'事業を終了',()=>handlers.onAction?.('closeBusiness',{}),!b.active);section.append(controls);
     if(b.active){
       const figures=businessMonthlyFigures(b,game.world?.phase);
       line(section,'従業員数',`${b.employees??0}人`);
