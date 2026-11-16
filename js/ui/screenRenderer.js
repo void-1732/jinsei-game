@@ -1,4 +1,5 @@
 import {renderPlayDashboard} from './playDashboard.js';
+import {businessActionsRemaining} from '../core/businessOperations.js';
 import {renderLivingPanel} from './livingPanel.js';
 import {getScreenFieldValues} from '../core/screenFieldValues.js';
 import {renderHistoryPanel} from './historyPanels.js';
@@ -51,17 +52,23 @@ export function renderFocusedScreen(container,screen,gameState,handlers={}){
     }
     flush();
   }
-  const blocked=gameState?.initialized &&
-    (gameState.pendingEvents.some(e=>e.type==='choice') ||
-    (gameState.turnActions?.turn===gameState.timeline.turnsElapsed && gameState.turnActions.used>=1));
-  if(blocked){
-    const notice=el('p','muted small focused-action-message',
-      gameState.pendingEvents.some(e=>e.type==='choice')?'先に出来事の選択を完了してください。':'このターンの自由行動は実行済みです。');
-    for(const button of container.querySelectorAll('button:not([disabled])')){
+  const hasStory=Boolean(gameState?.pendingEvents?.some(e=>e.type==='choice'));
+  const ordinaryUsed=Boolean(gameState?.initialized&&gameState.turnActions?.turn===gameState.timeline.turnsElapsed&&gameState.turnActions.used>=1);
+  const businessRemaining=businessActionsRemaining(gameState);
+  // Navigation and selection buttons remain operable. Only the action which
+  // would exceed its own allowance is disabled. Business controls have a
+  // separate capped budget from the once-per-turn life choice.
+  for(const button of container.querySelectorAll('button:not([disabled])')){
+    if(button.classList.contains('choice-button'))continue;
+    const admin=button.dataset.actionScope==='business';
+    if(hasStory||(admin?businessRemaining===0:ordinaryUsed)){
       button.disabled=true;
-      button.title='今のターンは行動できません';
+      button.title=hasStory?'先に出来事を選択してください。':admin?'今月の事業管理操作は3回までです。':'自由行動は次のターンに行えます。';
     }
-    if(container.querySelector('button'))container.prepend(notice);
+  }
+  if(hasStory||ordinaryUsed||businessRemaining===0){
+    const notice=hasStory?'先に出来事の選択を完了してください。':businessRemaining===0?'今月の事業管理は完了です。次のターンで再開できます。':'今月の自由行動は使用済みです。事業管理は別枠で行えます。';
+    if(container.querySelector('button:disabled'))container.prepend(el('p','muted small focused-action-message',notice));
   }
 }
 

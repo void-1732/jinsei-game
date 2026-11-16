@@ -88,6 +88,12 @@ export function advanceWorkplace(finances, date){
  c.workplaceActions=0;
  if(c.job){
   c.performance=clamp(Math.max(45,c.performance-1));c.coworkerTrust=clamp(Math.max(45,c.coworkerTrust-1));
+  if(c.plan==='specialist')c.performance=clamp(c.performance+1);
+  if(c.plan==='leadership'){
+    c.supervisorTrust=clamp(c.supervisorTrust+1);
+    c.coworkerTrust=clamp(c.coworkerTrust+1);
+  }
+  if(c.plan==='balanced'&&c.performance<60)c.performance=clamp(c.performance+1);
   for(const person of c.workplacePeople){
    person.personality ??= person.role==='上司'?'慎重':'協調的';
    person.skill ??= 60;

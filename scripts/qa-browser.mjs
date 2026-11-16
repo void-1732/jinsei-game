@@ -96,16 +96,56 @@ async function runViewport(binary,width){
   // Button-first selection: navigation changes the displayed tool without executing actions.
   await click("document.querySelector('#category-dock button:nth-child(4)')");
   await until(async()=>get("document.querySelector('#page-title')?.textContent==='学校・学習'"),'academic category opened');
-  const studyButtons=await get("({count:document.querySelectorAll('.topic-tool-buttons .choice-button').length,selected:document.querySelectorAll('.topic-tool-buttons .choice-button[aria-pressed=true]').length,dropdowns:document.querySelectorAll('.topic-tool-select').length})");
-  if(studyButtons.count!==3||studyButtons.selected!==1||studyButtons.dropdowns!==0)throw Error('Academic tool buttons missing '+JSON.stringify(studyButtons));
-  await click("document.querySelectorAll('.topic-tool-buttons .choice-button')[2]");
+  const studyButtons=await get("({count:document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab').length,selected:document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length,duplicate:document.querySelectorAll('.topic-tool-buttons').length})");
+  if(studyButtons.count!==3||studyButtons.selected!==1||studyButtons.duplicate!==0)throw Error('Top academic screen buttons missing or duplicated '+JSON.stringify(studyButtons));
+  await click("document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab')[2]");
   await until(async()=>get("document.querySelector('.phase4-choice-actions .choice-button-group')?.children.length>=4"),'study subject buttons opened');
   const academic=await get("({groupCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group').length,subjectCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0]?.children.length,hourCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1]?.children.length,selected:document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length,dropdowns:document.querySelectorAll('.phase4-choice-actions select').length,overflow:document.documentElement.scrollWidth>innerWidth+3})");
   if(academic.groupCount!==2||academic.subjectCount<4||academic.hourCount!==4||academic.selected!==2||academic.dropdowns!==0||academic.overflow)throw Error('Academic choice groups invalid '+JSON.stringify(academic));
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0].children[1]");
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1].children[2]");
   if(!(await get("document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length===2")))throw Error('Selected button state not updated');
-  if(!(await get("document.querySelectorAll('.topic-tool-buttons .choice-button[aria-pressed=true]').length===1")))throw Error('Tool button state not updated');
+  if(!(await get("document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length===1")))throw Error('Top screen state not updated');
+  // Use a detached scenario to verify that a real equipment button works after
+  // the ordinary life action was spent. This must not modify the player's save.
+  const machine=await evaluate(`(async()=>{
+    const [{createGameStore},{economyAction},{renderFocusedScreen}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/core/economySystems.js'),import('./js/ui/screenRenderer.js')
+    ]);
+    const store=createGameStore({interactiveChoices:true});
+    store.startNewGame();
+    const snapshot=structuredClone(store.getState());
+    snapshot.pendingEvents=[];
+    snapshot.timeline={year:2025,month:5,ageYears:25,turnsElapsed:100,monthsElapsed:304};
+    snapshot.finances.cash=1000000;
+    const context={age:25,date:snapshot.timeline,education:snapshot.education};
+    economyAction(snapshot.finances,'startBusiness',{},context);
+    economyAction(snapshot.finances,'purchaseEquipment',{amount:50000,type:'標準設備'},context);
+    if(!store.loadState(snapshot).ok)return {error:'failed to load fixture'};
+    if(!store.performAction('setBudget',{amount:70000}).ok)return {error:'life action not spent'};
+    const host=document.createElement('div');
+    host.className='business-browser-scenario';
+    host.style.width='min(90%,900px)';
+    document.body.append(host);
+    let actionResult;
+    renderFocusedScreen(host,{id:'WORK-04'},store.getState(),{
+      onAction:(name,payload)=>{actionResult=store.performAction(name,payload);}
+    });
+    const equipment=host.querySelector('.business-equipment-panel');
+    const selector=host.querySelector('.business-machine-choice');
+    const target=[...host.querySelectorAll('button')].find(x=>x.textContent.includes('点検 5,000円'));
+    const unblocked=Boolean(target&&!target.disabled);
+    target?.click();
+    const result={equipment:!!equipment,selector:!!selector,unblocked,
+      operation:actionResult?.ok,adminUsed:store.getState().businessTurn.used,
+      lifeUsed:store.getState().turnActions.used,
+      noDuplicate:host.querySelectorAll('.business-equipment-panel').length===1,
+      overflow:document.documentElement.scrollWidth>innerWidth+3};
+    host.remove();return result;
+  })()`);
+  if(machine.error||!machine.equipment||!machine.selector||!machine.unblocked||
+     !machine.operation||machine.adminUsed!==1||machine.lifeUsed!==1||!machine.noDuplicate||machine.overflow)
+    throw Error('Business equipment action is missing, blocked or duplicated '+JSON.stringify(machine));
   await click("document.querySelector('#open-settings')");
   await until(async()=>get("document.querySelector('#settings-dialog').open"),'settings opened');
   if(!(await get("!!document.querySelector('#export-game') && !!document.querySelector('#import-game-file')")))throw Error('Backup controls missing');

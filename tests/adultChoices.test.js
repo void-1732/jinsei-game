@@ -79,7 +79,7 @@ test('旧保存の拡張欄欠落を補完、拡張後はJSONで往復可能',()
 test('統合画面は情報サマリー1つ、詳細描画1つに限定される',()=>{
   const text=readFileSync(new URL('../js/ui/topicPage.js',import.meta.url),'utf8');
   assert.match(text,/compactValues/);
-  assert.match(text,/topic-tool-buttons/);
+  assert.match(text,/renderScreen/);
   assert.match(text,/choiceButtons/);
   assert.ok(!text.includes('for(const id of topic.screenIds){\n    const target=findScreen(id);\n    const card='));
 });
@@ -117,8 +117,9 @@ test('詳細の切替と学業操作はボタン式で、実行操作は確認�
  const page=readFileSync(new URL('../js/ui/topicPage.js',import.meta.url),'utf8');
  const life=readFileSync(new URL('../js/ui/lifePanels.js',import.meta.url),'utf8');
  const control=readFileSync(new URL('../js/ui/choiceButtons.js',import.meta.url),'utf8');
- assert.match(page,/topic-tool-buttons/);
- assert.match(page,/choiceButtons\('操作する項目'/);
+ const dock=readFileSync(new URL('../js/ui/categoryDock.js',import.meta.url),'utf8');
+ assert.match(dock,/topic-screen-tabs/);
+ assert.ok(!page.includes("choiceButtons('操作する項目'"));
  assert.match(page,/choices\.getValue\(\)/);
  assert.match(life,/choiceButtons\('勉強する科目'/);
  assert.match(life,/choiceButtons\('学習時間'/);
