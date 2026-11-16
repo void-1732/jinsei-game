@@ -22,7 +22,7 @@ test('資格22種類と5段階難易度、専攻・医学部などのおすす�
  assert.ok(QUALIFICATION_CATALOG.some(q=>q.id==='physician'&&q.level===5));
  assert.ok(QUALIFICATION_CATALOG.some(q=>q.id==='dentist'&&q.level===5));
  assert.equal(new Set(QUALIFICATION_CATALOG.map(q=>q.id)).size,22);
- const e=adult().getState().education;
+ const e=structuredClone(adult().getState().education);
  e.program={school:'医学部',years:6,tuition:75000,type:'6年制医学課程',startYear:2018};
  assert.equal(recommendedQualifications(e)[0].id,'physician');
 });
