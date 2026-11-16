@@ -78,7 +78,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
         if(!summary.plan){
           const form=lifeEl('div','phase27-form');
           const name=lifeEl('input','phase4-select');name.placeholder='子どもの名前';name.maxLength=20;name.setAttribute('aria-label','子どもの名前');
-          const mode=lifeEl('select','phase4-select');
+          const mode=lifeEl('select','phase4-select family-plan-mode');
           for(const [val,label] of [['birth','妊娠・出産を希望'],['adopt','養子縁組を希望']]){
             const o=lifeEl('option','',label);o.value=val;mode.append(o);
           }
