@@ -8,9 +8,50 @@ import { renderLifePanel } from './lifePanels.js';
 import { screenDetails } from '../core/screenDetails.js';
 import { findScreen } from '../core/screenCatalog.js';
 import {getScreenCoverage,createCoverageReport} from '../core/screenCoverage.js';
+/** An embedded topic shows each real operation once, without nested diagnostics,
+ * repeated summaries, or development-only placeholder controls.
+ * All legacy screen IDs still resolve and remain searchable.
+ */
+export function renderFocusedScreen(container,screen,gameState,handlers={}){
+  container.replaceChildren();
+  const connected=[
+    renderHistoryPanel(container,screen,gameState),
+    renderWorldPanel(container,screen,gameState,handlers),
+    renderEconomyPanel(container,screen,gameState,handlers),
+    renderLivingPanel(container,screen,gameState,handlers),
+    renderLifePanel(container,screen,gameState,handlers),
+  ].some(Boolean);
+  if(!connected){
+    const section=el('section','content-card focused-fallback');
+    section.append(el('h3','',screen.title));
+    const entries=Object.entries(getScreenFieldValues(screen.id,gameState));
+    if(!entries.length)section.append(el('p','muted small',gameState?.initialized?'この項目には現在表示できる情報がありません。':'人生を開始すると情報を表示します。'));
+    for(const [name,value] of entries){
+      if(value===null||value===undefined||value==='')continue;
+      const row=el('div','field-list-item');
+      row.append(el('strong','',name),el('span','',String(value)));
+      section.append(row);
+    }
+    container.append(section);
+  }
+  const blocked=gameState?.initialized &&
+    (gameState.pendingEvents.some(e=>e.type==='choice') ||
+    (gameState.turnActions?.turn===gameState.timeline.turnsElapsed && gameState.turnActions.used>=1));
+  if(blocked){
+    const notice=el('p','muted small focused-action-message',
+      gameState.pendingEvents.some(e=>e.type==='choice')?'先に出来事の選択を完了してください。':'このターンの自由行動は実行済みです。');
+    for(const button of container.querySelectorAll('button:not([disabled])')){
+      button.disabled=true;
+      button.title='今のターンは行動できません';
+    }
+    if(container.querySelector('button'))container.prepend(notice);
+  }
+}
+
 /** Render only domain snapshots; all interactive filters are UI-local. */
 export function renderScreen(container, screen, gameState = null, handlers = {}) {
   if(screen.id==='LIFE-01')return renderPlayDashboard(container,gameState,handlers);
+  if(handlers.embedded && screen.id!=='SETTING-01' && screen.id!=='SETTING-06')return renderFocusedScreen(container,screen,gameState,handlers);
   if(screen.id==='SETTING-01'){
     const box=document.createElement('section');box.className='play-card settings-screen';
     const title=document.createElement('h2');title.textContent='保存・読み込み・新しい人生';
