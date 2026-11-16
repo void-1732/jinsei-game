@@ -1,0 +1,94 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createGameStore} from '../js/core/gameState.js';
+import {validateGameState} from '../js/core/saveSystems.js';
+import {familyEligibility,familyJourneyAction,advanceFamilyJourney,createFamilyProgress,validateFamilyProgress} from '../js/core/familyJourney.js';
+const script=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const ageState=(age=25)=>{
+ const g=createGameStore({interactiveChoices:true});
+ assert.equal(g.startNewGame({seed:345,birth:{year:2000,month:1,day:1}}).ok,true);
+ const state=structuredClone(g.getState());
+ state.timeline={year:2000+age,month:5,ageYears:age,monthsElapsed:age*12+4,turnsElapsed:age*4+4};
+ state.pendingEvents=[];
+ state.finances.cash=300000;state.finances.career.monthlySalary=180000;
+ return state;
+};
+const months=(s,n=1)=>{const idx=s.timeline.year*12+s.timeline.month-1+n;s.timeline.year=Math.floor(idx/12);s.timeline.month=idx%12+1;
+ s.timeline.monthsElapsed+=n;s.timeline.ageYears=s.timeline.year-2000;s.timeline.turnsElapsed+=n;};
+const friend=(s,name='友人')=>{
+ s.people.push({id:'FRIEND-001',name,birth:{year:2000,month:1,day:1},role:'友人',relationship:70});
+ return s.people.at(-1);
+};
+const spouse=s=>{s.people.push({id:'FRIEND-001',name:'配偶者',birth:{year:2000,month:1,day:1},role:'配偶者',relationship:90});
+ s.household.memberIds.push('FRIEND-001');return s.people.at(-1);};
+test('交際は出会って即日成立せず、少なくとも3か月・将来の話し合いを要する',()=>{
+ const s=ageState(),r=familyJourneyAction(s,'meetFriend');
+ assert.equal(r.ok,true);
+ const f=s.people.find(p=>p.id===r.personId);
+ assert.match(familyEligibility(s,'date',f.id),/3か月/);
+ assert.equal(familyJourneyAction(s,'date',{personId:f.id}).ok,false);
+ months(s,3);f.relationship=70;
+ assert.match(familyEligibility(s,'date',f.id),/話を2回/);
+ assert.equal(familyJourneyAction(s,'courtship',{personId:f.id}).ok,true);
+ assert.equal(familyJourneyAction(s,'courtship',{personId:f.id}).ok,false);
+ months(s,1);
+ assert.equal(familyJourneyAction(s,'courtship',{personId:f.id}).ok,true);
+ assert.equal(familyJourneyAction(s,'date',{personId:f.id}).ok,true);
+});
+test('結婚には12か月の交際と家計・親密度、将来の話し合いを要する',()=>{
+ const s=ageState(),p=friend(s);p.role='交際相手';p.relationship=90;
+ s.familyJourney.connections[p.id]={knownSince:0,datingSince:s.timeline.year*12+s.timeline.month-1,futureTalks:2,lastTalk:-1,lastContact:-1};
+ assert.match(familyEligibility(s,'marry',p.id),/12か月/);
+ months(s,12);
+ assert.equal(familyJourneyAction(s,'marry',{personId:p.id}).ok,true);
+ assert.equal(p.role,'配偶者');
+ assert.equal(s.household.memberIds.filter(id=>id===p.id).length,1);
+ assert.equal(s.finances.cash,260000);
+ assert.equal(validateGameState(s),true);
+});
+test('子どもを迎えるボタン1回で即出生せず、月次の妊娠・養子縁組経過を要する',()=>{
+ const s=ageState();spouse(s);
+ const res=familyJourneyAction(s,'haveChild',{name:'そら',mode:'adopt'});
+ assert.equal(res.ok,true);
+ assert.equal(s.people.filter(p=>p.role==='子').length,0);
+ assert.equal(s.familyJourney.plan.stage,'手続き中');
+ for(let i=0;i<16;i++){months(s);advanceFamilyJourney(s,s.timeline);}
+ assert.equal(s.people.filter(p=>p.role==='子').length,1);
+ assert.equal(s.familyJourney.plan,null);
+ assert.equal(validateGameState(s),true);
+});
+test('育児費用は月ごとに家計に反映、親子の関係と本人の心理にも影響',()=>{
+ const s=ageState();spouse(s);
+ s.people.push({id:'CHILD-001',name:'子',birth:{year:2020,month:1,day:1},role:'子',relationship:80});
+ s.household.memberIds.push('CHILD-001');
+ const before=s.finances.cash;
+ advanceFamilyJourney(s,s.timeline);
+ assert.equal(before-s.finances.cash,16000);
+ assert.equal(s.familyJourney.totalChildExpenses,16000);
+ const bond=familyJourneyAction(s,'familyCare',{personId:'CHILD-001'});
+ assert.equal(bond.ok,true);
+ assert.ok(s.people.at(-1).relationship>80);
+ assert.equal(validateGameState(s),true);
+});
+test('家族計画は同時開始・年齢・資金条件を検査し旧セーブと互換',()=>{
+ const s=ageState();spouse(s);s.finances.cash=100000;
+ assert.equal(familyJourneyAction(s,'haveChild',{name:'子',mode:'birth'}).ok,true);
+ assert.equal(familyJourneyAction(s,'haveChild',{name:'子2',mode:'birth'}).ok,false);
+ assert.equal(validateFamilyProgress(s.familyJourney),true);
+ const older=structuredClone(s);delete older.familyJourney;
+ assert.equal(validateGameState(older),true);
+ const store=createGameStore({interactiveChoices:true});
+ assert.equal(store.loadState(older).ok,true);
+ assert.deepEqual(store.getState().familyJourney,createFamilyProgress());
+ const invalid=structuredClone(s);invalid.familyJourney.plan.name='x'.repeat(200);
+ assert.equal(validateGameState(invalid),false);
+});
+test('人物・家族UIは少数の主要操作、詳細は折りたたみで提供',()=>{
+ const ui=script('js/ui/lifePanels.js');
+ assert.match(ui,/family-journey/);
+ assert.match(ui,/discussFuture/);
+ assert.match(ui,/養子縁組を希望/);
+ assert.match(ui,/家族計画を始める/);
+ assert.match(ui,/月（家計へ自動反映）/);
+});
