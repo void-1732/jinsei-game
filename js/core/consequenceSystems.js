@@ -42,7 +42,7 @@ export function validateConsequenceProgress(x){
 export function ensureConsequenceProgress(state){
  if(state.legacy51!==undefined)return state.legacy51;
  const progress=createConsequenceProgress();
- const mapped={spark:'learning',career:'career',bonds:'bonds',values:'health'};
+ const mapped={spark:'learning',career:'career',bonds:'bonds',values:'health',financialFuture:'finance',adultBalance:'bonds'};
  const seen=new Set();
  const previous=[...(state.storyProgress?.memories??[])].reverse();
  for(const old of previous){
@@ -56,7 +56,7 @@ export function ensureConsequenceProgress(state){
  return progress;
 }
 function impactDomain(impact={},branch){
- if(branch){return {spark:'learning',career:'career',bonds:'bonds',values:'health'}[branch.thread]??null;}
+ if(branch){return {spark:'learning',career:'career',bonds:'bonds',values:'health',financialFuture:'finance',adultBalance:'bonds'}[branch.thread]??null;}
  const weighted={learning:Math.abs(impact.study??0)+Math.abs(impact.skillValue??0),career:Math.abs(impact.work??0)*2+(impact.careerPortfolio??0),bonds:Math.abs(impact.social??0),finance:Math.abs(impact.cash??0)/1200+Math.abs(impact.budgetHabit??0),health:Math.abs(impact.physical??0)+Math.abs(impact.mental??0)+Math.abs(impact.energy??0)*.5};
  const ranked=Object.entries(weighted).sort((a,b)=>b[1]-a[1]);
  return ranked[0][1]>=2?ranked[0][0]:null;
