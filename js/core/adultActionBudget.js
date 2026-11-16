@@ -22,7 +22,7 @@ const ACTIVITY_CATEGORIES=Object.freeze({
  'gym-class':'健康','mindfulness':'健康','medical-screening':'健康',
  'family-dinner':'人物・家族','friends-outing':'人物・家族',
  'online-course':'学業','reading-workshop':'学業',
- 'job-networking':'仕事・経営',
+ 'job-networking':'仕事・経営','community-volunteer':'社会',
 });
 export const adultActionLimit=age=>age>=18?3:1;
 export function actionBudget(state){
