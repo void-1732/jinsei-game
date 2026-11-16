@@ -13,7 +13,7 @@ import {validateGameState} from '../js/core/saveSystems.js';
 const skill=(track,age=16)=>{
  const g=createGameStore();g.startNewGame();
  const s=structuredClone(g.getState());
- s.timeline={year:2016,month:5,ageYears:age,turnsElapsed:65,monthsElapsed:196};
+ s.timeline={year:2000+age,month:5,ageYears:age,turnsElapsed:age*4+1,monthsElapsed:age*12+4};
  s.education.stage=track==='高専'?'高専':'高校';
  s.education.school=track==='高専'?'高等専門学校':track;
  s.education.highSchoolTrack=track;
