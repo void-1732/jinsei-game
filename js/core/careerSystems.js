@@ -7,12 +7,12 @@ import {ensureWorkplace,staffProductivity,resetWorkplacePeople} from './workplac
 import {EXTENDED_JOB_POSTINGS,CAREER_SECTORS,careerEligibility,postingIsVisible,schoolRecommendationBonus} from './careerMarketplace.js';
 /** 第10段階：求人・採用・企業経営のゲーム専用モデル。実在企業・賃金を表さない。 */
 export const JOB_POSTINGS=Object.freeze([
-  {id:'shop',company:'みらい販売',job:'販売スタッフ',salary:195000,minAge:18,threshold:35,focus:'社会'},
-  {id:'office',company:'さくら事務サービス',job:'事務職',salary:235000,minAge:18,threshold:48,focus:'国語'},
-  {id:'tech',company:'東都技術研究所',job:'技術職',salary:290000,minAge:18,threshold:62,focus:'数学'},
-  {id:'pro',company:'日本総合開発',job:'専門職',salary:360000,minAge:22,threshold:73,focus:'英語',university:true},
-  {id:'creative',company:'北星企画',job:'企画職',salary:260000,minAge:18,threshold:55,focus:'国語'},
-  {id:'care',company:'青葉生活支援',job:'生活支援職',salary:215000,minAge:18,threshold:40,focus:'理科'},
+  {id:'shop',company:'みらい販売',job:'販売スタッフ',salary:195000,minAge:18,threshold:35,focus:'社会',sector:'小売'},
+  {id:'office',company:'さくら事務サービス',job:'事務職',salary:235000,minAge:18,threshold:48,focus:'国語',sector:'事務'},
+  {id:'tech',company:'東都技術研究所',job:'技術職',salary:290000,minAge:18,threshold:62,focus:'数学',sector:'IT'},
+  {id:'pro',company:'日本総合開発',job:'専門職',salary:360000,minAge:22,threshold:73,focus:'英語',sector:'研究',university:true},
+  {id:'creative',company:'北星企画',job:'企画職',salary:260000,minAge:18,threshold:55,focus:'国語',sector:'企画'},
+  {id:'care',company:'青葉生活支援',job:'生活支援職',salary:215000,minAge:18,threshold:40,focus:'理科',sector:'福祉'},
   ...EXTENDED_JOB_POSTINGS,
 ]);
 export const CAREER_TRAINING=Object.freeze([
