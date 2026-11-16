@@ -1,5 +1,6 @@
 import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures} from '../core/careerSystems.js';
+import {employmentQualificationBonus,canApplyUniversityRole,majorFor} from '../core/educationPaths.js';
 import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns,PART_TIME_JOBS,INVESTMENT_PRODUCTS,VEHICLE_OPTIONS} from '../core/economySystems.js';
 /** 仕事・家計の実データ操作パネル。入力はユーザー操作時のみ反映。 */
 const econEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
