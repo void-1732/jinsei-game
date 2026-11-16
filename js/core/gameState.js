@@ -22,6 +22,7 @@ import {createStoryProgress,ensureStoryProgress} from './branchingStories.js';
 import {createConsequenceProgress,ensureConsequenceProgress,rememberConsequence,consequenceHiringBonus,consequenceHealthProtection} from './consequenceSystems.js';
 import { createEconomyData, advanceEconomy, economyAction } from './economySystems.js';
 import { createLifeData, advanceEducation, study, socialize, gainSkill, prepareExam, chooseSchool, chooseMajor } from './lifeSystems.js';
+import {performStudentDay} from './studentBalance.js';
 /** PHASE 3: game-domain store. Independent of presentation and navigation. */
 const MAX_YEAR = 2200;
 /** Age dominates mortality; severe physical/mental decline has a modest effect. */
@@ -353,7 +354,8 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'chooseSchool': result=chooseSchool(state.education,payload.stage,payload.school);break;
       case 'chooseMajor': result=chooseMajor(state.education,payload.majorId);break;
       case 'familyActivity': result=familyActivity(state,payload);break;
-      case 'study': result=study(state.education,payload.subject,payload.hours);break;
+      case 'studentDay': result=performStudentDay(state,payload);break;
+       case 'study': result=study(state.education,payload.subject,payload.hours);break;
       case 'socialize': result=socialize(state.people,payload.personId);break;
       case 'skill': result=gainSkill(state.education,payload.skill);break;
       case 'university':
@@ -390,7 +392,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const success=action!=='applyJob'||result.passed;
         if(success)rememberConsequence(state,{title:action==='marry'?'結婚という選択':action==='haveChild'?'家族が増えた日':'仕事の節目'}, {label:result.message??action,impact:{}},{source:'action',forceDomain:['marry','haveChild'].includes(action)?'bonds':'career'});
       }
-      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='setTimePlan'?'時間配分':action==='habit'?'生活習慣':action==='treatment'?'治療':action==='checkup'?'健康診断':action==='careerTraining'?'職業研修':action==='resolveChoice'?'人生選択':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['familyBond','courtship','meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='chooseMajor'?'専攻選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
+      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='setTimePlan'?'時間配分':action==='habit'?'生活習慣':action==='treatment'?'治療':action==='checkup'?'健康診断':action==='careerTraining'?'職業研修':action==='resolveChoice'?'人生選択':action==='studentDay'?'学生生活':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['familyBond','courtship','meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='chooseMajor'?'専攻選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
       if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
       if(interactiveChoices){
         const highlight=choiceBeingResolved?.branch||choiceBeingResolved?.consequence

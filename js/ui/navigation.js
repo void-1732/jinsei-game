@@ -1,3 +1,4 @@
+import {topicGroups} from './topicGroups.js';
 /** Backward-compatible signature with optional PHASE 1 category/search options. */
 export function renderNavigation(container, groups, activeId, onNavigate, options = {}) {
   const activeCategory = Object.hasOwn(options, 'activeCategory') ? options.activeCategory : groups.find(g => g.screens.some(s => s.id === activeId))?.category;
@@ -62,12 +63,14 @@ export function renderNavigation(container, groups, activeId, onNavigate, option
       const placeholder = document.createElement('option');
       placeholder.value = ''; placeholder.textContent = '画面を選択';
       select.append(placeholder);
-      for (const screen of group.screens) {
+      // One navigation destination per consolidated topic. Old detail IDs
+      // remain reachable from the topic's own selector and direct links.
+      for (const topic of topicGroups[group.category]??[]) {
         const item = document.createElement('option');
-        item.value = screen.id; item.textContent = screen.title;
+        item.value = topic.screenIds[0]; item.textContent = topic.title;
         select.append(item);
       }
-      select.value = group.screens.some(screen => screen.id === activeId) ? activeId : '';
+      select.value = (topicGroups[group.category]??[]).find(topic=>topic.screenIds.includes(activeId))?.screenIds[0]??'';
       select.addEventListener('change', () => { if (select.value) onNavigate(select.value); });
       pickLabel.append(select); groupItems.append(pickLabel);
       section.append(groupItems);

@@ -113,12 +113,13 @@ test('表示先を1か所に限定し、実操作は初期表示・折りたた�
  assert.ok(!living.includes("['LIFE-02','SOCIETY-06'].includes(screen.id)"));
 });
 
-test('詳細の切替と学業操作はボタン式で、実行操作は確認ボタンからだけ発火する',()=>{
+test('統合した詳細の切替と学業操作は実行ボタンでのみ発火する',()=>{
  const page=readFileSync(new URL('../js/ui/topicPage.js',import.meta.url),'utf8');
  const life=readFileSync(new URL('../js/ui/lifePanels.js',import.meta.url),'utf8');
  const control=readFileSync(new URL('../js/ui/choiceButtons.js',import.meta.url),'utf8');
  const dock=readFileSync(new URL('../js/ui/categoryDock.js',import.meta.url),'utf8');
- assert.match(dock,/topic-screen-tabs/);
+ assert.ok(!dock.includes("const sub=node('div','topic-screen-tabs')"));
+ assert.match(page,/topic-detail-picker/);
  assert.ok(!page.includes("choiceButtons('操作する項目'"));
  assert.match(page,/choices\.getValue\(\)/);
  assert.match(life,/choiceButtons\('勉強する科目'/);

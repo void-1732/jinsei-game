@@ -94,7 +94,8 @@ test('設備選択は一か所で、重複のある画面下部の切替を表�
  assert.match(economy,/renderBusinessEquipmentPanel/);
  assert.ok(!economy.includes("section.append(econEl('h3','','事業設備の個別管理'))"));
  assert.ok(!topic.includes("choiceButtons('操作する項目'"));
- assert.match(dock,/topic-screen-tabs/);
+ assert.ok(!dock.includes("const sub=node('div','topic-screen-tabs')"));
+ assert.match(topic,/topic-detail-picker/);
 });
 
 test('故障設備の修理と翌月修理の受付が実際の資金・設備状態を更新する',()=>{
