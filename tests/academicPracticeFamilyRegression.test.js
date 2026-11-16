@@ -28,7 +28,7 @@ test('科目別復習は低下を止め、勉強再開で回復できる',()=>{
  const e=education();
  advanceAcademicPractice(e,date(2020,1));
  for(let m=2;m<=12;m++){
-  if(m===3||m===6||m===9)recordAcademicStudy(e,date(2020,m),['理科']);
+  if(m===3||m===6||m===9||m===12)recordAcademicStudy(e,date(2020,m),['理科']);
   advanceAcademicPractice(e,date(2020,m));
  }
  assert.equal(e.scores.理科,50);
