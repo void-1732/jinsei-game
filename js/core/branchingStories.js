@@ -40,6 +40,39 @@ const threads=Object.freeze([
       {id:'wellbeing',label:'心身のゆとり',seed:'健康と休息を大事にする',scene:['暮らしのペースを見直す','年齢とともに変わる暮らし'],hook:['無理のない暮らしを選んできたが、生活に変化が訪れた。','健康を大切にしてきた経験を、これからどう活かそうか。'],impact:{physical:4,mental:3}},
     ],
   },
+  {
+    // U7: the player's financial habits return at midlife and retirement.
+    id:'financialFuture',label:'お金と暮らしの選択',ages:[24,35,50],
+    start:'社会人としてのお金の使い方',
+    introduction:'収入を得て、貯蓄・暮らし・仕事への投資を考えるようになった。最初に何を重視する？',
+    paths:[
+      {id:'save',label:'計画的な貯蓄',seed:'生活費を見直し、無理なく貯める',scene:['10年続けた家計の習慣','長く積み重ねた家計の選択'],
+       hook:['若い頃に決めた支出の優先順位が、30代の暮らしにも影響している。','仕事と家庭の変化を経て、当時の貯蓄方針を続けるか見直す時期が来た。'],
+       impact:{mental:3,study:2}},
+      {id:'housing',label:'住まいの安定',seed:'長く暮らす住まいの計画を立てる',scene:['住まいと家計の折り合い','住まいを次の世代にどう残すか'],
+       hook:['住まいを優先した考えが、将来の家族との暮らしにもつながっている。','住宅の維持費と将来設計を、もう一度考える場面が訪れた。'],
+       impact:{social:3,mental:2}},
+      {id:'challenge',label:'仕事への投資',seed:'仕事に役立つ技能を磨く',scene:['学びへの投資を振り返る','これまでの努力を次の挑戦へ'],
+       hook:['20代から積み重ねた技能が、35歳で新しい働き方を考える材料になった。','過去に身につけた専門性を、次の世代へどう生かせるだろう。'],
+       impact:{work:4,study:2,energy:-2}},
+    ],
+  },
+  {
+    // U7: relationships, work and belonging have consequences decades later.
+    id:'adultBalance',label:'仕事と大切な人',ages:[28,42,58],
+    start:'仕事と大切な人の時間',
+    introduction:'働くこと、家族や友人との時間、地域でのつながり。今後の暮らしで何を大切にする？',
+    paths:[
+      {id:'relations',label:'人との時間',seed:'家族や友人との約束を優先する',scene:['大切な人との距離を考える','長く続いた人間関係の節目'],
+       hook:['28歳で大切にした関係が、働き方の変化を経ても心の支えになっている。','積み重ねた交流が、後半生の時間の使い方を見つめ直すきっかけになった。'],
+       impact:{social:5,mental:3}},
+      {id:'career',label:'仕事への集中',seed:'今の仕事で成果を残す',scene:['仕事の成果と周囲との関係','次の世代へ仕事を引き継ぐ'],
+       hook:['仕事を優先してきた経験が強みになった一方、身近な人との時間も改めて考えたい。','長く培った仕事の経験を、社会や家族にどう還元するか考える時が来た。'],
+       impact:{work:5,energy:-3,mental:1}},
+      {id:'community',label:'地域とのつながり',seed:'地域や友人と助け合う',scene:['地域で生まれた新しい役割','今までのつながりを後世へ'],
+       hook:['若い頃の地域活動が、42歳で新たな仲間とのつながりを生んだ。','地域で育てた縁を、これからの世代へ伝える機会が来た。'],
+       impact:{social:4,mental:2,physical:1}},
+    ],
 ]);
 const byId=Object.fromEntries(threads.map(t=>[t.id,t]));
 const pathFor=(thread,id)=>thread.paths.find(p=>p.id===id)??thread.paths[0];
