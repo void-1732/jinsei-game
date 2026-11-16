@@ -4,12 +4,17 @@ export const REGIONS=Object.freeze([
  ['東京・東京23区',125000],['愛知・名古屋',88000],['大阪・大阪',98000],['香川・高松',62000],
  ['福岡・福岡',79000],['鹿児島・鹿児島',59000]
 ].map(([name,rent])=>Object.freeze({name,rent})));
+export const HOME_OPTIONS=Object.freeze([
+ {id:'small',name:'小さな戸建て・中古物件',priceFactor:0.65,maintenanceFactor:0.8},
+ {id:'standard',name:'標準的な住宅',priceFactor:1,maintenanceFactor:1},
+ {id:'large',name:'広い戸建て・大型物件',priceFactor:1.6,maintenanceFactor:1.4},
+]);
 export const INSURANCE_PLANS=Object.freeze({
  '未加入':{premium:0,benefit:0},'基本保障':{premium:3000,benefit:15000},'充実保障':{premium:7000,benefit:40000},
  '医療重点':{premium:4500,benefit:28000},'がん・重病重点':{premium:6200,benefit:50000},'生活防衛':{premium:8500,benefit:65000}
 });
 export const REGIONAL_FACTORS=Object.freeze({'北海道・札幌':{living:0.94,jobs:0.98},'宮城・仙台':{living:0.96,jobs:1},'新潟・新潟':{living:0.92,jobs:0.97},'埼玉・さいたま':{living:1,jobs:1.02},'東京・東京23区':{living:1,jobs:1},'愛知・名古屋':{living:0.98,jobs:1.03},'大阪・大阪':{living:1,jobs:1.02},'香川・高松':{living:0.9,jobs:0.95},'福岡・福岡':{living:0.96,jobs:1},'鹿児島・鹿児島':{living:0.9,jobs:0.95}});
-export function createLivingData(){return {region:'東京・東京23区',housing:'実家',rent:0,propertyValue:0,monthlyHousingCost:0,insurance:'未加入',lastClaimKey:null,moves:[],claims:[],mortgageBalance:0,mortgagePayment:0,mortgageMonths:0,pensionMonths:0,pensionPaid:0,mortgageArrears:0,mortgageLateMonths:0,mortgageHistory:[],propertyAgeMonths:0,repairCount:0,pensionContributions:0,medicalSubsidyPaid:0,mortgageCredit:70,mortgageArrearsPaid:0,homeMaintenancePaid:0,pensionPremiumPaid:0,insuranceBenefitPaid:0,pensionMode:'通常納付',pensionExemptMonths:0,pensionUnpaidMonths:0,pensionBackPaidMonths:0,pensionUnpaidRecords:[],pensionCreditHalfUnits:0,mortgageRejectedApplications:0,mortgageAccounting:'従来方式',mortgageOverdueInterest:0,pensionExemptionApplications:0,insuranceClaimCap:'定額',pensionHistory:[]};}
+export function createLivingData(){return {region:'東京・東京23区',housing:'実家',rent:0,propertyValue:0,monthlyHousingCost:0,insurance:'未加入',homeType:'standard',lastClaimKey:null,moves:[],claims:[],mortgageBalance:0,mortgagePayment:0,mortgageMonths:0,pensionMonths:0,pensionPaid:0,mortgageArrears:0,mortgageLateMonths:0,mortgageHistory:[],propertyAgeMonths:0,repairCount:0,pensionContributions:0,medicalSubsidyPaid:0,mortgageCredit:70,mortgageArrearsPaid:0,homeMaintenancePaid:0,pensionPremiumPaid:0,insuranceBenefitPaid:0,pensionMode:'通常納付',pensionExemptMonths:0,pensionUnpaidMonths:0,pensionBackPaidMonths:0,pensionUnpaidRecords:[],pensionCreditHalfUnits:0,mortgageRejectedApplications:0,mortgageAccounting:'従来方式',mortgageOverdueInterest:0,pensionExemptionApplications:0,insuranceClaimCap:'定額',pensionHistory:[]};}
 export function ensureMortgage(l){l.mortgageBalance??=0;l.mortgagePayment??=0;l.mortgageMonths??=0;l.pensionMonths??=0;l.pensionPaid??=0;l.mortgageArrears??=0;l.mortgageLateMonths??=0;l.mortgageHistory??=[];l.propertyAgeMonths??=0;l.repairCount??=0;l.pensionContributions??=0;l.medicalSubsidyPaid??=0;l.mortgageCredit??=70;l.mortgageArrearsPaid??=0;l.homeMaintenancePaid??=0;l.pensionPremiumPaid??=0;l.insuranceBenefitPaid??=0;l.pensionMode??='通常納付';l.pensionExemptMonths??=0;l.pensionUnpaidMonths??=0;l.pensionBackPaidMonths??=0;l.pensionUnpaidRecords??=[];l.pensionCreditHalfUnits??=(l.pensionMonths??0)*2;l.mortgageRejectedApplications??=0;l.mortgageAccounting??='従来方式';l.mortgageOverdueInterest??=0;l.pensionExemptionApplications??=0;l.insuranceClaimCap??='定額';l.pensionHistory??=[];return l;}
 /** 第31段階：家計の信用と手元資金を使うゲーム独自の住宅ローン簡易審査。 */
 export function assessMortgage(f,price,loan){
@@ -106,7 +111,9 @@ export function livingAction(f,h,action,payload,context){
    if(!region||!['実家','賃貸','持ち家'].includes(housing))return {ok:false,reason:'居住地域または住居種別が不正です。'};
    if(living.region===region.name&&living.housing===housing)return {ok:false,reason:'現在と同じ住居です。'};
    const rent= housing==='賃貸'?region.rent:0;
-   const price=housing==='持ち家'?region.rent*180:0;
+   const home=HOME_OPTIONS.find(h=>h.id===(payload.homeType??'standard'));
+   if(housing==='持ち家'&&!home)return {ok:false,reason:'物件の種類が不正です。'};
+   const price=housing==='持ち家'?Math.round(region.rent*180*home.priceFactor):0;
    const fee=housing==='賃貸'?rent*2:housing==='持ち家'?Math.floor(price*.03):20000;
    const loanWanted=payload.loan===true && housing==='持ち家';
    const downPayment=loanWanted?Math.ceil(price*.2):price;
@@ -123,10 +130,10 @@ export function livingAction(f,h,action,payload,context){
    if(proceeds){f.cash+=proceeds;f.ledger.push({year:date.year,month:date.month,kind:'資産移動',label:'旧住居売却',amount:proceeds});if(f.ledger.length>600)f.ledger.shift();}
    transfer(f,date,'引越し・契約費用',fee);
    if(price) {f.cash-=downPayment;f.ledger.push({year:date.year,month:date.month,kind:'資産移動',label:loanWanted?'持ち家頭金':'持ち家購入',amount:-downPayment});if(f.ledger.length>600)f.ledger.shift();}
-   living.region=region.name;living.housing=housing;living.rent=rent;living.propertyValue=price;
+   living.region=region.name;living.housing=housing;living.homeType=housing==='持ち家'?home.id:'standard';living.rent=rent;living.propertyValue=price;
    living.mortgageArrears=0;living.mortgageOverdueInterest=0;living.mortgageAccounting='従来方式';living.mortgageCredit=70;living.mortgageLateMonths=0;living.mortgageHistory=[];living.propertyAgeMonths=0;living.mortgageBalance=loanAmount;living.mortgageMonths=loanWanted?360:0;
    living.mortgagePayment=loanWanted?Math.ceil(loanAmount*0.003/(1-Math.pow(1.003,-360))):0;
-   living.monthlyHousingCost=housing==='賃貸'?rent:housing==='持ち家'?Math.round(region.rent*.12):0;
+   living.monthlyHousingCost=housing==='賃貸'?rent:housing==='持ち家'?Math.round(region.rent*.12*home.maintenanceFactor):0;
    living.moves.push({year:date.year,month:date.month,region:region.name,housing,cost});
    if(living.moves.length>80)living.moves.shift();
    return {ok:true,message:`${region.name}の${housing}へ引越しました。`};
@@ -289,6 +296,7 @@ export function advanceLiving(f,date,age){
 export function validateLiving(l){
  if(l===undefined)return true; // 第26段階以前のセーブとの互換性
  if(!l||!findRegion(l.region)||!['実家','賃貸','持ち家'].includes(l.housing)||!Object.hasOwn(INSURANCE_PLANS,l.insurance))return false;
+ if(l.homeType!==undefined&&!HOME_OPTIONS.some(h=>h.id===l.homeType))return false;
  if(!['rent','propertyValue','monthlyHousingCost'].every(k=>validMoney(l[k])))return false;
  if(l.housing==='実家'&&(l.rent!==0||l.monthlyHousingCost!==0||l.propertyValue!==0))return false;
  if(l.housing==='賃貸'&&(l.rent!==l.monthlyHousingCost||l.propertyValue!==0))return false;
