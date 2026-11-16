@@ -94,6 +94,9 @@ function render(state){
   if(getTopic(screen.id)&&screen.id!=='LIFE-01')renderTopicPage(dom.screenRoot,screen,gameState,screenHandlers);
   else renderScreen(dom.screenRoot,screen,gameState,screenHandlers);
   foldState.restore(dom.screenRoot,screen.id);
+  const topicFold=dom.screenRoot.querySelector('.topic-detail');
+  const topicOverview=dom.screenRoot.querySelector('.topic-overview');
+  if(topicFold&&topicOverview)topicOverview.hidden=topicFold.open;
   lastRenderedFoldScreen=screen.id;
   dom.systemMessage.textContent=actionFeedback||`${screen.id} を表示中 · ${gameState.initialized?`${gameState.timeline.turnsElapsed}ターン経過`:'人生開始前'}`;
   if(state.helpOpen&&!dom.helpDialog.open)dom.helpDialog.showModal();
