@@ -1,0 +1,34 @@
+/* Button-first navigation and choice controls. Kept to the active topic UI. */
+.choice-button-field{min-width:0;width:100%;display:grid;gap:6px}
+.choice-button-label{font-size:12px;font-weight:700;color:#d6eaff}
+.choice-button-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.choice-button{appearance:none;border:1px solid #6488aa;border-radius:9px;background:#17334d;color:#e7f5ff;padding:9px 13px;min-height:40px;line-height:1.3;font:inherit;font-size:12px;font-weight:650;cursor:pointer;overflow-wrap:anywhere;transition:background .14s,border-color .14s}
+.choice-button:hover{background:#2a5577;border-color:#a0c9e8}
+.choice-button.is-selected,.choice-button[aria-pressed="true"]{background:#b9d8ea;color:#12314c;border-color:#e0f3ff;font-weight:800}
+.choice-button:focus-visible{outline:3px solid #f4d399;outline-offset:2px}
+.choice-button:disabled{opacity:.48;cursor:not-allowed}
+.topic-tool-buttons{margin:3px 0 9px}
+.topic-tool-buttons .choice-button-group{gap:7px}
+.topic-tool-buttons .choice-button{min-height:42px;padding:10px 16px}
+.topic-action-choices{flex:1 1 100%;min-width:0}
+.topic-leading .topic-action-form{align-items:start}
+.topic-leading .topic-action-form>.button{align-self:end}
+.topic-leading .topic-action-choices .choice-button{padding:8px 10px;min-height:38px;font-size:11px}
+.topic-leading .topic-action-choices .choice-button-group{gap:5px}
+.topic-action-choices .choice-button-group{max-height:170px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:2px}
+.phase4-choice-actions{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(180px,.75fr) auto;align-items:end;gap:10px}
+.phase4-choice-actions .choice-button{padding:9px 13px}
+.phase4-choice-actions>.phase4-action{align-self:end;min-height:40px;white-space:normal}
+@media(max-width:1100px){
+ .phase4-choice-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .phase4-choice-actions>.phase4-action{grid-column:1/-1;justify-self:start}
+}
+@media(max-width:600px){
+ .choice-button-group{gap:5px}
+ .choice-button{min-height:44px;padding:9px 10px}
+ .topic-tool-buttons .choice-button{min-height:44px;padding:10px 12px}
+ .topic-action-choices .choice-button-group{max-height:178px}
+ .phase4-choice-actions{grid-template-columns:1fr}
+ .phase4-choice-actions>.phase4-action{grid-column:auto;width:100%}
+}
+@media(prefers-reduced-motion:reduce){.choice-button{transition:none}}

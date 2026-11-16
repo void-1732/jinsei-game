@@ -5,6 +5,7 @@ import {findScreen} from '../core/screenCatalog.js';
 import {renderScreen} from './screenRenderer.js';
 import {renderOpportunityPanel} from './opportunityPanel.js';
 import {renderLifeReview} from './lifeGoalPanel.js';
+import {choiceButtons} from './choiceButtons.js';
 
 const el=(tag,klass='',text='')=>{const e=document.createElement(tag);if(klass)e.className=klass;e.textContent=text;return e;};
 // UI-only state; reopening the page defaults to expanded unless explicitly collapsed.
@@ -23,14 +24,12 @@ function actionBox(state,category,onAction){
     return box;
   }
   const form=el('div','topic-action-form');
-  const label=el('label','',`残り1回：${category}の行動を選ぶ`);
-  const select=el('select','topic-action-select');
-  select.setAttribute('aria-label',`${category}の自由行動`);
-  actions.forEach((a,i)=>{const opt=el('option','',a.title);opt.value=String(i);select.append(opt);});
-  label.append(select);
-  const run=el('button','button button-primary','この行動をする');run.type='button';
-  run.addEventListener('click',()=>{const picked=actions[Number(select.value)];if(picked)onAction?.(picked.action,picked.payload);});
-  form.append(label,run);box.append(form,el('p','topic-action-foot','自由行動は全カテゴリ共通で1ターン1回です。'));
+  const choices=choiceButtons(`残り1回：${category}の行動を選ぶ`,
+    actions.map((a,i)=>({label:a.title,value:String(i)})),'0');
+  choices.element.classList.add('topic-action-choices');
+  const run=el('button','button button-primary','選択した行動を実行');run.type='button';
+  run.addEventListener('click',()=>{const picked=actions[Number(choices.getValue())];if(picked)onAction?.(picked.action,picked.payload);});
+  form.append(choices.element,run);box.append(form,el('p','topic-action-foot','自由行動は全カテゴリ共通で1ターン1回です。'));
   return box;
 }
 function compactValues(state,ids){
@@ -84,25 +83,18 @@ export function renderTopicPage(container,screen,state,handlers={}){
   details.open=expandedByTopic.get(topicKey)??true;
   details.append(el('summary','','詳細・個別操作を見る（クリックで閉じる／開く）'));
   const body=el('div','topic-detail-content');
-  const label=el('label','topic-tool-label','操作する項目');
-  if(topic.screenIds.length===1)label.hidden=true;
-  const select=el('select','topic-tool-select');
-  select.setAttribute('aria-label','詳細操作の項目を選択');
-  for(const id of topic.screenIds){
-    const target=findScreen(id);const option=el('option','',target.title);option.value=id;select.append(option);
-  }
-  // A requested legacy link selects that tool, while ordinary navigation starts with the first.
-  select.value=screen.id;
-  label.append(select);body.append(label);
   const full=el('div','topic-legacy-detail');
-  const show=()=>{
-    const target=findScreen(select.value);full.replaceChildren();
+  const show=(selectedId=screen.id)=>{
+    const target=findScreen(selectedId);full.replaceChildren();
     renderScreen(full,target,state,{...handlers,embedded:true,filter:'',onFilterChange:()=>{}});
   };
-  select.addEventListener('change',()=>{
-    if(handlers.onNavigate)handlers.onNavigate(select.value);
-    else show();
-  });
+  if(topic.screenIds.length>1){
+    const choices=choiceButtons('操作する項目',
+      topic.screenIds.map(id=>({value:id,label:findScreen(id).title})),screen.id,
+      id=>{if(handlers.onNavigate)handlers.onNavigate(id);else show(id);});
+    choices.element.classList.add('topic-tool-buttons');
+    body.append(choices.element);
+  }
   details.addEventListener('toggle',()=>{
     expandedByTopic.set(topicKey,details.open);
     overview.hidden=details.open;
