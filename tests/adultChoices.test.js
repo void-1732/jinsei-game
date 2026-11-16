@@ -101,8 +101,8 @@ test('表示先を1か所に限定し、実操作は初期表示・折りたた�
  const living=readFileSync(new URL('../js/ui/livingPanel.js',import.meta.url),'utf8');
  assert.match(topics,/\['住まい・車',\['LIFE-02'\]\]/);
  assert.match(topics,/\['保険・年金',\['LIFE-07'\]\]/);
- assert.match(compact,/details\.open=true/);
- assert.match(compact,/overview\.hidden=true/);
+ assert.match(compact,/expandedByTopic/);
+ assert.match(compact,/overview\.hidden=details\.open/);
  assert.match(compact,/embedded:true/);
  assert.match(details,/detail\.open=Boolean\(handlers\.embedded\)/);
  assert.match(details,/if\(!handlers\.embedded\)container\.prepend\(quick\)/);
