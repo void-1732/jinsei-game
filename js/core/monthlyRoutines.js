@@ -32,7 +32,8 @@ export const ONE_OFF_ACTIVITIES=Object.freeze([
  {id:'friends-outing',name:'友人との外出',category:'人物・家族',cost:6500,description:'友人との関係+4'},
  {id:'online-course',name:'オンライン講座を受ける',category:'学業',cost:5000,description:'パソコン技能を磨く'},
  {id:'reading-workshop',name:'読書・教養講座',category:'学業',cost:3500,description:'読書技能を磨く'},
- {id:'job-networking',name:'キャリア交流会',category:'仕事・経営',cost:6000,description:'仕事探し・職場人脈の準備'}
+ {id:'job-networking',name:'キャリア交流会',category:'仕事・経営',cost:6000,description:'仕事探し・職場人脈の準備'},
+ {id:'community-volunteer',name:'地域のボランティア',category:'社会',cost:1500,description:'こころ+2・元気-2、地域活動に参加'}
 ]);
 const clamp=n=>Math.max(0,Math.min(100,Math.round(n)));
 const monthIndex=date=>date.year*12+date.month-1;
@@ -110,5 +111,6 @@ export function takeAdultActivity(state,{id}={}){
  if(id==='online-course')e.skills.パソコン=(e.skills.パソコン??0)+Math.min(2,Math.max(0,95-(e.skills.パソコン??0)));
  if(id==='reading-workshop')e.skills.読書=(e.skills.読書??0)+Math.min(2,Math.max(0,95-(e.skills.読書??0)));
  if(id==='job-networking')state.opportunity47.career.interviewPrep=Math.min(6,(state.opportunity47.career.interviewPrep??0)+1);
+ if(id==='community-volunteer'){h.mental=clamp(h.mental+2);h.energy=clamp(h.energy-2);}
  return {ok:true,message:`${action.name}を実行しました。費用：${action.cost.toLocaleString('ja-JP')}円。`};
 }
