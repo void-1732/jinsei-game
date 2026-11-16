@@ -137,8 +137,10 @@ test('病後の体力がゼロに固定されない・年齢が上がるほど�
 
 test('家計・体調の重大な問題を人生画面から解決できるよう案内する',()=>{
  const dash=read('js/ui/playDashboard.js');
- assert.match(dash,/play-attention/);
- assert.match(dash,/finance\.debt>=150_000/);
- assert.match(dash,/health\.physical<=35/);
- assert.match(read('css/phase50.css'),/play-attention-item/);
+ const logic=read('js/core/lifeGuidance.js');
+ assert.match(dash,/renderLifeGuidancePanel/);
+ assert.match(logic,/h\.physical<=35/);
+ assert.match(logic,/monthly\.liquidCash<monthly\.outflow\*2/);
+ assert.match(logic,/unemployed/);
+ assert.match(read('css/phase67.css'),/life-guidance-item/);
 });

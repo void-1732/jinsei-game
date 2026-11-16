@@ -121,6 +121,67 @@ async function runViewport(binary,width){
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1].children[2]");
   if(!(await get("document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length===2")))throw Error('Selected button state not updated');
   if(!(await get("document.querySelectorAll('#topic-strip .screen-tab[aria-pressed=true]').length===1")))throw Error('Top screen state not updated');
+  // U4/U5/U7: isolated adult fixture checks the real responsive game panels
+  // and long-term event generation without touching the browser's save slots.
+  const newFeatures=await evaluate(`(async()=>{
+    const [
+      {createGameStore},{renderFocusedScreen},{renderLifeGuidancePanel},
+      {createStoryProgress,createBranchingEvent,recordBranchChoice}
+    ]=await Promise.all([
+      import('./js/core/gameState.js'),
+      import('./js/ui/screenRenderer.js'),
+      import('./js/ui/lifeGuidancePanel.js'),
+      import('./js/core/branchingStories.js')
+    ]);
+    const store=createGameStore({interactiveChoices:true});store.startNewGame();
+    const snapshot=structuredClone(store.getState());snapshot.pendingEvents=[];
+    snapshot.timeline={year:2026,month:5,ageYears:26,turnsElapsed:101,monthsElapsed:316};
+    snapshot.turnActions={turn:101,used:0,lastAction:null,categories:[]};
+    snapshot.finances.cash=1000000;
+    snapshot.finances.career.job='事務職';snapshot.finances.career.monthlySalary=300000;
+    if(!store.loadState(snapshot).ok)return {error:'adult fixture did not load'};
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    renderFocusedScreen(host,{id:'LIFE-03'},store.getState(),{onAction:()=>{}});
+    const overview=host.querySelector('.asset-pulse');
+    const metrics=host.querySelectorAll('.asset-pulse-metrics .asset-pulse-item').length;
+    const flows=host.querySelectorAll('.asset-pulse-flow .asset-pulse-item').length;
+    const choices=[...host.querySelectorAll('.asset-pulse-forecast .choice-button')];
+    const previous=host.querySelector('.asset-pulse-result')?.textContent;
+    choices.find(b=>b.dataset.value==='12')?.click();
+    const later=host.querySelector('.asset-pulse-result')?.textContent;
+    const forecastChanged=previous!==later;
+    const original=JSON.stringify(store.getState());
+    const budget=host.querySelector('.asset-pulse-budget button');
+    const chart=host.querySelector('.asset-pulse-fold .phase18-graph');
+    host.replaceChildren();
+    let destination=null;
+    const risk=structuredClone(store.getState());
+    risk.health.physical=20;risk.health.mental=20;risk.finances.cash=100;
+    risk.finances.career.job=null;
+    const guidance=renderLifeGuidancePanel(risk,id=>{destination=id;});
+    host.append(guidance);
+    const alerts=host.querySelectorAll('.life-guidance-item.is-warning').length;
+    const more=host.querySelector('.life-guidance-extra');
+    host.querySelector('.life-guidance-link')?.click();
+    const adviceWorking=Boolean(destination);
+    const progress=createStoryProgress();
+    const opening=createBranchingEvent(progress,{year:2025,month:2},200,25);
+    recordBranchChoice(progress,opening,opening.options[0],25);
+    const sequel=createBranchingEvent(progress,{year:2035,month:2},350,35);
+    const result={overview:!!overview,metrics,flows,forecastButtons:choices.length,
+      forecastChanged,budget:!!budget,chart:!!chart,
+      readOnly:original===JSON.stringify(store.getState()),
+      guidance:!!guidance,alerts,more:!!more,adviceWorking,
+      story:opening?.branch?.thread,sequel:sequel?.branch?.stage,
+      overflow:document.documentElement.scrollWidth>innerWidth+3};
+    host.remove();return result;
+  })()`);
+  if(newFeatures.error||!newFeatures.overview||newFeatures.metrics!==6||newFeatures.flows!==3||
+    newFeatures.forecastButtons!==3||!newFeatures.forecastChanged||!newFeatures.budget||
+    !newFeatures.readOnly||!newFeatures.guidance||newFeatures.alerts<2||
+    !newFeatures.more||!newFeatures.adviceWorking||newFeatures.story!=='financialFuture'||
+    newFeatures.sequel!==2||newFeatures.overflow)
+    throw Error('U4/U5/U7 adult asset, guidance or branching browser QA failed '+JSON.stringify(newFeatures));
   const jobLayout=await evaluate(`(async()=>{
     const [{createGameStore},{renderFocusedScreen}]=await Promise.all([
       import('./js/core/gameState.js'),import('./js/ui/screenRenderer.js')
