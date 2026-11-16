@@ -159,12 +159,9 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     listingSelect.addEventListener('change',update);
     sectorSelect.addEventListener('change',update);
     market.append(marketControls,status);
-    if(['医学課程修了','歯学課程修了'].includes(game.education.degree)){
-      const exam=econEl('div','phase4-actions');
-      const license=game.education.degree==='医学課程修了'?'医師':'歯科医師';
-      action(exam,`${license}のゲーム内資格試験`,()=>handlers.onAction?.('professionalExam',{license}), (game.education.licenses??[]).includes(license));
-      market.append(exam);
-    }
+    // Unified qualification exam panel supersedes the old, easier medical exam button.
+    if(['医学課程修了','歯学課程修了'].includes(game.education.degree))
+      market.append(renderQualificationPanel(game,handlers.onAction,{career:true}));
     section.append(market);
     update();
     section.append(econEl('h3','','企業別の財務・求人状況（第14段階）'));
