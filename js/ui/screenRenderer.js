@@ -34,6 +34,23 @@ export function renderFocusedScreen(container,screen,gameState,handlers={}){
     }
     container.append(section);
   }
+  // Layout-only transformation: group consecutive data rows into a responsive
+  // grid. This moves existing DOM nodes without changing their content or actions.
+  for(const section of container.querySelectorAll('.phase4-panel')){
+    let rows=[];
+    const flush=()=>{
+      if(rows.length<2){rows=[];return;}
+      const group=el('div','topic-stat-grid');
+      rows[0].before(group);
+      for(const row of rows)group.append(row);
+      rows=[];
+    };
+    for(const child of [...section.children]){
+      if(child.classList.contains('field-list-item'))rows.push(child);
+      else flush();
+    }
+    flush();
+  }
   const blocked=gameState?.initialized &&
     (gameState.pendingEvents.some(e=>e.type==='choice') ||
     (gameState.turnActions?.turn===gameState.timeline.turnsElapsed && gameState.turnActions.used>=1));
