@@ -81,12 +81,16 @@ export function renderLifePanel(container,screen,game,handlers={}){
     line(section,'在学状況',e.stage==='未就学'?'未就学':e.stage==='卒業'?'学業課程修了':`${e.school} / ${e.grade}年生`);
     line(section,'累計学習時間',`${e.studyHours}時間`);
     line(section,'進路方針',e.universityChoice);
+    if(e.degree)line(section,'最終学歴',e.degree);
+    if(e.nextProgram&&e.nextProgram!=='就職')line(section,'卒業後の進路',e.nextProgram);
+    if(e.highSchoolTrack)line(section,'中等教育の出身校',e.highSchoolTrack);
     if(e.program){
       line(section,'課程・修業年限',`${e.program.type}・${e.program.years}年間`);
       line(section,'学費（月額・基本）',`${e.program.tuition.toLocaleString('ja-JP')}円`);
       line(section,'専攻分野',majorFor(e.major).name);
     }
     if((e.qualifications??[]).length)line(section,'取得したゲーム内資格',e.qualifications.join('、'));
+    if((e.licenses??[]).length)line(section,'専門資格',e.licenses.join('・'));
     if(e.schoolPreference)line(section,'志望校',`${e.schoolPreference.高校??'自動'}／${e.schoolPreference.大学??'自動'}`);
     if(screen.id==='EDU-03'||screen.id==='EDU-01'){
       if(screen.id==='EDU-01')section.append(renderStudentBalancePanel(game,handlers.onAction));
@@ -102,7 +106,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
       section.append(controls);
     }
     if(screen.id==='EDU-04'){
-      if(e.stage==='大学'){
+      if(['大学','大学院','高専','高専専攻科'].includes(e.stage)){
         section.append(lifeEl('h3','','専攻を選んで将来の仕事につなげる'));
         const courses=choiceButtons('学ぶ分野を選ぶ',
           STUDY_MAJORS.map(major=>({value:major.id,label:major.name})),e.major??'general');
@@ -121,11 +125,11 @@ export function renderLifePanel(container,screen,game,handlers={}){
       }
       line(section,'受験準備の回数',`${e.examPreparation??0}回`);
       line(section,'受験結果',`${e.entrance.status}${e.entrance.destination?`：${e.entrance.destination}`:''}`);
-      if(e.stage==='高校')section.append(lifeEl('p','muted small','進学先により2年制・4年制、毎月の学費、卒業後の求人条件が変化します。'));
+      if(e.stage==='高校')section.append(lifeEl('p','muted small','学費・卒業までの期間・進路に応じて求人の応募条件が変化します。'));
       const controls=lifeEl('div','phase4-actions');
       if(['中学校','高校'].includes(e.stage)){
         const stage=e.stage==='中学校'?'高校':'大学';
-        const schools=stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校']:['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校'];
+        const schools=stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校','高等専門学校']:['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校','医学部','歯学部'];
         const select=choiceButtons('志望校を選ぶ',schools,e.schoolPreference?.[stage]??'自動');
         controls.append(select.element);
         if(stage==='大学'){
@@ -137,6 +141,16 @@ export function renderLifePanel(container,screen,game,handlers={}){
       }
       if(['中学校','高校'].includes(e.stage))
         action(controls,'受験対策をする（全科目＋2）',()=>handlers.onAction?.('prepareExam',{}));
+      const furtherOptions=e.stage==='高専'?['就職','高専専攻科','高専編入大学']:
+        e.stage==='大学'&&e.program?.years===4?['就職','大学院修士課程']:null;
+      if(furtherOptions){
+        const further=lifeEl('details','phase4-extra');
+        further.append(lifeEl('summary','','卒業後の進路・進学を計画'));
+        const select=choiceButtons('卒業後の希望',furtherOptions,e.nextProgram??'就職');
+        further.append(select.element);
+        action(further,'この進路を希望',()=>handlers.onAction?.('chooseFurtherEducation',{choice:select.getValue()}));
+        controls.append(further);
+      }
       if(e.stage==='高校'){
         action(controls,'大学進学を希望',()=>handlers.onAction?.('university',{choice:'進学'}));
         action(controls,'高校卒業後の就職を希望',()=>handlers.onAction?.('university',{choice:'就職'}));
