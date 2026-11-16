@@ -48,7 +48,7 @@ function render(state){
   if(!screen)return;
   if(lastScreenId!==screen.id){actionFeedback='';lastScreenId=screen.id;}
   const mergedTopic=getTopic(screen.id);
-  dom.pageTitle.textContent=mergedTopic?.screenIds.length>1?mergedTopic.title:screen.title;
+  dom.pageTitle.textContent=mergedTopic?.title??screen.title;
   dom.screenId.textContent=mergedTopic?.screenIds.length>1?`${mergedTopic.screenIds.length}項目`:screen.id;
   dom.breadcrumbs.textContent=`カテゴリ / ${screen.category} / ${mergedTopic?.title??screen.title}`;
   dom.categoryLabel.textContent=screen.category;
