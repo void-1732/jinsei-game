@@ -4,6 +4,7 @@
 import {screenGroups,findScreen} from '../core/screenCatalog.js';
 import {turnActivityOptions} from './turnActivities.js';
 import {opportunityOptions} from '../core/opportunitySystems.js';
+import {turnActionCategory,actionBudget,categoryActionAvailable} from '../core/adultActionBudget.js';
 
 const ids=(prefix,from,to)=>Array.from({length:to-from+1},(_,i)=>`${prefix}-${String(from+i).padStart(2,'0')}`);
 const specs={
@@ -53,26 +54,24 @@ export const topicGroups=Object.freeze(Object.fromEntries(Object.entries(specs).
 const index=new Map(Object.values(topicGroups).flat().flatMap(topic=>topic.screenIds.map(id=>[id,topic])));
 export const getTopic=id=>index.get(id)??null;
 export const categoryLanding=category=>topicGroups[category]?.[0]?.screenIds[0]??'LIFE-01';
-// The short action list is shared across the dashboard and every related category.
-const actionCategory={
-  study:'学業',skill:null,habit:'健康',treatment:'健康',socialize:'人物・家族',jobSearch:'仕事・経営',safetyPrep:null,
-};
+// All category pages share a single source of action/category classification
+// with the game store. UI is not an authority: the store independently enforces it.
 export function categoryActivities(state,category){
-  const options=[...turnActivityOptions(state),...opportunityOptions(state,category).map(x=>({title:x.label,action:x.action,payload:x.payload}))];
-  return options.filter(item=>{
-    if(item.action==='safetyPrep')return item.payload.area==='health'?category==='健康':category==='生活・資産';
-    if(item.action==='skill'){
-      if(item.payload.skill==='運動')return category==='健康';
-      if(item.payload.skill==='パソコン')return category==='仕事・経営'||category==='学業';
-      return category==='学業';
-    }
-    return opportunityOptions(state,category).some(x=>x.action===item.action&&JSON.stringify(x.payload)===JSON.stringify(item.payload))||actionCategory[item.action]===category;
-  });
+ if(!state?.initialized)return [];
+ const options=[...turnActivityOptions(state),...opportunityOptions(state,category).map(x=>({title:x.label,action:x.action,payload:x.payload}))];
+ const unique=new Set();
+ return options.filter(item=>{
+  if(turnActionCategory(item.action,item.payload)!==category)return false;
+  const id=item.action+':'+JSON.stringify(item.payload);
+  if(unique.has(id))return false;
+  unique.add(id);
+  return true;
+ });
 }
-export function hasFreeAction(state){
-  return Boolean(state?.initialized&&!state.ending?.dead
-    &&!state.pendingEvents.some(e=>e.type==='choice')
-    &&!(state.turnActions?.turn===state.timeline.turnsElapsed&&state.turnActions.used>=1));
+export function hasFreeAction(state,category=null){
+ const b=actionBudget(state);
+ return Boolean(!b.blocked&&b.remaining>0&&
+   (category===null||categoryActionAvailable(state,category)));
 }
 // Catch inadvertent gaps in the category-to-topic map during development.
 export function assertTopics(){
