@@ -1,0 +1,21 @@
+/* Compact asset portfolio and custom mortgage amount controls. */
+.asset-portfolio{display:grid;gap:10px;padding:12px;border:1px solid #557e9c;border-radius:12px;background:#18354d;min-width:0}
+.asset-portfolio h3,.asset-portfolio h4{margin:3px 0 6px}
+.asset-registration-card,.asset-property-details{border:1px solid #557d9e;border-radius:10px;padding:11px;background:#142d46}
+.asset-property-details:empty{display:none}
+.asset-property-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
+.asset-property-fact{display:flex;flex-direction:column;gap:5px;min-width:0;padding:9px;background:#11293f;border:1px solid #496d8b;border-radius:8px;overflow-wrap:anywhere}
+.asset-property-fact small{color:#b9d8eb}
+.asset-property-fact strong{font-size:12px}
+.asset-action-row{display:flex;flex-wrap:wrap;gap:9px;align-items:end;min-width:0;padding:10px 0}
+.asset-action-row>.choice-button-field{flex:1 1 100%}
+.asset-action-row>.button{min-height:43px}
+.asset-money-label{display:flex;flex-direction:column;gap:5px;flex:1 1 210px;max-width:300px;font-size:12px;font-weight:700}
+.asset-money-label input{min-width:0;width:100%;min-height:42px;padding:8px}
+.asset-purchase{padding:10px;border:1px solid #557c9a;border-radius:10px}
+.asset-purchase>summary{font-weight:700;font-size:13px;cursor:pointer}
+.asset-purchase-form{display:grid;gap:12px;padding-top:12px}
+.asset-portfolio .choice-button-group{max-height:170px;overflow-y:auto}
+.asset-portfolio button:focus-visible{outline:3px solid #f4d399;outline-offset:2px}
+@media(max-width:700px){.asset-property-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.asset-portfolio{padding:9px}}
+@media(max-width:390px){.asset-property-stats{grid-template-columns:1fr 1fr}.asset-action-row>.button{width:100%}}
