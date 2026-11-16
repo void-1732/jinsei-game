@@ -3,6 +3,7 @@ import {JOB_POSTINGS,employmentScore,businessMonthlyFigures,CAREER_PLANS,careerS
 import {choiceButtons} from './choiceButtons.js';
 import {renderBusinessEquipmentPanel} from './businessEquipmentPanel.js';
 import {renderSideJobWorkspace,renderBusinessWorkspace} from './workCompactPanel.js';
+import {renderAssetPulse} from './assetPulsePanel.js';
 import {employmentQualificationBonus,canApplyUniversityRole,majorFor} from '../core/educationPaths.js';
 import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns,PART_TIME_JOBS,INVESTMENT_PRODUCTS,VEHICLE_OPTIONS} from '../core/economySystems.js';
 /** 仕事・家計の実データ操作パネル。入力はユーザー操作時のみ反映。 */
@@ -33,6 +34,16 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   section.append(econEl('h2','',headings[screen.id]??'仕事・家計・資産'));
   if(!game?.initialized){section.append(econEl('p','muted','人生を開始すると仕事・資産の情報が表示されます。'));container.prepend(section);return true;}
   const f=game.finances,job=f.career,b=f.business,age=game.timeline.ageYears;
+  if(screen.id==='LIFE-03'){
+    renderAssetPulse(section,game,handlers.onAction);
+    const monthly=[...new Map(game.finances.ledger.filter(x=>x.kind==='収入'||x.kind==='支出').map(x=>[`${x.year}-${x.month}`,{year:x.year,month:x.month}])).values()];
+    for(const x of monthly)x.balance=game.finances.ledger.filter(y=>y.year===x.year&&y.month===x.month&&(y.kind==='収入'||y.kind==='支出')).reduce((sum,y)=>sum+y.amount,0);
+    const timeline=econEl('details','asset-pulse-fold');
+    timeline.append(econEl('summary','','過去12か月の収支推移'));
+    graph(timeline,'家計の月次収支推移',monthly,'balance');
+    section.append(timeline);
+    container.prepend(section);return true;
+  }
   if(screen.id==='WORK-03'){
     renderSideJobWorkspace(section,game,handlers.onAction);
     container.prepend(section);return true;
