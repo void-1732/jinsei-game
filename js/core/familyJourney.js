@@ -3,6 +3,7 @@
  * This is simplified fiction, not a model of fertility, medical care, adoption law or family eligibility.
  */
 import {socialAction,advanceFamily,familyActivity} from './socialSystems.js';
+import {familyDepthEligibility,familyDepthAction,onRelationshipAction,advanceFamilyDepth,validateFamilyDepth,childBaseMonthlyCost} from './familyDepth.js';
 const index=date=>date.year*12+date.month-1;
 const ageAt=(date,p)=>date.year-p.birth.year-(date.month<p.birth.month?1:0);
 const clamp=n=>Math.min(100,Math.max(0,Math.round(n)));
@@ -27,6 +28,7 @@ export function validateFamilyProgress(p){
    !(x.due===null||Number.isInteger(x.due)&&x.due>=x.started&&x.due<=26412)||
    !Number.isInteger(x.waited)||x.waited<0||x.waited>24)return false;
  }
+ if(!validateFamilyDepth(p))return false;
  if(!Array.isArray(p.history)||p.history.length>24||p.history.some(h=>!h||typeof h.title!=='string'||h.title.length>90||
   !Number.isInteger(h.year)||h.year<2000||h.year>2200||!Number.isInteger(h.month)||h.month<1||h.month>12))return false;
  return true;
@@ -111,6 +113,7 @@ export function familyJourneyAction(state,action,payload={}){
    if(p&&['配偶者','交際相手'].includes(p.role))connection(progress,p,now).lastContact=now;
    progress.lastFamilyTime=now;
   }
+  onRelationshipAction(state,action,payload,result);
   return result;
  }
  if(action==='familyCare'||action==='familyActivity'){
@@ -121,18 +124,26 @@ export function familyJourneyAction(state,action,payload={}){
    const r=familyActivity(state,payload);if(!r.ok)return r;
   }
   progress.lastFamilyTime=now;
-  return {ok:true,message:`${child.name}と過ごしました。家庭の信頼関係が深まります。`};
+  const response={ok:true,message:`${child.name}と過ごしました。家庭の信頼関係が深まります。`};
+  onRelationshipAction(state,action,payload,response);
+  return response;
  }
+ if(['startCohabitation','propose','holdWedding','setChildEducation'].includes(action))return familyDepthAction(state,action,payload);
  if(action==='courtship'||action==='date'||action==='marry'||action==='discussFuture'||action==='haveChild'){
   const reason=familyEligibility(state,action,payload.personId);
   if(reason)return {ok:false,reason};
+  if(action==='marry'){
+   const depthReason=familyDepthEligibility(state,'marry',payload.personId,payload);
+   if(depthReason)return {ok:false,reason:depthReason};
+  }
  }
  if(action==='courtship'){
   const c=connection(progress,p,now);
   if(c.lastTalk===now)return {ok:false,reason:'この月はすでに将来の話をしました'};
   c.futureTalks=Math.min(30,c.futureTalks+1);c.lastTalk=now;c.lastContact=now;
   p.relationship=clamp(p.relationship+5);
-  return {ok:true,message:`${p.name}と会話しました。親密度${p.relationship}、話し合い${c.futureTalks}/2。`};
+  onRelationshipAction(state,'courtship',payload,{ok:true});
+  return {ok:true,message:`${p.name}と会話しました.親密度${p.relationship}、話し合い${c.futureTalks}/2。`};
  }
  if(action==='date'){
   const c=connection(progress,p,now);
@@ -144,12 +155,14 @@ export function familyJourneyAction(state,action,payload={}){
   if(c.lastTalk===now)return {ok:false,reason:'今月はすでに将来について話しました'};
   c.futureTalks=Math.min(30,c.futureTalks+1);c.lastTalk=now;c.lastContact=now;
   p.relationship=clamp(p.relationship+5);
+  onRelationshipAction(state,'discussFuture',payload,{ok:true});
   return {ok:true,message:`住まい・お金・家族の希望について話し合いました（話し合い${c.futureTalks}/2）。`};
  }
  if(action==='marry'){
   debit(state,date,'結婚に向けた手続き・準備',40000);
   p.role='配偶者';
   if(!state.household.memberIds.includes(p.id))state.household.memberIds.push(p.id);
+  onRelationshipAction(state,'marry',payload,{ok:true});
   connection(progress,p,now).lastContact=now;
   record(state,date,`${p.name}と結婚`);
   return {ok:true,message:`${p.name}と結婚しました。今後は家計と家族の時間が関係に影響します。`};
@@ -223,7 +236,7 @@ export function advanceFamilyJourney(state,date){
   }
   if(spouse.relationship<40&&now%6===0)out.push({type:'family',title:'夫婦の時間を考える',description:'生活の負担が増えています。話し合いや家計の見直しが関係に役立ちます。'});
  }
- return [...out,...advanceFamily(state,date)];
+ return [...out,...advanceFamilyDepth(state,date),...advanceFamily(state,date)];
 }
 export function familyProgressSummary(state){
  const p=state.familyJourney??createFamilyProgress();
