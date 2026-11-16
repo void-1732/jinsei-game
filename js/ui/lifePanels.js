@@ -2,6 +2,7 @@
 import {choiceButtons} from './choiceButtons.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING} from '../core/careerSystems.js';
+import {renderQualificationPanel} from './qualificationPanel.js';
 import {renderStudentBalancePanel} from './studentBalancePanel.js';
 const lifeEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 function line(root,key,value){const row=lifeEl('div','field-list-item');row.append(lifeEl('strong','',key),lifeEl('span','',String(value)));root.append(row);}
@@ -157,6 +158,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
       }
       section.append(controls);
     }
+    if(['EDU-04','EDU-05'].includes(screen.id))section.append(renderQualificationPanel(game,handlers.onAction));
     if(screen.id==='EDU-05'){
       for(const [name,val]of Object.entries(e.skills))line(section,name,`習熟度 ${val}`);
       const controls=lifeEl('div','phase4-actions');for(const skill of ['読書','パソコン','運動'])action(controls,`${skill}を練習`,()=>handlers.onAction?.('skill',{skill}));
