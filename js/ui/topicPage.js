@@ -6,6 +6,8 @@ import {renderScreen} from './screenRenderer.js';
 import {renderOpportunityPanel} from './opportunityPanel.js';
 import {renderLifeReview} from './lifeGoalPanel.js';
 import {choiceButtons} from './choiceButtons.js';
+import {actionBudget,categoryActionAvailable} from '../core/adultActionBudget.js';
+import {renderMonthlyRoutinePanel} from './monthlyRoutinePanel.js';
 
 const el=(tag,klass='',text='')=>{const e=document.createElement(tag);if(klass)e.className=klass;e.textContent=text;return e;};
 // UI-only state; reopening the page defaults to expanded unless explicitly collapsed.
@@ -17,19 +19,20 @@ function actionBox(state,category,onAction){
   const box=el('section','topic-action');
   box.append(el('span','topic-action-kicker','このカテゴリでできること'));
   const pending=state.pendingEvents.some(e=>e.type==='choice');
-  const canAct=hasFreeAction(state);
-  box.append(el('h2','','今のターンの自由行動'));
+  const canAct=hasFreeAction(state,category);
+  const budget=actionBudget(state);
+  box.append(el('h2','',`自由行動：残り${budget.remaining}/${budget.limit}回`));
   if(!canAct){
-    box.append(el('p','',pending?'先に「次のターンへ進む」で出来事を選択してください。':'このターンの自由行動は完了しています。次のターンで再び行えます。'));
+    box.append(el('p','',pending?'先に今の出来事を選択してください。':budget.remaining===0?'今月の自由行動はすべて完了しました。':'このカテゴリでは今月すでに行動しました。別のカテゴリを選んでください。'));
     return box;
   }
   const form=el('div','topic-action-form');
-  const choices=choiceButtons(`残り1回：${category}の行動を選ぶ`,
+  const choices=choiceButtons(`今月の「${category}」の行動を選ぶ`,
     actions.map((a,i)=>({label:a.title,value:String(i)})),'0');
   choices.element.classList.add('topic-action-choices');
   const run=el('button','button button-primary','選択した行動を実行');run.type='button';
   run.addEventListener('click',()=>{const picked=actions[Number(choices.getValue())];if(picked)onAction?.(picked.action,picked.payload);});
-  form.append(choices.element,run);box.append(form,el('p','topic-action-foot','自由行動は全カテゴリ共通で1ターン1回です。'));
+  form.append(choices.element,run);box.append(form,el('p','topic-action-foot',budget.limit===3?'18歳以降は異なるカテゴリを最大3回まで選べます。同じカテゴリは月1回です。':'18歳になるまでは自由行動は各ターン1回です。'));
   return box;
 }
 function compactValues(state,ids){
@@ -65,6 +68,10 @@ export function renderTopicPage(container,screen,state,handlers={}){
     if(businessFocus){
       const secondary=el('details','topic-secondary-panel');secondary.append(el('summary','','今月の自由行動（必要な場合に開く）'),actions);root.append(secondary);
     }else{leading.classList.add('has-actions');leading.append(actions);}
+  }
+  if(state?.initialized){
+    const monthly=renderMonthlyRoutinePanel(state,screen.category,handlers.onAction);
+    if(monthly)root.append(monthly);
   }
   const featured=renderOpportunityPanel(state,screen.category,handlers.onAction);
   if(featured){
