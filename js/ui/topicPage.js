@@ -58,11 +58,19 @@ export function renderTopicPage(container,screen,state,handlers={}){
     el('h2','',topic.title),
     el('p','','詳細は見出しから開閉できます。'));
   leading.append(intro);root.append(leading);
+  const businessFocus=screen.id==='WORK-04';
   if(screen.category==='履歴'&&state?.initialized)root.append(renderLifeReview(state,{expanded:Boolean(state.ending?.dead)}));
   const actions=state?.initialized?actionBox(state,screen.category,handlers.onAction):null;
-  if(actions){leading.classList.add('has-actions');leading.append(actions);}
+  if(actions){
+    if(businessFocus){
+      const secondary=el('details','topic-secondary-panel');secondary.append(el('summary','','今月の自由行動（必要な場合に開く）'),actions);root.append(secondary);
+    }else{leading.classList.add('has-actions');leading.append(actions);}
+  }
   const featured=renderOpportunityPanel(state,screen.category,handlers.onAction);
-  if(featured){leading.classList.add('has-context');featured.classList.add('topic-context');leading.append(featured);}
+  if(featured){
+    if(businessFocus){const secondary=el('details','topic-secondary-panel');secondary.append(el('summary','','仕事・家計の見通し（詳細）'),featured);root.append(secondary);}
+    else{leading.classList.add('has-context');featured.classList.add('topic-context');leading.append(featured);}
+  }
   if(screen.category==='設定'){
     const button=el('button','button button-primary topic-settings-button','保存・読み込み・新しい人生');
     button.type='button';button.addEventListener('click',()=>handlers.onSettings?.());root.append(button);
@@ -88,13 +96,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
     const target=findScreen(selectedId);full.replaceChildren();
     renderScreen(full,target,state,{...handlers,embedded:true,filter:'',onFilterChange:()=>{}});
   };
-  if(topic.screenIds.length>1){
-    const choices=choiceButtons('操作する項目',
-      topic.screenIds.map(id=>({value:id,label:findScreen(id).title})),screen.id,
-      id=>{if(handlers.onNavigate)handlers.onNavigate(id);else show(id);});
-    choices.element.classList.add('topic-tool-buttons');
-    body.append(choices.element);
-  }
+  // Detailed screen navigation is now rendered only in the persistent top topic strip.
   details.addEventListener('toggle',()=>{
     expandedByTopic.set(topicKey,details.open);
     overview.hidden=details.open;
