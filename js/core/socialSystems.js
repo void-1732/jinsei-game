@@ -5,6 +5,27 @@ const acquaintances=['葵','悠斗','美咲','蓮','陽菜','結衣','大翔','�
 export function socialAction(state,action,payload={}){
   const {people,timeline:t,household}=state;
   const partner=people.find(p=>p.id===payload.personId && p.role!=='本人');
+  if(action==='familyBond'){
+    if(!partner||!['父','母','子','配偶者','友人','交際相手'].includes(partner.role))return {ok:false,reason:'交流する人物を選んでください。'};
+    const options={会話:{gain:4,cost:0},贈り物:{gain:8,cost:2000},旅行:{gain:12,cost:12000}};
+    const choice=options[payload.activity];
+    if(!choice)return {ok:false,reason:'交流方法を選んでください。'};
+    if(choice.cost && state.finances.cash<choice.cost)return {ok:false,reason:'交流に必要な資金が不足しています。'};
+    if(choice.cost){
+      state.finances.cash-=choice.cost;state.finances.totals.expenses+=choice.cost;
+      state.finances.ledger.push({year:t.year,month:t.month,kind:'支出',label:'家族・友人との'+payload.activity,amount:-choice.cost});
+      if(state.finances.ledger.length>600)state.finances.ledger.shift();
+    }
+    partner.relationship=socialClamp(partner.relationship+choice.gain);
+    return {ok:true,message:`${partner.name}と${payload.activity}を楽しみました。親密度 ${partner.relationship}`,relationship:partner.relationship};
+  }
+  if(action==='courtship'){
+    if(t.ageYears<18)return {ok:false,reason:'交際に向けた交流は18歳からです。'};
+    if(!partner||partner.role!=='友人'||ageAt(t,partner)<18)return {ok:false,reason:'18歳以上の友人を選んでください。'};
+    if(people.some(p=>['配偶者','交際相手'].includes(p.role)))return {ok:false,reason:'すでに交際相手または配偶者がいます。'};
+    partner.relationship=socialClamp(partner.relationship+8);
+    return {ok:true,relationship:partner.relationship,message:`${partner.name}と親しくなりました（親密度${partner.relationship}）。60以上で交際を申し込めます。`};
+  }
   if(action==='meetFriend'){
     if(t.ageYears<6)return {ok:false,reason:'友人との交流は6歳からです。'};
     const existing=people.filter(p=>p.role==='友人'||p.role==='配偶者'||p.role==='交際相手').length;

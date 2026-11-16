@@ -4,10 +4,10 @@ const ROUTINE_CATEGORY=Object.freeze({health:'健康',relationships:'人物・�
 const BY_CATEGORY={
  '人生':['setTimePlan'],
  '生活・資産':['setBudget','reviewBudget','repayDebt','buyVehicle','sellVehicle','moveHome','registerHome','buyProperty','sellProperty','setPropertyUse','repayPropertyLoan','setPropertyPayment','clearPropertyArrears','setMortgagePayment','enableAccurateMortgage','requestPensionExemption','setInsuranceClaimCap','setPensionMode','backPayPension','clearMortgageArrears','repayMortgage','setInsurance','claimInsurance','repairHome','buyInvestment','sellInvestment'],
- '人物・家族':['socialize','meetFriend','date','marry','haveChild','familyCare','familyActivity'],
+ '人物・家族':['socialize','familyBond','courtship','meetFriend','date','marry','haveChild','familyCare','familyActivity'],
  '学業':['study','skill','prepareExam','chooseSchool','chooseMajor','university','applyScholarship','setEducationFunding','repayEducation'],
- '仕事・経営':['employmentSupport','supportRebuilding','setCareerPlan','applyJob','promotionExam','prepareInterview','careerCertification','salaryNegotiation','interactCoworker','resolveWorkIncident','workHard','helpColleague','talkSupervisor','reviewPerformance','findJob','resign','sideJob','startBusiness','closeBusiness','jobSearch'],
- '健康':['habit','treatment'],
+ '仕事・経営':['employmentSupport','supportRebuilding','careerTraining','setCareerPlan','applyJob','promotionExam','prepareInterview','careerCertification','salaryNegotiation','interactCoworker','resolveWorkIncident','workHard','helpColleague','talkSupervisor','reviewPerformance','findJob','resign','sideJob','startBusiness','closeBusiness','jobSearch'],
+ '健康':['habit','treatment','checkup'],
  '社会':[],
 };
 const ACTION_MAP=new Map(Object.entries(BY_CATEGORY).flatMap(([cat,names])=>names.map(n=>[n,cat])));
