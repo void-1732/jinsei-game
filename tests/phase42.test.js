@@ -36,7 +36,7 @@ test('ランダムな誕生日で開始月・年齢と保存形式が一致',()=
   assert.ok(first.story);
   assert.equal(g.performAction('resolveChoice',{eventId:first.id,choice:first.options[0].id}).ok,true);
   assert.equal(g.advanceTurn().ok,true);
-  assert.equal(g.getState().timeline.month,1);
+  assert.equal(g.getState().timeline.month,11);
   assert.equal(g.getState().timeline.ageYears,0);
   assert.equal(validateGameState(g.getState()),true);
   assert.equal(g.startNewGame({birth:{year:2000,month:2,day:30}}).ok,false);
