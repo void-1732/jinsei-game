@@ -13,6 +13,7 @@ function student(track='工業高校',cash=0,age=16){
  data.education.highSchoolTrack=track;
  data.education.school=track==='高専'?'高等専門学校':track;
  data.finances.cash=cash;
+ data.pendingEvents=[];
  assert.equal(validateGameState(data),true);
  assert.equal(g.loadState(data).ok,true);
  return g;
