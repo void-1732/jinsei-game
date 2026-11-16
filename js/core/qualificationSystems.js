@@ -28,6 +28,25 @@ export const QUALIFICATION_CATALOG=freeze([
  item('research','研究開発技能認定',4,'理科',79,12000,{description:'研究計画・実験技術',degree:'学士相当'}),
  item('physician','医師免許（ゲーム内）',5,'理科',88,25000,{description:'医学部6年制課程の修了後、ゲーム内試験を受ける',degree:'医学課程修了',license:'医師',minAge:24}),
  item('dentist','歯科医師免許（ゲーム内）',5,'理科',87,25000,{description:'歯学部6年制課程の修了後、ゲーム内試験を受ける',degree:'歯学課程修了',license:'歯科医師',minAge:24}),
+ item('networkBasic','ネットワーク基礎認定',2,'数学',56,4200,{description:'ネットワーク構築と運用'}),
+ item('cyberSkills','情報セキュリティ実務認定',4,'数学',79,11000,{description:'システムの安全設計',prerequisite:'itFundamental'}),
+ item('dataScience','データ分析実務認定',3,'数学',68,9000,{description:'データ集計・統計分析'}),
+ item('robotics','ロボット制御認定',4,'数学',80,13000,{description:'工場・ロボット制御',prerequisite:'industrial'}),
+ item('electrical','電気設備基礎認定',2,'理科',58,5400,{description:'電気設備の保守基礎。公的免許ではありません'}),
+ item('cad','CAD製図技能認定',3,'数学',70,8000,{description:'設計・製図ソフトウェア'}),
+ item('quality','品質管理技能認定',3,'数学',69,7500,{description:'検査・品質改善'}),
+ item('commercialPractical','商業実務認定',2,'社会',59,5200,{description:'商取引・流通の基礎'}),
+ item('marketing','マーケティング技能認定',3,'社会',68,7500,{description:'市場調査・販売計画'}),
+ item('officeTools','ビジネスPC実務認定',2,'国語',57,4800,{description:'文書・表計算の仕事術'}),
+ item('logistics','物流管理技能認定',3,'社会',68,7700,{description:'在庫・物流の計画'}),
+ item('tax','税務会計基礎認定',4,'社会',79,12500,{description:'税務・経理の応用',prerequisite:'bookkeeping2'}),
+ item('english','ビジネス英語認定',3,'英語',70,7500,{description:'海外顧客との実務会話'}),
+ item('tourism','観光サービス技能認定',2,'英語',59,5500,{description:'観光・接客の基本'}),
+ item('videoEdit','動画編集技能認定',3,'国語',70,8000,{description:'映像編集・企画'}),
+ item('digitalArt','デジタル作画技能認定',3,'国語',69,8500,{description:'デジタルイラスト制作'}),
+ item('nutrition','栄養・衛生基礎認定',2,'理科',58,5500,{description:'食と衛生の基礎。管理栄養士免許ではありません'}),
+ item('businessManagement','経営計画技能認定',4,'社会',78,12000,{description:'経営計画・組織運営'}),
+
 ]);
 export const getQualification=id=>QUALIFICATION_CATALOG.find(q=>q.id===id)??null;
 const byId=id=>getQualification(id);
@@ -44,9 +63,9 @@ export function hasQualification(education,id){
 /** 15–17歳の職業系高校・高専生は対応するゲーム内技能資格に挑戦できる。
  * 医師免許などの専門免許や高学歴必須資格には適用しない。 */
 export const STUDENT_QUALIFICATIONS=freeze({
- '工業高校':freeze(['itEntry','itFundamental','industrial','industrialAdvanced','building']),
- '商業高校':freeze(['bookkeeping3','bookkeeping2','itEntry','itFundamental']),
- '高専':freeze(['itEntry','itFundamental','industrial','industrialAdvanced','building']),
+ '工業高校':freeze(['itEntry','itFundamental','industrial','industrialAdvanced','building','electrical','cad','quality','robotics','networkBasic']),
+ '商業高校':freeze(['bookkeeping3','bookkeeping2','itEntry','itFundamental','commercialPractical','marketing','officeTools','logistics','english','tax']),
+ '高専':freeze(['itEntry','itFundamental','industrial','industrialAdvanced','building','electrical','cad','quality','robotics','networkBasic','cyberSkills','dataScience']),
 });
 export function eligibleStudentQualification(education,q,age){
  if(!q||!Number.isInteger(age)||age<15||age>=18)return false;
@@ -61,26 +80,65 @@ export function qualificationRequirements(q,education,age){
  if(q.prerequisite&&!hasQualification(education,q.prerequisite))return `${byId(q.prerequisite).name}の取得が必要`;
  return null;
 }
-function ability(education,q){
- const values=Object.values(education.scores??{}).filter(Number.isFinite);
- const avg=values.length?values.reduce((s,n)=>s+n,0)/values.length:0;
- const focused=Number(education.scores?.[q.focus]??0);
- const skillValues=Object.values(education.skills??{}).filter(Number.isFinite);
- const skill=skillValues.length?Math.max(...skillValues):0;
- const prep=Math.min(30,Number(education.qualificationTrack?.preparation?.[q.id]??0));
- const study=Math.min(5,Math.floor((education.studyHours??0)/70));
+/** Skill relevance differs by qualification; an unrelated high skill no longer gives a large bonus. */
+export const QUALIFICATION_SKILLS=freeze({
+ itEntry:['パソコン','技術力'],itFundamental:['技術力','パソコン'],itAdvanced:['技術力','パソコン'],
+ networkBasic:['技術力','パソコン'],cyberSkills:['技術力','パソコン'],dataScience:['技術力','パソコン'],
+ bookkeeping3:['事務力','パソコン'],bookkeeping2:['事務力','パソコン'],tax:['事務力','パソコン'],
+ commercialPractical:['事務力','接客力'],marketing:['企画力','接客力'],officeTools:['事務力','パソコン'],
+ logistics:['事務力','企画力'],businessManagement:['企画力','事務力'],
+ industrial:['技術力','パソコン'],industrialAdvanced:['技術力','パソコン'],
+ robotics:['技術力','パソコン'],electrical:['技術力','専門力'],cad:['技術力','パソコン'],
+ quality:['技術力','事務力'],building:['技術力','企画力'],
+ medicalAdmin:['事務力','支援力'],care:['支援力','専門力'],nutrition:['専門力','支援力'],
+ cooking:['専門力','支援力'],pastry:['専門力','企画力'],
+ finance:['事務力','パソコン'],financeAdvanced:['事務力','専門力'],
+ design:['企画力','パソコン'],digitalArt:['企画力','パソコン'],videoEdit:['企画力','パソコン'],
+ manga:['企画力','パソコン'],writing:['読書','企画力'],
+ sport:['運動','専門力'],public:['事務力','読書'],research:['専門力','技術力'],
+ physician:['専門力','支援力'],dentist:['専門力','技術力'],
+ english:['接客力','読書'],tourism:['接客力','支援力']
+});
+export function qualificationAbility(education,q){
+ const values=Object.values(education?.scores??{}).filter(Number.isFinite);
+ const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:0;
+ const focused=Number(education?.scores?.[q.focus]??0);
+ const skillNames=QUALIFICATION_SKILLS[q.id]??['専門力','パソコン'];
+ const relevantSkill=Math.max(0,...skillNames.map(key=>Number(education?.skills?.[key]??0)).filter(Number.isFinite));
+ const prep=Math.min(30,Math.max(0,Number(education?.qualificationTrack?.preparation?.[q.id]??0)));
+ const study=Math.min(5,Math.floor((education?.studyHours??0)/70));
  const degreeBoost=q.level>=4&&qualifiedBachelor(education)?3:0;
- return cap(avg*.22+focused*.68+skill*.10+prep*.70+study+degreeBoost);
+ const skillWeight=q.level>=4?.45:.30;
+ const readiness=cap(average*.22+focused*(.78-skillWeight)+relevantSkill*skillWeight+prep*.35+study+degreeBoost);
+ return {average:cap(average),focused:cap(focused),relevantSkill:cap(relevantSkill),
+  skillNames,readiness,preparation:prep};
 }
-/** Probability shown is a GAME estimate, not the qualification's real pass rate. */
+/** Entry prerequisites for advanced exams; independent of eligibility by age/degree. */
+export function qualificationAbilityBarrier(education,q){
+ if(q.level<4)return null;
+ const ability=qualificationAbility(education,q);
+ const minimumSkill=q.level>=5?55:35;
+ const minimumSubject=q.level>=5?70:55;
+ if(ability.focused<minimumSubject)return `${q.focus}の学力が${minimumSubject}点以上必要（現在${ability.focused}点）`;
+ if(ability.relevantSkill<minimumSkill)return `${ability.skillNames.join('・')}の専門技能が${minimumSkill}点以上必要（現在${ability.relevantSkill}点）`;
+ return null;
+}
+/** Zero-fee school support applies only to eligible technical/vocational students. */
+export function qualificationCost(education,q,age){
+ const subsidized=eligibleStudentQualification(education,q,age);
+ return {subsidized,preparation:subsidized?0:2000,exam:subsidized?0:q.fee};
+}
+/** Probability is a fictional game estimate and not an official exam pass rate. */
 export function qualificationPreview(education,id,age){
  const q=byId(id);if(!q)return {ok:false,reason:'未登録の資格です。'};
  const earned=hasQualification(education,id);
  const requirement=qualificationRequirements(q,education,age);
- const readiness=ability(education,q);
- const chance=earned?100:requirement?0:cap(45+(readiness-q.threshold)*2.4,4,95);
- return {ok:true,q,earned,requirement,readiness,chance,
-  difficulty:qualificationDifficulty(q),preparation:education.qualificationTrack?.preparation?.[id]??0};
+ const ability=qualificationAbility(education,q);
+ const barrier=qualificationAbilityBarrier(education,q);
+ const chance=earned?100:requirement||barrier?0:cap(45+(ability.readiness-q.threshold)*2.4,4,95);
+ return {ok:true,q,earned,requirement,barrier,readiness:ability.readiness,
+  relevantSkill:ability.relevantSkill,skillNames:ability.skillNames,focused:ability.focused,
+  chance,difficulty:qualificationDifficulty(q),preparation:ability.preparation};
 }
 export function recommendedQualifications(education){
  const school=education.program?.school??education.school??'';
@@ -88,36 +146,37 @@ export function recommendedQualifications(education){
  const ids=school==='医学部'||education.degree==='医学課程修了'?['physician','medicalAdmin']:
  school==='歯学部'||education.degree==='歯学課程修了'?['dentist','medicalAdmin']:
  school==='大学院修士課程'||education.degree==='修士'?['research','itAdvanced','financeAdvanced']:
- /高専/.test(school)||track==='高専'||track==='工業高校'?['industrial','industrialAdvanced','itFundamental','building']:
- major==='it'?['itEntry','itFundamental','itAdvanced']:
- major==='business'?['bookkeeping3','bookkeeping2','finance']:
+ /高専/.test(school)||track==='高専'||track==='工業高校'||school==='工業高校'?['industrial','electrical','cad','quality','industrialAdvanced','itFundamental','building']:
+ track==='商業高校'||school==='商業高校'?['bookkeeping3','officeTools','commercialPractical','bookkeeping2','marketing','logistics']:
+ major==='it'?['itEntry','itFundamental','networkBasic','dataScience','itAdvanced']:
+ major==='business'?['bookkeeping3','bookkeeping2','commercialPractical','finance','marketing']:
  major==='care'?['medicalAdmin','care']:
- major==='creative'?['design','manga','writing']:
+ major==='creative'?['design','manga','digitalArt','videoEdit','writing']:
  ['bookkeeping3','itEntry','public'];
  return ids.map(byId).filter(Boolean);
 }
 export const JOB_QUALIFICATION_RULES=freeze({
- tech:{preferred:['itFundamental','industrial']},
+ tech:{preferred:['itFundamental','industrial','networkBasic']},
  pro:{preferred:['research','itAdvanced']},
- office:{preferred:['bookkeeping3','bookkeeping2']},
+ office:{preferred:['bookkeeping3','bookkeeping2','officeTools','tax']},
  shop:{preferred:['bookkeeping3']},
  creative:{preferred:['design','writing']},
  care:{preferred:['care','medicalAdmin']},
- heavyIndustry:{preferred:['industrial','industrialAdvanced']},
+ heavyIndustry:{preferred:['industrial','industrialAdvanced','quality']},
  automation:{preferred:['industrialAdvanced','itFundamental']},
  energy:{preferred:['industrial','industrialAdvanced']},
  precision:{preferred:['industrialAdvanced']},
  civil:{preferred:['building','industrial']},
  architect:{preferred:['building']},
  software:{preferred:['itFundamental','itAdvanced']},
- cyber:{required:['itFundamental'],preferred:['itAdvanced']},
- gameDev:{preferred:['itFundamental','design']},
+ cyber:{required:['itFundamental'],preferred:['itAdvanced','cyberSkills']},
+ gameDev:{preferred:['itFundamental','design','digitalArt']},
  research:{preferred:['research']},
  laboratory:{preferred:['research']},
  doctor:{required:['physician']},
  dentist:{required:['dentist']},
  medicalSupport:{preferred:['medicalAdmin']},
- analyst:{preferred:['bookkeeping2','financeAdvanced']},
+ analyst:{preferred:['bookkeeping2','financeAdvanced','dataScience']},
  trader:{preferred:['finance','financeAdvanced']},
  publisher:{preferred:['writing','design']},
  novelist:{preferred:['writing']},
@@ -131,7 +190,7 @@ export const JOB_QUALIFICATION_RULES=freeze({
  nationalPolitics:{preferred:['public']},
  publicAdmin:{preferred:['public']},
  journalist:{preferred:['writing']},
- video:{preferred:['design']},
+ video:{preferred:['design','videoEdit']},
 });
 export function jobQualificationInfo(education,postingId){
  const rule=JOB_QUALIFICATION_RULES[postingId]??{};
@@ -175,28 +234,30 @@ export function qualificationAction(state,action,payload={}){
  if(!q)return {ok:false,reason:'資格を選んでください。'};
  if(t.ageYears<18&&!eligibleStudentQualification(e,q,t.ageYears))return {ok:false,reason:'この資格は18歳からです。職業系高校・高専の対応資格は15歳から利用できます。'};
  const preview=qualificationPreview(e,q.id,t.ageYears);
+ const costs=qualificationCost(e,q,t.ageYears);
  if(preview.earned)return {ok:false,reason:'この資格は取得済みです。'};
  if(preview.requirement)return {ok:false,reason:preview.requirement};
  const track=e.qualificationTrack??{earned:[],preparation:{},attempts:{}};
  if(action==='prepareQualification'){
    const previous=track.preparation[q.id]??0;
    if(previous>=30)return {ok:false,reason:'この資格の対策は十分です。受験に進んでください。'};
-   if(f.cash<2000)return {ok:false,reason:'試験対策費2,000円が必要です。'};
+   if(f.cash<costs.preparation)return {ok:false,reason:`試験対策費${costs.preparation.toLocaleString('ja-JP')}円が必要です。`};
    e.qualificationTrack=track;
-   f.cash-=2000;f.totals.expenses+=2000;
+   f.cash-=costs.preparation;f.totals.expenses+=costs.preparation;
    track.preparation[q.id]=Math.min(30,previous+10);
    h.energy=Math.max(0,h.energy-3);
-   record(state,`${q.name}の受験対策`,-2000);
+   record(state,`${q.name}の受験対策${costs.subsidized?'（学校支援）':''}`,-costs.preparation);
    return {ok:true,message:`${q.name}の対策を進めました（準備${track.preparation[q.id]}/30）。合格見込みが改善します。`};
  }
  if(action!=='takeQualificationExam')return {ok:false,reason:'未対応の資格操作です。'};
- if(f.cash<q.fee)return {ok:false,reason:`受験費用${q.fee.toLocaleString('ja-JP')}円が必要です。`};
+ if(preview.barrier)return {ok:false,reason:`この資格は受験できません：${preview.barrier}。実習・職業研修で専門技能を高めてください。`};
+ if(f.cash<costs.exam)return {ok:false,reason:`受験費用${costs.exam.toLocaleString('ja-JP')}円が必要です。`};
  const prev=track.attempts[q.id]??{count:0,lastMonth:0};
  if(prev.lastMonth===ym(t))return {ok:false,reason:'同じ資格の試験は1か月に1回までです。'};
  const rand=hiringRoll(q,t,prev.count,Number(state.random?.seed??0));
  const passed=rand<preview.chance;
  e.qualificationTrack=track;
- f.cash-=q.fee;f.totals.expenses+=q.fee;h.energy=Math.max(0,h.energy-5);
+ f.cash-=costs.exam;f.totals.expenses+=costs.exam;h.energy=Math.max(0,h.energy-5);
  track.attempts[q.id]={count:prev.count+1,lastMonth:ym(t)};
  if(passed){
    track.earned.push(q.id);
@@ -205,7 +266,7 @@ export function qualificationAction(state,action,payload={}){
      if(!e.licenses.includes(q.license))e.licenses.push(q.license);
    }
  }
- record(state,`${q.name}の試験：${passed?'合格':'不合格'}`,-q.fee);
+ record(state,`${q.name}の試験：${passed?'合格':'不合格'}${costs.subsidized?'（学校支援）':''}`,-costs.exam);
  return {ok:true,passed,chance:preview.chance,message:passed?
    `${q.name}に合格しました。求人の応募資格・採用評価に反映されます。`:
    `${q.name}は不合格でした（挑戦時のゲーム内合格見込み${preview.chance}%）。準備して再挑戦できます。`};
