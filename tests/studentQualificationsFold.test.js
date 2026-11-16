@@ -42,7 +42,7 @@ test('工業高校・商業高校・高専は15～17歳で専攻に合った資�
  assert.deepEqual(STUDENT_QUALIFICATIONS['商業高校'].slice(0,2),['bookkeeping3','bookkeeping2']);
 });
 test('普通高校・年齢14歳・専門免許は未成年の自由受験が不可',()=>{
- const g=skill('普通高校');
+ const g=skill('県立高校');
  assert.match(qualificationPreview(g.getState().education,'itEntry',16).requirement,/18歳/);
  assert.equal(g.performAction('takeQualificationExam',{id:'itEntry'}).ok,false);
  const younger=skill('工業高校',14);
