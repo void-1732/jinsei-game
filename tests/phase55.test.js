@@ -71,7 +71,7 @@ for(const [style,seed,preferredPlan] of [
     }
     if(style==='relationships'&&state.timeline.ageYears>=18 && state.timeline.ageYears<35 && !state.finances.career.job && turns%16===0){
       const r=game.performAction('jobSearch');
-      if(r.ok){assert.equal(game.performAction('skill',{skill:'読書'}).ok,false,'Multiple actions in same turn');}
+      if(r.ok){assert.equal(game.performAction('skill',{skill:'読書'}).ok,true,'Adult can use a different category');assert.equal(game.performAction('skill',{skill:'読書'}).ok,false,'Same category is limited to once');}
     }
     if(state.timeline.ageYears>=60 && state.timeline.ageYears<61 && !usedFast){
       const result=game.fastForward({focus:style==='recovery'?'health':style==='learning'?'learning':'relationships',maxMonths:6});

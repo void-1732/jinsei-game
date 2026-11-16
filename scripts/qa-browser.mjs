@@ -154,6 +154,39 @@ async function runViewport(binary,width){
   if(machine.error||!machine.equipment||!machine.selector||!machine.unblocked||
      !machine.operation||machine.adminUsed!==1||machine.lifeUsed!==1||!machine.noDuplicate||machine.overflow)
     throw Error('Business equipment action is missing, blocked or duplicated '+JSON.stringify(machine));
+  // Exercise the actual adult store: three distinct category actions, one each,
+  // plus monthly recurring settings. The detached fixture never touches the save.
+  const adultBudget=await evaluate(`(async()=>{
+    const [{createGameStore},{renderMonthlyRoutinePanel},{renderTurnActivity}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/monthlyRoutinePanel.js'),import('./js/ui/turnActivities.js')
+    ]);
+    const store=createGameStore({interactiveChoices:true});store.startNewGame();
+    const snapshot=structuredClone(store.getState());snapshot.pendingEvents=[];
+    snapshot.timeline={year:2026,month:5,ageYears:26,turnsElapsed:101,monthsElapsed:316};
+    snapshot.turnActions={turn:101,used:0,lastAction:null,categories:[]};
+    snapshot.finances.cash=300000;
+    if(!store.loadState(snapshot).ok)return {error:'fixture not loaded'};
+    const host=document.createElement('section');host.style.width='min(90%,850px)';document.body.append(host);
+    host.append(renderMonthlyRoutinePanel(store.getState(),'健康',(a,p)=>store.performAction(a,p)));
+    const habit=host.querySelector('.monthly-routine-panel');
+    if(!habit)return {error:'monthly health panel missing'};
+    habit.open=true;
+    const options=[...host.querySelectorAll('.monthly-routine-panel .choice-button')];
+    options.find(x=>x.dataset.value==='walks')?.click();
+    host.querySelector('.monthly-routine-body >button')?.click();
+    const one=store.getState().turnActions.used;
+    const second=store.performAction('setMonthlyRoutine',{domain:'relationships',planId:'call'});
+    const third=store.performAction('adultActivity',{id:'online-course'});
+    const fourth=store.performAction('adultActivity',{id:'gym-class'});
+    const result={first:one,second:second.ok,third:third.ok,fourth:fourth.ok,
+      remaining:3-store.getState().turnActions.used,unique:new Set(store.getState().turnActions.categories).size,
+      mobileOverflow:document.documentElement.scrollWidth>innerWidth+3,buttonCount:options.length};
+    host.remove();return result;
+  })()`);
+  if(adultBudget.error||adultBudget.first!==1||!adultBudget.second||!adultBudget.third||
+     adultBudget.fourth||adultBudget.remaining!==0||adultBudget.unique!==3||
+     adultBudget.buttonCount!==4||adultBudget.mobileOverflow)
+    throw Error('Adult three-category and recurring button test failed '+JSON.stringify(adultBudget));
   await click("document.querySelector('#open-settings')");
   await until(async()=>get("document.querySelector('#settings-dialog').open"),'settings opened');
   if(!(await get("!!document.querySelector('#export-game') && !!document.querySelector('#import-game-file')")))throw Error('Backup controls missing');

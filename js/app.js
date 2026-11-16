@@ -2,6 +2,7 @@ import {createSaveRepository} from './core/saveSystems.js';
 import {serializePortableSave,parsePortableSave,MAX_PORTABLE_CHARS} from './core/portableSaves.js';
 import { screenGroups, findScreen } from './core/screenCatalog.js';
 import { createGameStore, createRandomBirthday } from './core/gameState.js';
+import {actionBudget} from './core/adultActionBudget.js';
 import { createUiStore } from './ui/uiState.js';
 import { renderNavigation } from './ui/navigation.js';
 import { renderScreen } from './ui/screenRenderer.js';
@@ -160,7 +161,8 @@ function renderGameStatus(snapshot){
   $('#catalog-count').textContent=`${screenGroups.length}カテゴリ / ${screenGroups.reduce((sum,g)=>sum+g.screens.length,0)}画面`;
   $('#event-count').textContent=String(snapshot.pendingEvents.length);
   $('#hub-event-message').textContent=queued?queued.title:(gameInProgress?'次の出来事を待っています。':'まずは人生を始めてみましょう。');
-  $('#action-budget').textContent=gameInProgress?`自由行動：${snapshot.turnActions?.turn===t.turnsElapsed&&snapshot.turnActions.used?'実行済み':'あと1回'}`:'自由行動：未開始';
+  const available=actionBudget(snapshot);
+  $('#action-budget').textContent=gameInProgress?`自由行動：残り${available.remaining}/${available.limit}回`:'自由行動：未開始';
   $('#choice-feedback').textContent=storyResult?`【${storyResult.title}】${storyResult.message}${storyResult.changes?.length?' ／ '+storyResult.changes.join('・'):''}`:queued?'今の出来事を選ぶと、結果をここで確認できます。':'出来事の結果はここに表示されます。';
   const eventContainer=$('#pending-event-list');eventContainer.replaceChildren();
   const allNotices=snapshot.pendingEvents.filter(e=>e.type!=='choice');

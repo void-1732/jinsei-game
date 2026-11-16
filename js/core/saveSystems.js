@@ -1,5 +1,7 @@
 import {validateInheritance} from './estateSystems.js';
 import {validateBusinessTurn} from './businessOperations.js';
+import {validateTurnActionBudget} from './adultActionBudget.js';
+import {validateMonthlyRoutines} from './monthlyRoutines.js';
 import {validateEducationPath} from './educationPaths.js';
 import {validateLiving} from './livingSystems.js';
 import {validateStoryProgress} from './branchingStories.js';
@@ -23,12 +25,8 @@ export function validateGameState(s) {
   if(!s || typeof s!=='object' || Array.isArray(s) || s.schemaVersion!==7 || typeof s.initialized!=='boolean') return false;
   const t=s.timeline;
   if(!t || !Number.isInteger(t.year) || t.year<2000 || t.year>2200 || !Number.isInteger(t.month) || t.month<1 || t.month>12 || !Number.isInteger(t.turnsElapsed) || t.turnsElapsed<0 || !Number.isInteger(t.ageYears) || t.ageYears<0 || t.ageYears>200) return false;
-  if (s.turnActions !== undefined) {
-    const a=s.turnActions;
-    if (!a || !Number.isInteger(a.turn) || a.turn<0 || a.turn>t.turnsElapsed ||
-        !Number.isInteger(a.used) || a.used<0 || a.used>1 ||
-        !(a.lastAction===null || typeof a.lastAction==='string' && a.lastAction.length<=40)) return false;
-  }
+  if(s.turnActions!==undefined&&!validateTurnActionBudget(s.turnActions,t))return false;
+  if(s.monthlyRoutines!==undefined&&!validateMonthlyRoutines(s.monthlyRoutines))return false;
   if(s.businessTurn!==undefined&&!validateBusinessTurn(s.businessTurn,t.turnsElapsed))return false;
   if(s.storyProgress!==undefined && !validateStoryProgress(s.storyProgress))return false;
   if(s.opportunity47!==undefined && !validateOpportunityProgress(s.opportunity47))return false;

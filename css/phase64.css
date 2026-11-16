@@ -1,0 +1,15 @@
+/* Adult free actions and sustainable monthly routines. */
+.monthly-routine-panel{border:1px solid #587d9b;border-radius:11px;padding:10px 13px;margin:8px 0;background:#19344d}
+.monthly-routine-panel>summary{cursor:pointer;font-size:13px;font-weight:750;min-height:29px}
+.monthly-routine-body{display:grid;gap:9px;padding:10px 0 2px;min-width:0}
+.monthly-routine-body .choice-button-group{max-height:160px;overflow-y:auto;scrollbar-width:thin}
+.monthly-routine-body>.button{justify-self:start;min-height:42px}
+.turn-activity>.turn-activity-form{display:grid;gap:10px;padding-top:10px}
+.turn-activity summary{cursor:pointer;font-weight:700}
+.turn-activity .turn-activity-buttons .choice-button-group{max-height:145px;overflow-y:auto}
+.topic-action .topic-action-choices .choice-button-group{max-height:185px}
+@media(max-width:640px){
+ .monthly-routine-panel{padding:9px}
+ .monthly-routine-body .choice-button,.turn-activity .choice-button{min-height:44px}
+ .monthly-routine-body>.button,.turn-activity-form>.button{width:100%}
+}

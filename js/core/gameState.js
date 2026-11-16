@@ -1,5 +1,7 @@
 import {calculateInheritance} from './estateSystems.js';
 import {isBusinessOperation,businessActionsRemaining} from './businessOperations.js';
+import {actionBudget,turnActionCategory,actionAvailable} from './adultActionBudget.js';
+import {makeMonthlyRoutines,ensureMonthlyRoutines,setMonthlyRoutine,advanceMonthlyRoutines,takeAdultActivity} from './monthlyRoutines.js';
 import {createDailySchedule,ensureDailySchedule,setDailySchedule,monthlyHouseholdDiscount,advanceDailySchedule} from './dailySchedule.js';
 import {createLifeGoalProgress,ensureLifeGoalProgress,observeLifeGoals,chooseLifeDream,finalizeLifeGoals} from './lifeGoals.js';
 import {createLivingData, ensureLiving, ensureMortgage, livingAction, getHousingEquity} from './livingSystems.js';
@@ -64,7 +66,8 @@ export const initialGameState = freezeSnapshot({
   player: { id: null, name: null, birth: null },
   household: null, finances: null, health: null, world: null, people: [], relationships: [], education: null,
   pendingEvents: [], eventHistory: [],
-  turnActions: {turn: 0, used: 0, lastAction: null},
+  turnActions: {turn: 0, used: 0, lastAction: null,categories:[]},
+  monthlyRoutines:makeMonthlyRoutines(),
   businessTurn:{turn:0,used:0},
   storyProgress: createStoryProgress(),
   opportunity47: createOpportunityProgress(),
@@ -169,6 +172,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const homeDiscount=interactiveChoices?monthlyHouseholdDiscount(state,date,monthAge):0;
         const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world,{livingDiscount:homeDiscount});
         if(interactiveChoices)advanceDailySchedule(state,date,monthAge,homeDiscount);
+        if(interactiveChoices)advanceMonthlyRoutines(state,date,monthAge);
         if(interactiveChoices)advanceOpportunityMonth(state,date);
         advanceWorkplace(state.finances,date);
         advanceCompanyMarket(state.finances,date,state.world);
@@ -196,7 +200,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     }
     for(const event of advanceFamily(state,{year,month}))newEvents.push(makeEvent(event.type,event.title,event.description));
     state.timeline = { year, month, ageYears: age, turnsElapsed: turn, monthsElapsed: t.monthsElapsed + months };
-    state.turnActions = {turn,used:0,lastAction:null};
+    state.turnActions = {turn,used:0,lastAction:null,categories:[]};
     // 40歳以降は健康・年齢に応じた死亡リスク。110歳時点で寿命終了。
     if(age>=40){
       const mortality=nextRandom(state.random.seed);
@@ -304,8 +308,12 @@ export function createGameStore({interactiveChoices=false} = {}) {
         return {ok:false,reason:'先に今の出来事を選んでください。'};
       if(admin&&businessActionsRemaining(state)===0)
         return {ok:false,reason:'今月の事業管理操作は3回までです。次のターンで再び行えます。'};
-      if (!admin&&(state.turnActions?.turn === state.timeline.turnsElapsed ? state.turnActions.used : 0) >= 1)
-        return {ok:false,reason:'このターンの自由行動は終了しました。次のターンで再び行動できます。'};
+      if(!admin&&!actionAvailable(state,action,payload)){
+        const current=actionBudget(state),category=turnActionCategory(action,payload);
+        return {ok:false,reason:!category?'この操作の行動カテゴリを判定できません。':current.remaining<=0?
+          'このターンの自由行動は上限です。次のターンで再び行えます。':
+          `「${category}」の自由行動は今月すでに実行済みです。別のカテゴリを選んでください。`};
+      }
     }
     const beforeDevelopment = interactiveChoices && action !== 'resolveChoice'
       ? {scores:{...state.education.scores},skills:{...state.education.skills},relations:Object.fromEntries(state.people.map(p=>[p.id,p.relationship]))} : null;
@@ -319,6 +327,8 @@ export function createGameStore({interactiveChoices=false} = {}) {
         result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
         if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
       case 'safetyPrep': result=prepareForSurprise(state,payload.area);break;
+      case 'setMonthlyRoutine':result=setMonthlyRoutine(state,payload);break;
+      case 'adultActivity':result=takeAdultActivity(state,payload);break;
       case 'setTimePlan': result=setDailySchedule(state,payload.planId);break;
       case 'applyScholarship': case 'setEducationFunding': case 'repayEducation': case 'prepareInterview': case 'careerCertification': case 'salaryNegotiation': case 'reviewBudget':
         result=opportunityAction(state,action,payload);break;
@@ -372,7 +382,9 @@ export function createGameStore({interactiveChoices=false} = {}) {
           const oldValue=beforeDevelopment.relations[person.id];
           if (Number.isFinite(oldValue) && person.relationship > oldValue) person.relationship=balancedGrowth(state,`relation:${person.id}`,oldValue,person.relationship-oldValue);
         }
-        state.turnActions={turn:state.timeline.turnsElapsed,used:1,lastAction:action};
+        const old=state.turnActions?.turn===state.timeline.turnsElapsed?state.turnActions:{turn:state.timeline.turnsElapsed,used:0,categories:[]};
+        const categories=old.categories??(old.used?['以前の行動']:[]);
+        state.turnActions={turn:state.timeline.turnsElapsed,used:old.used+1,lastAction:action,categories:[...categories,turnActionCategory(action,payload)]};
       }
       if(interactiveChoices && ['applyJob','promotionExam','marry','haveChild','startBusiness'].includes(action)) {
         const success=action!=='applyJob'||result.passed;
@@ -402,7 +414,9 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(!validateGameState(snapshot))return {ok:false,reason:'保存データの形式が不正です。'};
     state=clone(snapshot);
     // Older v4.3.0 saves predate the action budget; migrate without wiping progress.
-    if (!state.turnActions) state.turnActions={turn:state.timeline.turnsElapsed,used:0,lastAction:null};
+    if (!state.turnActions) state.turnActions={turn:state.timeline.turnsElapsed,used:0,lastAction:null,categories:[]};
+    else if(!state.turnActions.categories)state.turnActions.categories=state.turnActions.used?['以前の行動']:[];
+    ensureMonthlyRoutines(state);
     state.businessTurn??={turn:state.timeline.turnsElapsed,used:0};
     ensureStoryProgress(state);
     ensureOpportunityProgress(state);
