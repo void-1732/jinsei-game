@@ -109,7 +109,7 @@ export function livingAction(f,h,action,payload,context){
  if(action==='moveHome'){
    const region=findRegion(payload.region),housing=payload.housing;
    if(!region||!['実家','賃貸','持ち家'].includes(housing))return {ok:false,reason:'居住地域または住居種別が不正です。'};
-   if(living.region===region.name&&living.housing===housing)return {ok:false,reason:'現在と同じ住居です。'};
+   if(living.region===region.name&&living.housing===housing&&(housing!=='持ち家'||(living.homeType??'standard')===(payload.homeType??'standard')))return {ok:false,reason:'現在と同じ住居です。'};
    const rent= housing==='賃貸'?region.rent:0;
    const home=HOME_OPTIONS.find(h=>h.id===(payload.homeType??'standard'));
    if(housing==='持ち家'&&!home)return {ok:false,reason:'物件の種類が不正です。'};
