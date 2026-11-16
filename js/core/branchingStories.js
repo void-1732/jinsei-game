@@ -73,6 +73,7 @@ const threads=Object.freeze([
        hook:['若い頃の地域活動が、42歳で新たな仲間とのつながりを生んだ。','地域で育てた縁を、これからの世代へ伝える機会が来た。'],
        impact:{social:4,mental:2,physical:1}},
     ],
+  },
 ]);
 const byId=Object.fromEntries(threads.map(t=>[t.id,t]));
 const pathFor=(thread,id)=>thread.paths.find(p=>p.id===id)??thread.paths[0];
