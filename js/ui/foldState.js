@@ -7,9 +7,9 @@ const own=(obj,key)=>Object.prototype.hasOwnProperty.call(obj,key);
 function storage(){
  try{return typeof window==='undefined'?null:window.localStorage;}catch{return null;}
 }
-function keyOf(detail,screenId,index){
+function keyOf(detail,screenId){
  const summary=detail.querySelector(':scope > summary')?.textContent?.trim().slice(0,72)??'';
- const hint=detail.dataset.foldKey??`${detail.className}:${summary}:${index}`;
+ const hint=detail.dataset.foldKey??`${detail.className}:${summary}`;
  const scope=detail.closest('[data-rendered-screen-id]')?.dataset.renderedScreenId??screenId;
  return `${scope}::${hint}`;
 }
@@ -38,14 +38,14 @@ export function createFoldState(store=storage()){
   /** Snapshot before a screen is replaced, including closed nested details. */
   capture(root,screenId){
    if(!root||!screenId)return;
-   detailsOf(root).forEach((detail,i)=>put(keyOf(detail,screenId,i),detail.open,false));
+   detailsOf(root).forEach(detail=>put(keyOf(detail,screenId),detail.open,false));
    save();
   },
   /** Restore and observe user toggles. Safe to call on each re-render. */
   restore(root,screenId){
    if(!root||!screenId)return;
-   detailsOf(root).forEach((detail,i)=>{
-    const key=keyOf(detail,screenId,i);
+   detailsOf(root).forEach(detail=>{
+    const key=keyOf(detail,screenId);
     if(states.has(key))detail.open=states.get(key);
     detail.addEventListener('toggle',()=>put(key,detail.open));
    });
