@@ -26,7 +26,7 @@ export const majorFor=id=>STUDY_MAJORS.find(m=>m.id===id)||STUDY_MAJORS[0];
 export function assignProgram(education,school,year){
  const def=programFor(school);
  education.program={school,years:def.years,tuition:def.tuition,type:def.type,startYear:year};
- education.major='general';education.credentialIds=[];education.qualifications=[];
+ education.major='general';education.credentialIds??=[];education.qualifications??=[];
  return education.program;
 }
 export function chooseMajor(education,majorId){
