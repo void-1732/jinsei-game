@@ -84,7 +84,9 @@ test('家族計画は同時開始・年齢・資金条件を検査し旧セー�
  assert.equal(validateGameState(older),true);
  const store=createGameStore({interactiveChoices:true});
  assert.equal(store.loadState(older).ok,true);
- assert.deepEqual(store.getState().familyJourney,createFamilyProgress());
+ assert.equal(store.getState().familyJourney.partnership?.stage,'結婚済み');
+ assert.equal(store.getState().familyJourney.partnership?.engagedSince,-1);
+ assert.equal(store.getState().familyJourney.plan,null);
  const invalid=structuredClone(s);invalid.familyJourney.plan.name='x'.repeat(200);
  assert.equal(validateGameState(invalid),false);
 });
