@@ -95,4 +95,10 @@ test('キャリアの大学専攻ルートでは2年制の専門職応募を拒�
  const long=enroll('国公立大学');advanceEducation(long,{year:2022,month:3},{year:2022,month:4},90);
  const applied=careerAction(structuredClone(f),'applyJob',{postingId:'pro'},{age:22,education:long,date,world});
  assert.equal(applied.ok,true);
+ const tech=enroll('専門学校');chooseMajor(tech,'it');
+ advanceEducation(tech,{year:2020,month:3},{year:2020,month:4},90);
+ const qualifiedFinance=structuredClone(f);
+ const qualified=careerAction(qualifiedFinance,'applyJob',{postingId:'tech'},{age:20,education:tech,date,world,interviewBonus:40});
+ assert.equal(qualified.ok,true);assert.equal(qualified.passed,true);
+ assert.equal(qualifiedFinance.career.monthlySalary,290000+13000);
 });
