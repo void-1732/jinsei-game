@@ -10,7 +10,8 @@ function storage(){
 function keyOf(detail,screenId,index){
  const summary=detail.querySelector(':scope > summary')?.textContent?.trim().slice(0,72)??'';
  const hint=detail.dataset.foldKey??`${detail.className}:${summary}:${index}`;
- return `${screenId}::${hint}`;
+ const scope=detail.closest('[data-rendered-screen-id]')?.dataset.renderedScreenId??screenId;
+ return `${scope}::${hint}`;
 }
 export function createFoldState(store=storage()){
  const states=new Map();
