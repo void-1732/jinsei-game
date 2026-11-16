@@ -1,4 +1,5 @@
 import {calculateInheritance} from './estateSystems.js';
+import {isBusinessOperation,businessActionsRemaining} from './businessOperations.js';
 import {createDailySchedule,ensureDailySchedule,setDailySchedule,monthlyHouseholdDiscount,advanceDailySchedule} from './dailySchedule.js';
 import {createLifeGoalProgress,ensureLifeGoalProgress,observeLifeGoals,chooseLifeDream,finalizeLifeGoals} from './lifeGoals.js';
 import {createLivingData, ensureLiving, ensureMortgage, livingAction, getHousingEquity} from './livingSystems.js';
@@ -64,6 +65,7 @@ export const initialGameState = freezeSnapshot({
   household: null, finances: null, health: null, world: null, people: [], relationships: [], education: null,
   pendingEvents: [], eventHistory: [],
   turnActions: {turn: 0, used: 0, lastAction: null},
+  businessTurn:{turn:0,used:0},
   storyProgress: createStoryProgress(),
   opportunity47: createOpportunityProgress(),
   balance48: createBalanceProgress(),
@@ -292,6 +294,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       if(changed.ok){observeLifeGoals(state);emit();}
       return changed;
     }
+    const admin=interactiveChoices&&isBusinessOperation(action);
     const choiceBeingResolved=action==='resolveChoice'
       ? state.pendingEvents.find(e=>e.id===payload.eventId&&e.type==='choice') : null;
     // One optional manual decision
@@ -299,7 +302,9 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if (interactiveChoices && action !== 'resolveChoice') {
       if (state.pendingEvents.some(e => e.type === 'choice'))
         return {ok:false,reason:'先に今の出来事を選んでください。'};
-      if ((state.turnActions?.turn === state.timeline.turnsElapsed ? state.turnActions.used : 0) >= 1)
+      if(admin&&businessActionsRemaining(state)===0)
+        return {ok:false,reason:'今月の事業管理操作は3回までです。次のターンで再び行えます。'};
+      if (!admin&&(state.turnActions?.turn === state.timeline.turnsElapsed ? state.turnActions.used : 0) >= 1)
         return {ok:false,reason:'このターンの自由行動は終了しました。次のターンで再び行動できます。'};
     }
     const beforeDevelopment = interactiveChoices && action !== 'resolveChoice'
@@ -319,7 +324,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         result=opportunityAction(state,action,payload);break;
       case 'interactCoworker': case 'resolveWorkIncident': case 'workHard': case 'helpColleague': case 'talkSupervisor': case 'reviewPerformance': case 'trainStaff': case 'dismissStaff': case 'staffCare':
         result=workplaceAction(state.finances,action,payload,state.timeline);break;
-      case 'buyVehicle': case 'sellVehicle': case 'setLoanRepayment': case 'settleBusinessPayable': case 'businessLoan': case 'repayBusinessLoan': case 'purchaseEquipment': case 'sellEquipment': case 'findJob': case 'resign': case 'sideJob': case 'startBusiness': case 'closeBusiness': case 'businessFunding': case 'ownerDraw': case 'jobSearch': case 'restartBusiness': case 'setBudget': case 'buyInvestment': case 'sellInvestment': case 'repayDebt':
+      case 'serviceEquipment': case 'repairEquipment': case 'toggleEquipmentMaintenance': case 'scheduleEquipmentRepair': case 'sellEquipmentItem': case 'replaceEquipment': case 'setContractRepayment': case 'restructureBusinessDebt': case 'buyVehicle': case 'sellVehicle': case 'setLoanRepayment': case 'settleBusinessPayable': case 'businessLoan': case 'repayBusinessLoan': case 'purchaseEquipment': case 'sellEquipment': case 'findJob': case 'resign': case 'sideJob': case 'startBusiness': case 'closeBusiness': case 'businessFunding': case 'ownerDraw': case 'jobSearch': case 'restartBusiness': case 'setBudget': case 'buyInvestment': case 'sellInvestment': case 'repayDebt':
         if(interactiveChoices&&action==='setBudget'&&payload.amount<60_000){result={ok:false,reason:'生活費は最低60,000円を確保してください。'};break;}
         if(interactiveChoices&&action==='findJob'){
           const posting=JOB_POSTINGS.find(p=>p.job===payload.job);
@@ -349,7 +354,11 @@ export function createGameStore({interactiveChoices=false} = {}) {
       default: result={ok:false,reason:'未対応の操作です。'};
     }
     if(result.ok){
-      if (interactiveChoices && action !== 'resolveChoice') {
+      if(admin){
+        if(state.businessTurn?.turn!==state.timeline.turnsElapsed)state.businessTurn={turn:state.timeline.turnsElapsed,used:0};
+        state.businessTurn.used++;
+      }
+      if (interactiveChoices && action !== 'resolveChoice'&&!admin) {
         // Less growth as proficiency rises; routine actions don't create perfect scores.
         for (const [key,oldValue] of Object.entries(beforeDevelopment.scores)) {
           const value=state.education.scores[key];
@@ -394,6 +403,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
     state=clone(snapshot);
     // Older v4.3.0 saves predate the action budget; migrate without wiping progress.
     if (!state.turnActions) state.turnActions={turn:state.timeline.turnsElapsed,used:0,lastAction:null};
+    state.businessTurn??={turn:state.timeline.turnsElapsed,used:0};
     ensureStoryProgress(state);
     ensureOpportunityProgress(state);
     ensureBalanceProgress(state);
