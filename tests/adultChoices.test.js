@@ -119,7 +119,7 @@ test('詳細の切替と学業操作はボタン式で、実行操作は確認�
  const control=readFileSync(new URL('../js/ui/choiceButtons.js',import.meta.url),'utf8');
  const dock=readFileSync(new URL('../js/ui/categoryDock.js',import.meta.url),'utf8');
  assert.match(dock,/topic-screen-tabs/);
- assert.match(page,/choiceButtons\('操作する項目'/);
+ assert.ok(!page.includes("choiceButtons('操作する項目'"));
  assert.match(page,/choices\.getValue\(\)/);
  assert.match(life,/choiceButtons\('勉強する科目'/);
  assert.match(life,/choiceButtons\('学習時間'/);
