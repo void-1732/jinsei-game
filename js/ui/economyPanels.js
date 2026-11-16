@@ -87,7 +87,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
       item.append(econEl('p','muted small',`給与：${yen(post.salary)}／月・応募${post.minAge}歳以上・選考基準${post.threshold}点・現在の評価${score}点`));
       if(qualification)item.append(econEl('p','muted small',`専攻・資格の適性加点 +${qualification}点（${majorFor(game.education.major).name}）`));
       if(post.university&&!canApplyUniversityRole(game.education))item.append(econEl('p','muted small','応募条件：4年制大学の修了が必要です。'));
-      action(item,job.job?'応募して転職':'採用選考を受ける',()=>handlers.onAction?.('applyJob',{postingId:post.id}),age<post.minAge||company?.openings===0||company?.status==='営業停止');
+      action(item,job.job?'応募して転職':'採用選考を受ける',()=>handlers.onAction?.('applyJob',{postingId:post.id}),age<post.minAge||(post.university&&!canApplyUniversityRole(game.education))||company?.openings===0||company?.status==='営業停止');
       choices.append(item);
     }
     section.append(choices);
