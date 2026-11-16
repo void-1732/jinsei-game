@@ -311,7 +311,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       ? {scores:{...state.education.scores},skills:{...state.education.skills},relations:Object.fromEntries(state.people.map(p=>[p.id,p.relationship]))} : null;
     let result;
     switch(action){
-      case 'enableAccurateMortgage': case 'requestPensionExemption': case 'setInsuranceClaimCap': case 'setPensionMode': case 'backPayPension': case 'moveHome': case 'clearMortgageArrears': case 'repayMortgage': case 'setInsurance': case 'claimInsurance': case 'repairHome':
+      case 'registerHome': case 'buyProperty': case 'sellProperty': case 'setPropertyUse': case 'repayPropertyLoan': case 'setPropertyPayment': case 'clearPropertyArrears': case 'setMortgagePayment': case 'enableAccurateMortgage': case 'requestPensionExemption': case 'setInsuranceClaimCap': case 'setPensionMode': case 'backPayPension': case 'moveHome': case 'clearMortgageArrears': case 'repayMortgage': case 'setInsurance': case 'claimInsurance': case 'repairHome':
         result=livingAction(state.finances,state.health,action,payload,{age:state.timeline.ageYears,date:state.timeline});break;
       case 'employmentSupport': result=requestEmploymentSupport(state.world,state.finances.career,state.timeline,state.timeline.ageYears);break;
       case 'supportRebuilding': result=supportRebuilding(state.finances,payload.companyId,state.timeline);break;
@@ -417,6 +417,8 @@ export function createGameStore({interactiveChoices=false} = {}) {
       const c=state.finances.career,b=state.finances.business;
       for(const [key,val] of Object.entries({unemploymentMonths:0,benefitMonths:0,previousSalary:0,searchEffort:0,insuredMonths:0,benefitEligible:true}))if(c[key]===undefined)c[key]=val;
       if(b.ownerDraws===undefined)b.ownerDraws=0;
+      state.finances.vehicles??=[];
+      state.finances.nextVehicleId??=Math.max(1,...[state.finances.vehicle,...state.finances.vehicles].filter(Boolean).map(v=>(v.fleetId??0)+1));
       for(const [key,val] of Object.entries({loanBalance:0,loanInterestPaid:0,equipmentValue:0,businessLedger:[],monthlyRepayment:0,equipmentDepreciation:0,loanApplications:0,loanDueIndex:0,loanOverdueMonths:0,creditScore:70,equipmentItems:[],nextEquipmentId:1,loanContracts:[],nextLoanId:1,loanPaymentHistory:[],loanScheduleHistory:[]}))if(b[key]===undefined)b[key]=val;
       for(const item of b.equipmentItems){item.condition??=100;item.broken??=false;item.serviceCount??=0;item.maintenance??=false;item.repairMonths??=0;}
       if(b.loanContracts.length===0 && b.loanBalance>0){
