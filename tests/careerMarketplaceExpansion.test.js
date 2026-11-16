@@ -4,7 +4,7 @@ import {createGameStore} from '../js/core/gameState.js';
 import {createLifeData,advanceEducation,chooseSchool,chooseFurtherEducation} from '../js/core/lifeSystems.js';
 import {validateGameState} from '../js/core/saveSystems.js';
 import {createEconomyData} from '../js/core/economySystems.js';
-import {careerAction,employmentScore,JOB_POSTINGS} from '../js/core/careerSystems.js';
+import {careerAction,employmentScore,JOB_POSTINGS,ALL_JOB_POSTINGS} from '../js/core/careerSystems.js';
 import {createCompanyMarket} from '../js/core/companySystems.js';
 import {EXTENDED_JOB_POSTINGS,employerOffer,marketListings,careerEligibility,schoolRecommendationBonus,postingIsVisible} from '../js/core/careerMarketplace.js';
 
@@ -15,9 +15,10 @@ const post=id=>EXTENDED_JOB_POSTINGS.find(p=>p.id===id);
 test('既存6社を維持したまま医療・政治・スポーツ・創作など30の新規求人を提供',()=>{
  assert.equal(createCompanyMarket().length,6);
  assert.equal(EXTENDED_JOB_POSTINGS.length,30);
- assert.equal(JOB_POSTINGS.length,36);
- assert.ok(['医師','歯科医師','トレーダー','漫画家','作家','料理人','プロスポーツ選手','市区町村議員','都道府県議員','国会議員'].every(name=>JOB_POSTINGS.some(p=>p.job===name)));
- assert.equal(new Set(JOB_POSTINGS.map(p=>p.id)).size,36);
+ assert.equal(JOB_POSTINGS.length,6);
+ assert.equal(ALL_JOB_POSTINGS.length,36);
+ assert.ok(['医師','歯科医師','トレーダー','漫画家','作家','料理人','プロスポーツ選手','市区町村議員','都道府県議員','国会議員'].every(name=>ALL_JOB_POSTINGS.some(p=>p.job===name)));
+ assert.equal(new Set(ALL_JOB_POSTINGS.map(p=>p.id)).size,36);
 });
 test('中学卒業後の高専は5年制、高専卒業後は2年の専攻科または大学編入が可能',()=>{
  const e=ed();e.stage='中学校';e.grade=3;e.school='市立中学校';
