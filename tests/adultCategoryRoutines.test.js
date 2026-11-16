@@ -65,7 +65,7 @@ test('成年前の1ターン1回は維持される',()=>{
 });
 test('継続習慣は選択したカテゴリ枠だけ消費、次月から自動で続く',()=>{
  const g=adult();
- const state=structuredClone(g.getState()),person=state.people.find(p=>p.role==='母');
+ const state=structuredClone(g.getState()),person=state.people.find(p=>p.role==='配偶者')??state.people.find(p=>p.role==='子')??state.people.find(p=>p.role==='母'||p.role==='父');
  assert.equal(g.performAction('setMonthlyRoutine',{domain:'health',planId:'walks'}).ok,true);
  assert.equal(g.performAction('setMonthlyRoutine',{domain:'health',planId:'gym'}).ok,false);
  assert.equal(g.performAction('setMonthlyRoutine',{domain:'relationships',planId:'call'}).ok,true);
