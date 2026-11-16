@@ -1,5 +1,6 @@
 import {screenGroups,findScreen as groupScreen} from '../core/screenCatalog.js';
 import {topicGroups,getTopic,categoryActivities,hasFreeAction} from './topicGroups.js';
+import {actionBudget} from '../core/adultActionBudget.js';
 
 function node(tag,cls='',text=''){
   const el=document.createElement(tag);if(cls)el.className=cls;el.textContent=text;return el;
@@ -12,13 +13,14 @@ export function renderCategoryDock(container,strip,screen,uiState,gameState,hand
     const current=group.category===screen.category;
     const expanded=uiState.activeCategory===group.category;
     const usable=Boolean(categoryActivities(gameState,group.category).length);
-    const btn=node('button','dock-category'+(current?' current':'')+(expanded?' expanded':'')+(canAct&&usable?' actionable':''));
+    const available=hasFreeAction(gameState,group.category);
+    const btn=node('button','dock-category'+(current?' current':'')+(expanded?' expanded':'')+(available&&usable?' actionable':''));
     btn.type='button';btn.setAttribute('aria-expanded',String(expanded));btn.setAttribute('aria-controls','topic-strip');
     const label=node('span','dock-name',group.category);
     btn.append(label);
     if(usable&&gameState?.initialized){
-      const status=canAct?'行動可':gameState?.pendingEvents?.some(e=>e.type==='choice')?'選択後':'済';
-      btn.append(node('span','dock-status'+(canAct?' available':''),status));
+      const status=available?'行動可':gameState?.pendingEvents?.some(e=>e.type==='choice')?'選択後':'済';
+      btn.append(node('span','dock-status'+(available?' available':''),status));
     }
     btn.title=current?(expanded?'もう一度押すと項目を閉じます':'項目を開く'):`${group.category}を開く`;
     btn.addEventListener('click',()=>handlers.onCategory?.(group.category));
