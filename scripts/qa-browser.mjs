@@ -206,6 +206,55 @@ async function runViewport(binary,width){
      !qualificationQA.original?.includes('難易度')||!qualificationQA.doctor.includes('医学課程修了')||
      !qualificationQA.examDisabled||!qualificationQA.examEnabled||!qualificationQA.earned||qualificationQA.overflow)
     throw Error('Qualification UI broken at this viewport '+JSON.stringify(qualificationQA));
+  // Industrial/commercial/technical students: age-16 exams; training effect;
+  // open/closed preferences survive re-render at both tested widths.
+  const youthCareerQA=await evaluate(`(async()=>{
+    const [{createGameStore},{renderQualificationPanel},{renderLifePanel},{createFoldState}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/qualificationPanel.js'),
+      import('./js/ui/lifePanels.js'),import('./js/ui/foldState.js')
+    ]);
+    const g=createGameStore();g.startNewGame();
+    const state=structuredClone(g.getState());
+    state.timeline={year:2016,month:5,ageYears:16,turnsElapsed:65,monthsElapsed:196};
+    state.education.stage='高校';state.education.school='工業高校';
+    state.education.highSchoolTrack='工業高校';state.finances.cash=150000;
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    host.append(renderQualificationPanel(state,()=>({ok:true})));
+    let picker=host.querySelector('.qualification-picker');picker.value='industrial';
+    picker.dispatchEvent(new Event('change',{bubbles:true}));
+    const allowed=!host.querySelector('.qualification-panel button:last-child')?.disabled;
+    state.education.school='普通高校';state.education.highSchoolTrack='普通高校';
+    host.replaceChildren(renderQualificationPanel(state,()=>({ok:true})));
+    picker=host.querySelector('.qualification-picker');picker.value='industrial';
+    picker.dispatchEvent(new Event('change',{bubbles:true}));
+    const ordinaryBlocked=host.querySelector('.qualification-panel button:last-child')?.disabled;
+    state.education.stage='高専';state.education.school='高等専門学校';
+    state.education.highSchoolTrack='高専';
+    host.replaceChildren();
+    renderLifePanel(host,{id:'EDU-05'},state,{onAction:()=>({ok:true})});
+    const training=host.querySelector('details[data-fold-key="career-training"]');
+    const effect=host.querySelector('.career-training-effect')?.textContent??'';
+    const keys=new Map(),store={getItem:key=>keys.get(key)??null,setItem:(key,value)=>keys.set(key,value)};
+    const folds=createFoldState(store);
+    training.open=true;folds.capture(host,'EDU-05');
+    host.replaceChildren();
+    renderLifePanel(host,{id:'EDU-05'},state,{onAction:()=>({ok:true})});
+    const after=host.querySelector('details[data-fold-key="career-training"]');
+    folds.restore(host,'EDU-05');
+    const retainedOpen=after.open;
+    after.open=false;folds.capture(host,'EDU-05');
+    const fromStorage=createFoldState(store);
+    host.replaceChildren();renderLifePanel(host,{id:'EDU-05'},state,{onAction:()=>({ok:true})});
+    fromStorage.restore(host,'EDU-05');
+    const retainedClosed=!host.querySelector('details[data-fold-key="career-training"]').open;
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {allowed,ordinaryBlocked,training:!!training,effect,retainedOpen,retainedClosed,overflow};
+  })()`);
+  if(!youthCareerQA.allowed||!youthCareerQA.ordinaryBlocked||!youthCareerQA.training||
+      !youthCareerQA.effect.includes('採用評価')||!youthCareerQA.effect.includes('技能')||
+      !youthCareerQA.retainedOpen||!youthCareerQA.retainedClosed||youthCareerQA.overflow)
+    throw Error('Student qualification, training preview or fold persistence invalid '+JSON.stringify(youthCareerQA));
   // U4/U5/U7: isolated adult fixture checks the real responsive game panels
   // and long-term event generation without touching the browser's save slots.
   const newFeatures=await evaluate(`(async()=>{
