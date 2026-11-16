@@ -1,5 +1,6 @@
 import {eraSummary,eraEconomicEffects} from '../core/eraSystems.js';
 import {checkupGuidance} from '../core/healthSystems.js';
+import {rareLifeSummary} from '../core/rareLifeEvents.js';
 /** 第6段階の状態・操作パネル。ゲーム状態はhandlers経由でのみ更新。 */
 const node=(tag,cls='',label='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=label;return n;};
 function line(root,k,v){const r=node('div','field-list-item');r.append(node('strong','',k),node('span','',String(v)));root.append(r);}
@@ -67,6 +68,15 @@ export function renderWorldPanel(container,screen,game,handlers={}){
        wrap.append(controls);
      }
      section.append(wrap);
+   }
+   const rare=rareLifeSummary(game);
+   line(section,'数年に一度の特別イベント',`${rare.total}回`);
+   if(rare.history.length){
+     const special=node('details','phase4-extra');
+     special.append(node('summary','','火災・災害・転機の履歴'));
+     for(const h of rare.history)line(special,`${h.year}年${h.month}月・${h.kind}`,
+       `自己負担${h.loss.toLocaleString('ja-JP')}円／保険${h.insured.toLocaleString('ja-JP')}円／軽減${h.prevented.toLocaleString('ja-JP')}円`);
+     section.append(special);
    }
    section.append(node('h3','','最近の人生イベント'));
    for(const e of game.eventHistory.filter(x=>['choice','choice-result','illness','recovery','society'].includes(x.type)).slice(-12).reverse())line(section,`${e.year}年${e.month}月・${e.title}`,e.description);
