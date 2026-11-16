@@ -31,7 +31,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   section.append(econEl('h2','',headings[screen.id]??'仕事・家計・資産'));
   if(!game?.initialized){section.append(econEl('p','muted','人生を開始すると仕事・資産の情報が表示されます。'));container.prepend(section);return true;}
   const f=game.finances,job=f.career,b=f.business,age=game.timeline.ageYears;
-  const work=screen.id.startsWith('WORK-');
+  const work=screen.id.startsWith('WORK-')&&screen.id!=='WORK-04';
   if(work||['LIFE-04','LIFE-05','LIFE-06'].includes(screen.id)){
     line(section,'現金',yen(f.cash));line(section,'投資評価額',yen(f.investment));line(section,'借入残高',yen(f.debt));line(section,'純資産（事業資金を含む）',yen(netWorth(f)));
   }
@@ -236,6 +236,36 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
       for(const item of (b.marketHistory??[]).slice(-3).reverse())line(section,`${item.year}年${item.month}月 事業指標`, `従業員${item.employees}人／平均技能${item.averageSkill}点／意欲${item.averageMorale}点`);
       for(const result of (b.results??[]).slice(-6).reverse())line(section,`${result.year}年${result.month}月`,`${result.employees}人／平均技能${result.averageSkill}点／平均意欲${result.averageMorale}点`);
 
+    }
+  }
+  if(screen.id==='WORK-04'&&b.active){
+    const dashboard=econEl('div','business-overview');
+    for(const [key,value] of [
+      ['営業状態',b.status??'営業中'],['事業資金',yen(b.operatingCash??0)],
+      ['設備の台数',`${b.equipmentItems?.length??0}台`],['従業員',`${b.staff?.length??0}人`],
+      ['事業融資',yen(b.loanBalance??0)],['今月の見込売上',yen(b.monthlyRevenue??0)]
+    ]){
+      const item=econEl('div','business-overview-card');
+      item.append(econEl('small','',key),econEl('strong','',value));dashboard.append(item);
+    }
+    const heading=[...section.children].find(node=>node.tagName==='H3'&&node.textContent==='会社・事業経営');
+    const panel=section.querySelector('.business-equipment-panel');
+    if(heading&&panel){
+      heading.after(dashboard,panel);
+      const trailing=[...section.children].slice([...section.children].indexOf(panel)+1);
+      const details=[];
+      let current=null;
+      const group=(label)=>{
+        const item=econEl('details','business-folded-details');
+        item.append(econEl('summary','',label));
+        section.append(item);details.push(item);current=item;
+      };
+      group('経営・融資・返済の詳細');
+      for(const node of trailing){
+        if(node.tagName==='H3'&&node.textContent==='事業口座の取引履歴')group('資金移動・取引履歴');
+        if(node.tagName==='H3'&&node.textContent.includes('従業員・企業業績'))group('従業員・職場運営');
+        current.append(node);
+      }
     }
   }
   if(['LIFE-03','LIFE-04','LIFE-08'].includes(screen.id)){
