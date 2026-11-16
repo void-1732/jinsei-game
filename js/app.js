@@ -8,6 +8,7 @@ import { renderNavigation } from './ui/navigation.js';
 import { renderScreen } from './ui/screenRenderer.js';
 import {renderTopicPage} from './ui/topicPage.js';
 import {renderCategoryDock} from './ui/categoryDock.js';
+import {renderActionCenter} from './ui/actionCenter.js';
 import {categoryLanding,getTopic} from './ui/topicGroups.js';
 
 const gameStore = createGameStore({interactiveChoices:true});
@@ -26,6 +27,7 @@ const dom = {
   backButton: $('#nav-back'), forwardButton: $('#nav-forward'), searchInput: $('#screen-search'),
   helpDialog: $('#help-dialog'), storyDialog: $('#story-dialog'), storyContent: $('#story-content'),
   settingsDialog: $('#settings-dialog'), categoryDock: $('#category-dock'),topicStrip:$('#topic-strip'),
+  actionDialog:$('#action-center-dialog'),actionContent:$('#action-center-content'),
 };
 if(saveRepository){
   const loaded = saveRepository.load('自動保存');
@@ -40,6 +42,7 @@ function openSettings(){
 }
 function navigateTo(id){
   uiStore.navigateTo(id);
+  if(dom.actionDialog?.open)dom.actionDialog.close();
   $('#sidebar').classList.remove('open');
   $('#toggle-nav').setAttribute('aria-expanded','false');
 }
@@ -77,10 +80,12 @@ function render(state){
       else $('#player-name').focus();
     },
     onSettings:openSettings,
+    onOpenActionCenter:openActionCenter,
     onAction:(action,payload)=>{
       const result=gameStore.performAction(action,payload);
       actionFeedback=result.message??(result.ok?'操作を反映しました。':result.reason);
       dom.systemMessage.textContent=actionFeedback;
+      return result;
     },
   };
   if(getTopic(screen.id)&&screen.id!=='LIFE-01')renderTopicPage(dom.screenRoot,screen,gameState,screenHandlers);
@@ -88,6 +93,28 @@ function render(state){
   dom.systemMessage.textContent=actionFeedback||`${screen.id} を表示中 · ${gameState.initialized?`${gameState.timeline.turnsElapsed}ターン経過`:'人生開始前'}`;
   if(state.helpOpen&&!dom.helpDialog.open)dom.helpDialog.showModal();
   if(!state.helpOpen&&dom.helpDialog.open)dom.helpDialog.close();
+}
+function openActionCenter(){
+ const snapshot=gameStore.getState();
+ if(!snapshot.initialized){dom.systemMessage.textContent='人生を開始すると自由行動を選べます。';return;}
+ const state=()=>{
+  renderActionCenter(dom.actionContent,gameStore.getState(),{
+   onAction:(action,payload)=>{
+    const result=gameStore.performAction(action,payload);
+    actionFeedback=result.message??(result.ok?'操作を反映しました。':result.reason);
+    dom.systemMessage.textContent=actionFeedback;
+    return result;
+   },
+   onNavigate:id=>navigateTo(id),
+   onSuccessfulAction:message=>{
+    state();
+    const feedback=dom.actionContent.querySelector('.action-center-feedback');
+    if(feedback)feedback.textContent=message;
+   },
+  });
+ };
+ state();
+ if(!dom.actionDialog.open)dom.actionDialog.showModal();
 }
 function button(label, className='button button-secondary'){
   const b=document.createElement('button');b.type='button';b.className=className;b.textContent=label;return b;
@@ -288,6 +315,8 @@ dom.storyDialog.addEventListener('cancel',()=>{
   // Esc can dismiss an undecided event; the next-turn button reopens it.
 });
 $('#open-settings').addEventListener('click',openSettings);
+$('#open-action-center').addEventListener('click',openActionCenter);
+$('#close-action-center').addEventListener('click',()=>dom.actionDialog.close());
 $('#close-settings').addEventListener('click',()=>dom.settingsDialog.close());
 $('#toggle-nav').addEventListener('click',()=>{
   const opened=$('#sidebar').classList.toggle('open');
