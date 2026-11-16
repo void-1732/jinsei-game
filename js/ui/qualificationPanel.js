@@ -22,12 +22,17 @@ export function renderQualificationPanel(state,onAction,{career=false}={}){
  result.append(el('p','muted small',`現在の学歴・専攻でおすすめ：${recommend.map(q=>q.name).join('・')}`));
  const label=el('label','qualification-picker-label','確認・挑戦する資格');
  const select=el('select','phase4-select qualification-picker');
- for(const q of QUALIFICATION_CATALOG){
+ const available=QUALIFICATION_CATALOG.filter(q=>!qualificationPreview(e,q.id,age).earned);
+ for(const q of available){
   const option=el('option','',`${q.name}　${qualificationDifficulty(q)}`);
   option.value=q.id;select.append(option);
  }
- const recommended=recommend.find(q=>!qualificationPreview(e,q.id,age).earned);
+ const recommended=recommend.find(q=>available.some(item=>item.id===q.id));
  if(recommended)select.value=recommended.id;
+ if(!available.length){
+   select.disabled=true;
+   const done=el('option','','すべて取得済みです');done.value='';select.append(done);
+ }
  label.append(select);
  result.append(label);
  const description=el('p','muted small qualification-preview');
@@ -39,7 +44,7 @@ export function renderQualificationPanel(state,onAction,{career=false}={}){
  const feedback=el('p','muted small qualification-feedback');feedback.setAttribute('role','status');
  const refresh=()=>{
   const p=qualificationPreview(e,select.value,age),q=p.q;
-  if(!p.ok)return;
+  if(!p.ok){description.textContent='すべての資格を取得済みです。';prepare.disabled=true;exam.disabled=true;return;}
   const cost=qualificationCost(e,q,age);
   const allActionsBlocked=Boolean(state.pendingEvents?.some(x=>x.type==='choice'))||
     !state.initialized||Boolean(state.ending?.dead);
