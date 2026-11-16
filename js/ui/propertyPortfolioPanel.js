@@ -4,6 +4,7 @@ import {propertyCount,propertyPrice,portfolioTotals} from '../core/propertyPortf
 import {choiceButtons} from './choiceButtons.js';
 const el=(tag,cls='',value='')=>{const x=document.createElement(tag);x.className=cls;x.textContent=value;return x;};
 const yen=n=>`${Number(n??0).toLocaleString('ja-JP')}円`;
+let selectedPropertyId=null;
 function command(root,title,fn,disabled=false){const b=el('button','button button-secondary',title);b.type='button';b.disabled=disabled;b.addEventListener('click',fn);root.append(b);return b;}
 function money(root,label,value,min=1,max=100000000){
  const w=el('label','asset-money-label',label),i=el('input','phase5-number');
@@ -26,7 +27,8 @@ export function renderPropertyPortfolio(panel,game,onAction){
  }
  const details=el('div','asset-property-details');
  if(properties.length){
-  const choice=choiceButtons('管理する物件を選ぶ',properties.map(p=>({value:p.id,label:`#${p.id} ${p.region}`})),properties[0].id,id=>show(id));
+  const initial=properties.some(p=>p.id===selectedPropertyId)?selectedPropertyId:properties[0].id;
+  const choice=choiceButtons('管理する物件を選ぶ',properties.map(p=>({value:p.id,label:`#${p.id} ${p.region}`})),initial,id=>{selectedPropertyId=id;show(id);});
   root.append(choice.element);
   const show=(id)=>{
    const p=properties.find(x=>x.id===id);
@@ -54,7 +56,7 @@ export function renderPropertyPortfolio(panel,game,onAction){
    command(controls,'この物件を売却',()=>onAction?.('sellProperty',{id:p.id}),Math.floor(p.value*.9)<p.loanBalance+p.arrears);
    details.append(controls);
   };
-  show(properties[0].id);
+  show(initial);
  }else root.append(el('p','muted small','追加物件はありません。居住用の家とは別に、賃貸運用や別荘を所有できます。'));
  root.append(details);
  const buy=el('details','asset-purchase');
