@@ -21,7 +21,9 @@ function graph(root,heading,items,key){
 function input(root,value,aria){const x=econEl('input','phase5-number');x.type='number';x.min='1';x.max='100000000';x.step='1000';x.value=String(value);x.setAttribute('aria-label',aria);root.append(x);return x;}
 export function renderEconomyPanel(container,screen,game,handlers={}){
   if(!screen.id.startsWith('WORK-')&&!['LIFE-02','LIFE-03','LIFE-04','LIFE-05','LIFE-06','LIFE-08'].includes(screen.id))return false;
-  const section=econEl('section','content-card phase4-panel phase5-panel');section.append(econEl('h2','','仕事・家計・資産の実データ'));
+  const section=econEl('section','content-card phase4-panel phase5-panel');
+  const headings={'LIFE-02':'車の購入・所有','LIFE-03':'家計簿・収支','LIFE-04':'資産・預金','LIFE-05':'投資','LIFE-06':'借入・返済','LIFE-08':'収支・取引の履歴'};
+  section.append(econEl('h2','',headings[screen.id]??'仕事・家計・資産'));
   if(!game?.initialized){section.append(econEl('p','muted','人生を開始すると仕事・資産の情報が表示されます。'));container.prepend(section);return true;}
   const f=game.finances,job=f.career,b=f.business,age=game.timeline.ageYears;
   const work=screen.id.startsWith('WORK-');
@@ -263,7 +265,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     controls.append(product);
     action(controls,'購入',()=>handlers.onAction?.('buyInvestment',{amount:Number(value.value),productId:product.value}),age<18);
     action(controls,'売却',()=>handlers.onAction?.('sellInvestment',{amount:Number(value.value),productId:product.value}));
-    action(controls,'借入金を返済',()=>handlers.onAction?.('repayDebt',{amount:Number(value.value)}));
+
     section.append(controls);
     for(const item of f.investmentHoldings??[]){
       const definition=INVESTMENT_PRODUCTS.find(x=>x.id===item.id);
@@ -272,6 +274,14 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     const tracked=(f.investmentHoldings??[]).reduce((sum,x)=>sum+x.value,0);
     if(f.investment>tracked)line(section,'以前の投資残高',yen(f.investment-tracked));
     section.append(econEl('p','muted small','商品ごとに利回りと変動幅が異なります。旧セーブの投資残高はそのまま保護されます。'));
+  }
+  if(screen.id==='LIFE-06'){
+    section.append(econEl('h3','','個人借入金の返済'));
+    line(section,'現在の借入残高',yen(f.debt));
+    const controls=econEl('div','phase4-actions');
+    const amount=input(controls,Math.min(10000,Math.max(1,f.debt)),'借入金の返済額（円）');
+    action(controls,'借入金を返済',()=>handlers.onAction?.('repayDebt',{amount:Number(amount.value)}),f.debt<=0||f.cash<=0);
+    section.append(controls);
   }
   if(screen.id==='LIFE-02'){
     section.append(econEl('h3','','マイカーの購入・売却'));
