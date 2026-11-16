@@ -123,6 +123,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
           const option=lifeEl('option','',choice);option.value=choice;plans.append(option);
         }
         plans.value=summary.educationPlans?.[child.id]??'公立中心';
+        childChoice.group.addEventListener('click',()=>{plans.value=summary.educationPlans?.[childChoice.getValue()]??'公立中心';});
         education.append(plans);
         const explain=lifeEl('p','muted small','公立中心：基本費用／学習支援：毎月追加費用と学習支援／私立中心：学費の負担が大きくなります。');
         education.append(explain);
