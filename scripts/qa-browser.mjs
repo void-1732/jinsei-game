@@ -202,7 +202,7 @@ async function runViewport(binary,width){
     return {count:QUALIFICATION_CATALOG.length,root:!!root,closed:root?.open===false,original,
       doctor,examDisabled,examEnabled,earned,overflow};
   })()`);
-  if(qualificationQA.count!==22||!qualificationQA.root||!qualificationQA.closed||
+  if(qualificationQA.count!==40||!qualificationQA.root||!qualificationQA.closed||
      !qualificationQA.original?.includes('難易度')||!qualificationQA.doctor.includes('医学課程修了')||
      !qualificationQA.examDisabled||!qualificationQA.examEnabled||!qualificationQA.earned||qualificationQA.overflow)
     throw Error('Qualification UI broken at this viewport '+JSON.stringify(qualificationQA));
