@@ -2,6 +2,7 @@ import {estateBreakdown} from './estateSystems.js';
 import {getHousingEquity} from './livingSystems.js';
 import {advanceLiving} from './livingSystems.js';
 import {businessMonthlyFigures} from './careerSystems.js';
+import {canApplyUniversityRole} from './educationPaths.js';
 import {eraEconomicEffects} from './eraSystems.js';
 /** 第5段階：すべて整数円で扱う簡易経済システム。現実の税制・相場を再現しない。 */
 export const PART_TIME_JOBS=Object.freeze([
@@ -133,7 +134,7 @@ export function economyAction(e,action,payload,context){
       const job=JOBS[payload.job];
       if(!job)return {ok:false,reason:'職種を選択してください。'};
       if(age<job.age)return {ok:false,reason:`${job.age}歳から応募できます。`};
-      if(job.academic==='大学' && !(stage==='卒業'&&context.education?.universityChoice==='進学'))return {ok:false,reason:'この職種には大学課程修了が必要です。'};
+      if(job.academic==='大学' && !canApplyUniversityRole(context.education))return {ok:false,reason:'この職種には大学課程修了が必要です。'};
       if(e.career.job)return {ok:false,reason:'転職する場合は先に退職してください。'};
       e.career.job=payload.job;e.career.company=`${payload.job}の勤務先`;e.career.monthlySalary=job.salary;e.career.experience=0;e.career.jobChanges++;e.career.performance=50;e.career.supervisorTrust=50;e.career.coworkerTrust=50;e.career.workplaceActions=0;e.career.reviews=[];
       log(e,date,'記録',`${payload.job}に就職`,0);return {ok:true};

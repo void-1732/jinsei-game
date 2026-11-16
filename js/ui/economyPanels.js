@@ -1,5 +1,6 @@
 import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures} from '../core/careerSystems.js';
+import {employmentQualificationBonus,canApplyUniversityRole,majorFor} from '../core/educationPaths.js';
 import {netWorth,projectLoanSchedule,EQUIPMENT_TYPES,estimateEquipmentReturns,PART_TIME_JOBS,INVESTMENT_PRODUCTS,VEHICLE_OPTIONS} from '../core/economySystems.js';
 /** 仕事・家計の実データ操作パネル。入力はユーザー操作時のみ反映。 */
 const econEl=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
@@ -82,8 +83,11 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
       const company=getCompany(f,post.id);
       item.append(econEl('strong','',`${post.company} ／ ${post.job}`));
       item.append(econEl('p','muted small',`企業評価 ${company?.performance??'―'}点／募集 ${company?.openings??0}枠／${company?.status??'通常'}`));
+      const qualification=employmentQualificationBonus(game.education,post.id);
       item.append(econEl('p','muted small',`給与：${yen(post.salary)}／月・応募${post.minAge}歳以上・選考基準${post.threshold}点・現在の評価${score}点`));
-      action(item,job.job?'応募して転職':'採用選考を受ける',()=>handlers.onAction?.('applyJob',{postingId:post.id}),age<post.minAge||company?.openings===0||company?.status==='営業停止');
+      if(qualification)item.append(econEl('p','muted small',`専攻・資格の適性加点 +${qualification}点／採用時の月給加算 ${yen(qualification*1000)}（${majorFor(game.education.major).name}）`));
+      if(post.university&&!canApplyUniversityRole(game.education))item.append(econEl('p','muted small','応募条件：4年制大学の修了が必要です。'));
+      action(item,job.job?'応募して転職':'採用選考を受ける',()=>handlers.onAction?.('applyJob',{postingId:post.id}),age<post.minAge||(post.university&&!canApplyUniversityRole(game.education))||company?.openings===0||company?.status==='営業停止');
       choices.append(item);
     }
     section.append(choices);

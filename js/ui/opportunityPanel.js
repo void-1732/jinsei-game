@@ -17,7 +17,7 @@ export function renderOpportunityPanel(state,category){
   row('学校・進路',`${state.education.stage}・${state.education.school||'未定'}`);
   row('奨学金',e.scholarship==='採用'?`採用（毎月${yen(e.grantMonthly)}）`:e.scholarship);
   row('学費補助の累計',yen(e.scholarshipPaid));
-  row('大学の学費',`毎月${yen(36_000)}（在学中）`);
+  row('在学中の学費',`毎月${yen(state.education.program?.tuition??36_000)}（基本額）`);
   row('学費の支払い方法',e.funding==='loan'?'教育ローン':'現金優先・不足分は未払い');
   row('教育費の残債',yen(e.loanBalance+e.unpaidTuition));
  }else if(category==='仕事・経営'){
