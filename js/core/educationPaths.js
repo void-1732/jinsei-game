@@ -7,6 +7,11 @@ export const EDUCATION_PROGRAMS=Object.freeze({
  '私立大学':{years:4,tuition:52000,type:'4年制大学'},
  '短期大学':{years:2,tuition:24000,type:'短期大学'},
  '専門学校':{years:2,tuition:30000,type:'専門学校'},
+ '高等専門学校':{years:5,tuition:18000,type:'5年制高専'},
+ '高専専攻科':{years:2,tuition:22000,type:'高専専攻科'},
+ '大学院修士課程':{years:2,tuition:50000,type:'修士課程'},
+ '医学部':{years:6,tuition:75000,type:'6年制医学課程'},
+ '歯学部':{years:6,tuition:73000,type:'6年制歯学課程'},
 });
 export const STUDY_MAJORS=Object.freeze([
  {id:'general',name:'総合教養',focus:'国語',credential:'教養課程修了（ゲーム内）',jobs:['office','shop','pro']},
@@ -24,7 +29,7 @@ export function assignProgram(education,school,year){
  return education.program;
 }
 export function chooseMajor(education,majorId){
- if(education.stage!=='大学')return {ok:false,reason:'専攻は在学中に選べます。'};
+ if(!['大学','高専','高専専攻科','大学院'].includes(education.stage))return {ok:false,reason:'専攻は在学中に選べます。'};
  if(!STUDY_MAJORS.some(m=>m.id===majorId))return {ok:false,reason:'専攻が不正です。'};
  if(education.major===majorId)return {ok:false,reason:'現在の専攻と同じです。'};
  education.major=majorId;
@@ -47,6 +52,7 @@ export function employmentQualificationBonus(education,postingId){
 }
 export function canApplyUniversityRole(education){
  if(!education?.graduated||education.universityChoice!=='進学')return false;
+ if(education.degree)return ['学士','修士','医学課程修了','歯学課程修了','専攻科修了'].includes(education.degree);
  // Old saves never included program; preserve their historical university eligibility.
  return !education.program||education.program.years===4;
 }
@@ -54,7 +60,7 @@ export function validateEducationPath(education){
  if(education.program!==undefined&&education.program!==null){
   const p=education.program,known=EDUCATION_PROGRAMS[p.school];
   if(!known||p.years!==known.years||p.tuition!==known.tuition||p.type!==known.type||
-    !Number.isInteger(p.startYear)||p.startYear<2018||p.startYear>2200)return false;
+    !Number.isInteger(p.startYear)||p.startYear<(p.school==='高等専門学校'?2015:2018)||p.startYear>2200)return false;
  }
  if(education.major!==undefined&&!STUDY_MAJORS.some(m=>m.id===education.major))return false;
  if(education.credentialIds!==undefined&&(!Array.isArray(education.credentialIds)||education.credentialIds.length>5||
