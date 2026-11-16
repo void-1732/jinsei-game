@@ -59,7 +59,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
   const intro=el('header','topic-intro');
   intro.append(el('span','topic-eyebrow',screen.category),
     el('h2','',topic.title),
-    el('p','','詳細は見出しから開閉できます。'));
+    el('p','','重複したページをまとめ、必要な操作だけを選べます。'));
   leading.append(intro);root.append(leading);
   const businessFocus=['WORK-03','WORK-04'].includes(screen.id);
   if(screen.category==='履歴'&&state?.initialized)root.append(renderLifeReview(state,{expanded:Boolean(state.ending?.dead)}));
@@ -103,6 +103,22 @@ export function renderTopicPage(container,screen,state,handlers={}){
   details.open=expandedByTopic.get(topicKey)??true;
   details.append(el('summary','','詳細・個別操作を見る（クリックで閉じる／開く）'));
   const body=el('div','topic-detail-content');
+  // Legacy screen IDs remain addressable by bookmarks and saves, but no longer
+  // occupy a second row of navigation tabs. Choose one detail in-place.
+  if(topic.screenIds.length>1){
+    const picker=el('label','topic-detail-picker','表示する詳細');
+    const select=el('select','topic-detail-select');
+    for(const id of topic.screenIds){
+      const target=findScreen(id);
+      const option=el('option','',target?.title??id);
+      option.value=id;
+      select.append(option);
+    }
+    select.value=screen.id;
+    select.addEventListener('change',()=>show(select.value));
+    picker.append(select);
+    body.append(picker);
+  }
   const full=el('div','topic-legacy-detail');
   const show=(selectedId=screen.id)=>{
     const target=findScreen(selectedId);full.replaceChildren();
