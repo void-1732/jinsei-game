@@ -319,7 +319,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         result=opportunityAction(state,action,payload);break;
       case 'interactCoworker': case 'resolveWorkIncident': case 'workHard': case 'helpColleague': case 'talkSupervisor': case 'reviewPerformance': case 'trainStaff': case 'dismissStaff': case 'staffCare':
         result=workplaceAction(state.finances,action,payload,state.timeline);break;
-      case 'setLoanRepayment': case 'settleBusinessPayable': case 'businessLoan': case 'repayBusinessLoan': case 'purchaseEquipment': case 'sellEquipment': case 'findJob': case 'resign': case 'sideJob': case 'startBusiness': case 'closeBusiness': case 'businessFunding': case 'ownerDraw': case 'jobSearch': case 'restartBusiness': case 'setBudget': case 'buyInvestment': case 'sellInvestment': case 'repayDebt':
+      case 'buyVehicle': case 'sellVehicle': case 'setLoanRepayment': case 'settleBusinessPayable': case 'businessLoan': case 'repayBusinessLoan': case 'purchaseEquipment': case 'sellEquipment': case 'findJob': case 'resign': case 'sideJob': case 'startBusiness': case 'closeBusiness': case 'businessFunding': case 'ownerDraw': case 'jobSearch': case 'restartBusiness': case 'setBudget': case 'buyInvestment': case 'sellInvestment': case 'repayDebt':
         if(interactiveChoices&&action==='setBudget'&&payload.amount<60_000){result={ok:false,reason:'生活費は最低60,000円を確保してください。'};break;}
         if(interactiveChoices&&action==='findJob'){
           const posting=JOB_POSTINGS.find(p=>p.job===payload.job);
@@ -418,6 +418,11 @@ export function createGameStore({interactiveChoices=false} = {}) {
       state.world.employmentSupport??={lastIndex:-1,sessions:0};
       state.world.laborMarket??={openings:0,previousOpenings:null};
       if(interactiveChoices)ensureEraProgress(state.world);
+    }
+    if(state.finances){
+      state.finances.investmentHoldings??=[];
+      state.finances.vehicle??=null;
+      state.finances.sideJob??={active:false,monthlyIncome:35000};
     }
     if(state.finances)ensureMortgage(ensureLiving(state.finances));
     if(state.finances)ensureWorkplace(state.finances);if(state.finances)ensureCompanyMarket(state.finances);emit();return {ok:true,snapshot:getState()};
