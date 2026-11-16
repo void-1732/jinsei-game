@@ -9,6 +9,7 @@ export const EDUCATION_PROGRAMS=Object.freeze({
  '専門学校':{years:2,tuition:30000,type:'専門学校'},
  '高等専門学校':{years:5,tuition:18000,type:'5年制高専'},
  '高専専攻科':{years:2,tuition:22000,type:'高専専攻科'},
+ '高専編入大学':{years:2,tuition:36000,type:'大学編入'},
  '大学院修士課程':{years:2,tuition:50000,type:'修士課程'},
  '医学部':{years:6,tuition:75000,type:'6年制医学課程'},
  '歯学部':{years:6,tuition:73000,type:'6年制歯学課程'},
