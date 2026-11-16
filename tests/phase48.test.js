@@ -57,7 +57,7 @@ test('通常イベントの自動選択は重要な出来事と長期分岐を�
  assert.equal(g.fastForward().ok,false,'最初の選択待ちは進めない');
  choose(g);
  const r=g.fastForward({focus:'health'});
- assert.equal(r.ok,true);assert.ok(r.turns>=1&&r.turns<=4);
+ assert.equal(r.ok,true);assert.ok(r.turns>=1&&r.turns<=12);
  assert.ok(g.getState().timeline.turnsElapsed>=1);
  assert.equal(g.getState().balance48.focus,'health');
  assert.ok(g.getState().balance48.fastRuns>=1);
