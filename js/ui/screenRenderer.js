@@ -128,7 +128,8 @@ export function renderScreen(container, screen, gameState = null, handlers = {})
   const extraPanels=[...container.children].filter(node=>node.tagName==='SECTION' && !node.classList.contains('quick-overview'));
   if(extraPanels.length){
     const detail=document.createElement('details');detail.className='operations-directory';
-    detail.append(el('summary','','詳しい情報・操作を開く'));
+    detail.open=Boolean(handlers.embedded);
+    detail.append(el('summary','','操作・記録を閉じる／開く'));
     for(const node of extraPanels)detail.append(node);
     const blocked=gameState?.initialized && (gameState?.pendingEvents?.some(e=>e.type==='choice') || (gameState?.turnActions?.turn===gameState?.timeline?.turnsElapsed && gameState?.turnActions?.used>=1));
     if (blocked) {
@@ -146,7 +147,8 @@ export function renderScreen(container, screen, gameState = null, handlers = {})
   for(const [key,value]of visible){
     const field=el('div','quick-overview-line');field.append(el('span','',key),el('strong','',String(value)));quick.append(field);
   }
-  container.prepend(quick);
+  if(!handlers.embedded)container.prepend(quick);
+  else intro.remove();
   if (search.value) search.dispatchEvent(new Event('input'));
 }
 function screenDetailsForCategory(category, state) {
