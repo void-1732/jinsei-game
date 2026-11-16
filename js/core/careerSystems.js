@@ -42,7 +42,7 @@ export function careerAction(finances,action,payload,context){
   record(`${post.company}の採用選考：${passed?'合格':'不合格'}`);
   if(!passed)return {ok:true,passed:false,message:`採用見送り（評価${score}点／基準${post.threshold}点）。成績や技能を上げて再挑戦できます。`};
   const changing=Boolean(career.job);
-  career.job=post.job;career.company=post.company;career.monthlySalary=post.salary;
+  career.job=post.job;career.company=post.company;career.monthlySalary=post.salary+employmentQualificationBonus(context.education,post.id)*1000;
   career.experience=0;career.unemploymentMonths=0;career.benefitMonths=0;career.insuredMonths=0;career.previousSalary=0;career.searchEffort=0;career.rank=1;career.performance=50;career.supervisorTrust=50;career.coworkerTrust=50;career.workplaceActions=0;career.reviews=[];resetWorkplacePeople(career);career.promotions=career.promotions??0;career.jobChanges=(career.jobChanges??0)+1;
   record(`${post.company}に${changing?'転職':'就職'}`);
   return {ok:true,passed:true,message:`${post.company}に${changing?'転職':'就職'}しました。`};
