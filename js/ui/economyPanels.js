@@ -2,6 +2,8 @@ import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
 import {CAREER_SECTORS,EXTENDED_JOB_POSTINGS,marketListings,careerEligibility} from '../core/careerMarketplace.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures,CAREER_PLANS,careerStage} from '../core/careerSystems.js';
 import {choiceButtons} from './choiceButtons.js';
+import {jobQualificationInfo,hiringProbability} from '../core/qualificationSystems.js';
+import {renderQualificationPanel} from './qualificationPanel.js';
 import {renderBusinessEquipmentPanel} from './businessEquipmentPanel.js';
 import {renderSideJobWorkspace,renderBusinessWorkspace} from './workCompactPanel.js';
 import {renderAssetPulse} from './assetPulsePanel.js';
@@ -111,6 +113,8 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
       item.append(econEl('p','muted small',`企業評価 ${company?.performance??'―'}点／募集 ${company?.openings??0}枠／${company?.status??'通常'}`));
       const qualification=employmentQualificationBonus(game.education,post.id);
       item.append(econEl('p','muted small',`給与：${yen(post.salary)}／月・応募${post.minAge}歳以上・選考基準${post.threshold}点・現在の評価${score}点`));
+      const qualificationInfo=jobQualificationInfo(game.education,post.id);
+      if(qualificationInfo.preferred.length)item.append(econEl('p','muted small',`評価される資格：${qualificationInfo.preferred.map(q=>q.name).join('・')} ／取得済み${qualificationInfo.matched.length}件`));
       if(qualification)item.append(econEl('p','muted small',`専攻・資格の適性加点 +${qualification}点／採用時の月給加算 ${yen(qualification*1000)}（${majorFor(game.education.major).name}）`));
       if(post.university&&!canApplyUniversityRole(game.education))item.append(econEl('p','muted small','応募条件：4年制大学の修了が必要です。'));
       action(item,job.job?'応募して転職':'採用選考を受ける',()=>handlers.onAction?.('applyJob',{postingId:post.id}),age<post.minAge||(post.university&&!canApplyUniversityRole(game.education))||company?.openings===0||company?.status==='営業停止');
@@ -144,7 +148,10 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
       const selected=EXTENDED_JOB_POSTINGS.find(p=>p.id===listingSelect.value);
       const offer=listings.find(p=>p.id===listingSelect.value);
       const eligibility=selected?careerEligibility(selected,game.education,job,age):'この条件の求人はありません。';
-      status.textContent=selected?`${selected.job}｜月給${yen(selected.salary)}｜選考の目安${selected.threshold}点｜${eligibility??'応募条件を満たしています'}｜${offer?.phase??'募集中'}`:'この条件の求人はありません。';
+      const qual=selected?jobQualificationInfo(game.education,selected.id):null;
+      const hiringScore=selected?Math.min(100,employmentScore(game.education,selected,job.experience)+Math.min(12,(job.internships?.[selected.sector]??0)*3)+(job.sector===selected.sector?7:0)):0;
+      const chance=selected?hiringProbability(hiringScore,selected.threshold):0;
+      status.textContent=selected?`${selected.job}｜月給${yen(selected.salary)}｜選考の目安${selected.threshold}点｜${eligibility??'応募条件を満たしています'}｜${offer?.phase??'募集中'}｜内定見込み約${chance}%（ゲーム内推定）｜必須資格：${qual?.required.map(q=>q.name).join('・')||'なし'}｜評価される資格：${qual?.preferred.map(q=>q.name).join('・')||'なし'}（取得済み${qual?.matched.length??0}）`:'この条件の求人はありません。';
       apply.disabled=!selected||!offer?.openings||Boolean(eligibility);
       target.disabled=!sectorSelect.value||job.targetSector===sectorSelect.value;
       intern.disabled=!sectorSelect.value||Boolean(job.job)||age<16||age>35||(job.internships?.[sectorSelect.value]??0)>=5;
@@ -152,12 +159,9 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
     listingSelect.addEventListener('change',update);
     sectorSelect.addEventListener('change',update);
     market.append(marketControls,status);
-    if(['医学課程修了','歯学課程修了'].includes(game.education.degree)){
-      const exam=econEl('div','phase4-actions');
-      const license=game.education.degree==='医学課程修了'?'医師':'歯科医師';
-      action(exam,`${license}のゲーム内資格試験`,()=>handlers.onAction?.('professionalExam',{license}), (game.education.licenses??[]).includes(license));
-      market.append(exam);
-    }
+    // Unified qualification exam panel supersedes the old, easier medical exam button.
+    if(['医学課程修了','歯学課程修了'].includes(game.education.degree))
+      market.append(renderQualificationPanel(game,handlers.onAction,{career:true}));
     section.append(market);
     update();
     section.append(econEl('h3','','企業別の財務・求人状況（第14段階）'));
@@ -176,6 +180,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   }
   if(screen.id==='WORK-02'){
     const milestone=careerStage(job);
+    section.append(renderQualificationPanel(game,handlers.onAction,{career:true}));
     if(job.sector)line(section,'現在の業界',job.sector);
     if(job.targetSector)line(section,'希望する業界',job.targetSector);
     if(job.politicalRank)line(section,'政治キャリア',`${job.politicalRank===3?'国会':job.politicalRank===2?'都道府県':'市区町村'}議員／議員経験${job.politicalExperience??0}か月`);

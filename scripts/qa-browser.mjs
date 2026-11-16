@@ -176,6 +176,36 @@ async function runViewport(binary,width){
   if(!careerExpansion.drawer||!careerExpansion.closed||careerExpansion.registered!==30||
      !careerExpansion.original||!careerExpansion.count||!careerExpansion.after||!careerExpansion.filtered||careerExpansion.overflow)
     throw Error('Expanded job market browser UI failed '+JSON.stringify(careerExpansion));
+  // Qualification system: interactive preview, degree gates, compact layout,
+  // and safe controls tested at both PC and mobile viewport widths.
+  const qualificationQA=await evaluate(`(async()=>{
+    const [{createGameStore},{renderQualificationPanel},{QUALIFICATION_CATALOG}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/qualificationPanel.js'),import('./js/core/qualificationSystems.js')
+    ]);
+    const g=createGameStore();g.startNewGame();
+    const state=structuredClone(g.getState());
+    state.timeline={year:2026,month:5,ageYears:26,turnsElapsed:110,monthsElapsed:316};
+    state.finances.cash=200000;
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    host.append(renderQualificationPanel(state,(action,payload)=>({ok:true,message:action+' '+payload.id})));
+    const root=host.querySelector('.qualification-panel');
+    const selected=host.querySelector('.qualification-picker');
+    const original=host.querySelector('.qualification-preview')?.textContent??'';
+    selected.value='physician';selected.dispatchEvent(new Event('change',{bubbles:true}));
+    const doctor=host.querySelector('.qualification-preview')?.textContent??'';
+    const examDisabled=[...host.querySelectorAll('.qualification-panel button')].at(-1)?.disabled;
+    selected.value='itEntry';selected.dispatchEvent(new Event('change',{bubbles:true}));
+    const examEnabled=![...host.querySelectorAll('.qualification-panel button')].at(-1)?.disabled;
+    const earned=host.querySelector('.qualification-body')?.textContent?.includes('取得資格');
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {count:QUALIFICATION_CATALOG.length,root:!!root,closed:root?.open===false,original,
+      doctor,examDisabled,examEnabled,earned,overflow};
+  })()`);
+  if(qualificationQA.count!==22||!qualificationQA.root||!qualificationQA.closed||
+     !qualificationQA.original?.includes('難易度')||!qualificationQA.doctor.includes('医学課程修了')||
+     !qualificationQA.examDisabled||!qualificationQA.examEnabled||!qualificationQA.earned||qualificationQA.overflow)
+    throw Error('Qualification UI broken at this viewport '+JSON.stringify(qualificationQA));
   // U4/U5/U7: isolated adult fixture checks the real responsive game panels
   // and long-term event generation without touching the browser's save slots.
   const newFeatures=await evaluate(`(async()=>{

@@ -8,6 +8,7 @@ import {createLivingData, ensureLiving, ensureMortgage, livingAction, getHousing
 import {ensureCompanyMarket,advanceCompanyMarket,supportRebuilding} from './companySystems.js';
 import {ensureWorkplace,workplaceAction,advanceWorkplace} from './workplaceSystems.js';
 import {careerAction,JOB_POSTINGS} from './careerSystems.js';
+import {qualificationAction} from './qualificationSystems.js';
 import {socialAction,advanceFamily,familyActivity} from './socialSystems.js';
 import {validateGameState} from './saveSystems.js';
 import {createHealthData,advanceHealth,healthAction} from './healthSystems.js';
@@ -325,6 +326,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         result=livingAction(state.finances,state.health,action,payload,{age:state.timeline.ageYears,date:state.timeline});break;
       case 'employmentSupport': result=requestEmploymentSupport(state.world,state.finances.career,state.timeline,state.timeline.ageYears);break;
       case 'supportRebuilding': result=supportRebuilding(state.finances,payload.companyId,state.timeline);break;
+      case 'takeQualificationExam': case 'prepareQualification': result=qualificationAction(state,action,payload);break;
       case 'careerProject': case 'professionalExam': case 'internship': case 'setCareerTarget': case 'careerTraining': case 'setCareerPlan': case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
         result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,marketState:state,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
         if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
@@ -394,7 +396,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const success=action!=='applyJob'||result.passed;
         if(success)rememberConsequence(state,{title:action==='marry'?'結婚という選択':action==='haveChild'?'家族が増えた日':'仕事の節目'}, {label:result.message??action,impact:{}},{source:'action',forceDomain:['marry','haveChild'].includes(action)?'bonds':'career'});
       }
-      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='setTimePlan'?'時間配分':action==='habit'?'生活習慣':action==='treatment'?'治療':action==='checkup'?'健康診断':action==='careerTraining'?'職業研修':action==='resolveChoice'?'人生選択':action==='chooseFurtherEducation'?'進路選択':action==='internship'?'インターン':action==='professionalExam'?'資格試験':action==='careerProject'?'職業活動':action==='setCareerTarget'?'就職希望':action==='studentDay'?'学生生活':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['familyBond','courtship','meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='chooseMajor'?'専攻選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
+      if(action!=='resolveChoice')state.eventHistory.push({id:`A${state.timeline.turnsElapsed}-${state.eventHistory.length}`,type:'action',title:action==='setTimePlan'?'時間配分':action==='habit'?'生活習慣':action==='treatment'?'治療':action==='checkup'?'健康診断':action==='careerTraining'?'職業研修':action==='takeQualificationExam'?'資格受験':action==='prepareQualification'?'資格対策':action==='resolveChoice'?'人生選択':action==='chooseFurtherEducation'?'進路選択':action==='internship'?'インターン':action==='professionalExam'?'資格試験':action==='careerProject'?'職業活動':action==='setCareerTarget'?'就職希望':action==='studentDay'?'学生生活':action==='study'?'学習':action==='socialize'?'交流':action==='skill'?'技能訓練':action==='university'?'進路選択':['familyBond','courtship','meetFriend','date','marry','haveChild','familyCare'].includes(action)?'人物関係':action==='prepareExam'?'受験準備':action==='chooseSchool'?'志望校選択':action==='chooseMajor'?'専攻選択':action==='familyActivity'?'子育て':'経済操作',description:JSON.stringify(payload),year:state.timeline.year,month:state.timeline.month,turn:state.timeline.turnsElapsed,blocking:false});
       if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
       if(interactiveChoices){
         const highlight=choiceBeingResolved?.branch||choiceBeingResolved?.consequence
