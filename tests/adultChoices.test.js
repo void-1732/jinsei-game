@@ -79,7 +79,8 @@ test('旧保存の拡張欄欠落を補完、拡張後はJSONで往復可能',()
 test('統合画面は情報サマリー1つ、詳細描画1つに限定される',()=>{
   const text=readFileSync(new URL('../js/ui/topicPage.js',import.meta.url),'utf8');
   assert.match(text,/compactValues/);
-  assert.match(text,/topic-tool-select/);
+  assert.match(text,/topic-tool-buttons/);
+  assert.match(text,/choiceButtons/);
   assert.ok(!text.includes('for(const id of topic.screenIds){\n    const target=findScreen(id);\n    const card='));
 });
 
@@ -110,4 +111,20 @@ test('表示先を1か所に限定し、実操作は初期表示・折りたた�
  assert.match(finance,/if\(screen\.id==='LIFE-06'\)/);
  assert.match(living,/if\(screen\.id==='LIFE-07'\)/);
  assert.ok(!living.includes("['LIFE-02','SOCIETY-06'].includes(screen.id)"));
+});
+
+test('詳細の切替と学業操作はボタン式で、実行操作は確認ボタンからだけ発火する',()=>{
+ const page=readFileSync(new URL('../js/ui/topicPage.js',import.meta.url),'utf8');
+ const life=readFileSync(new URL('../js/ui/lifePanels.js',import.meta.url),'utf8');
+ const control=readFileSync(new URL('../js/ui/choiceButtons.js',import.meta.url),'utf8');
+ assert.match(page,/topic-tool-buttons/);
+ assert.match(page,/choiceButtons\('操作する項目'/);
+ assert.match(page,/choices\.getValue\(\)/);
+ assert.match(life,/choiceButtons\('勉強する科目'/);
+ assert.match(life,/choiceButtons\('学習時間'/);
+ assert.match(life,/choiceButtons\('志望校を選ぶ'/);
+ assert.ok(!life.includes("lifeEl('select','phase4-select')"));
+ assert.match(control,/aria-pressed/);
+ assert.match(control,/onChange\(value\)/);
+ assert.match(control,/button\.type='button'/);
 });
