@@ -176,6 +176,35 @@ async function runViewport(binary,width){
   if(!careerExpansion.drawer||!careerExpansion.closed||careerExpansion.registered!==30||
      !careerExpansion.original||!careerExpansion.count||!careerExpansion.after||!careerExpansion.filtered||careerExpansion.overflow)
     throw Error('Expanded job market browser UI failed '+JSON.stringify(careerExpansion));
+  // A single collapsible panel exposes realistic family stages without new screens.
+  const familyJourneyQA=await evaluate(`(async()=>{
+    const [{createGameStore},{renderLifePanel}]=await Promise.all([
+      import('./js/core/gameState.js'),import('./js/ui/lifePanels.js')
+    ]);
+    const g=createGameStore();g.startNewGame();
+    const state=structuredClone(g.getState());
+    state.timeline={year:2028,month:5,ageYears:28,turnsElapsed:130,monthsElapsed:340};
+    state.finances.cash=500000;
+    state.people.push({id:'FRIEND-001',name:'家族の検証',birth:{year:2000,month:1,day:1},role:'配偶者',relationship:90});
+    state.household.memberIds.push('FRIEND-001');
+    state.people.push({id:'CHILD-001',name:'子ども',birth:{year:2026,month:1,day:1},role:'子',relationship:80});
+    state.household.memberIds.push('CHILD-001');
+    const host=document.createElement('div');host.style.width='min(95%,900px)';document.body.append(host);
+    renderLifePanel(host,{id:'PERSON-02'},state,{onAction:()=>({ok:true})});
+    const journey=host.querySelector('details.family-journey');
+    const buttons=[...(journey?.querySelectorAll('button')??[])].map(b=>b.textContent);
+    const plan=buttons.some(b=>b.includes('家族計画を始める'));
+    const care=buttons.some(b=>b.includes('子どもと過ごす'));
+    const select=journey?.querySelector('select[aria-label="家族の迎え方"]');
+    const adoption=select?[...select.options].some(o=>o.value==='adopt'):false;
+    const condensed=buttons.length<=8;
+    const overflow=document.documentElement.scrollWidth>innerWidth+3;
+    host.remove();
+    return {journey:!!journey,closed:journey?.open===false,plan,care,adoption,condensed,overflow};
+  })()`);
+  if(!familyJourneyQA.journey||!familyJourneyQA.closed||!familyJourneyQA.plan||
+     !familyJourneyQA.care||!familyJourneyQA.adoption||!familyJourneyQA.condensed||familyJourneyQA.overflow)
+    throw Error('Family progression desktop/mobile browser UI invalid '+JSON.stringify(familyJourneyQA));
   // Qualification system: interactive preview, degree gates, compact layout,
   // and safe controls tested at both PC and mobile viewport widths.
   const qualificationQA=await evaluate(`(async()=>{
