@@ -1,4 +1,6 @@
 import {validateInheritance} from './estateSystems.js';
+import {validateHouseholdExtension} from './householdExtension.js';
+import {validateHardship} from './householdHardship.js';
 import {validateCivicProgress} from './civicSystems.js';
 import {validateBusinessTurn} from './businessOperations.js';
 import {validateTurnActionBudget} from './adultActionBudget.js';
@@ -43,6 +45,7 @@ export function validateGameState(s) {
   if(s.surprise53!==undefined && !validateSurpriseProgress(s.surprise53))return false;
   if(!validateRareLifeProgress(s.rareLife))return false;
   if(!validateFamilyProgress(s.familyJourney))return false;
+  if(!validateHouseholdExtension(s.householdExtension)||!validateHardship(s.hardship))return false;
   if(s.daily54!==undefined && !validateDailySchedule(s.daily54))return false;
   if(!s.initialized) return true;
   if(!s.player || typeof s.player.name!=='string' || !s.player.name.trim() || s.player.name.length>30 || s.player.birth?.year!==2000 || !Number.isInteger(s.player.birth?.month) || s.player.birth.month<1 || s.player.birth.month>12 || !Number.isInteger(s.player.birth?.day) || s.player.birth.day<1 || s.player.birth.day>new Date(Date.UTC(2000,s.player.birth.month,0)).getUTCDate() || !s.finances || !s.health || !s.world || !s.education || !Array.isArray(s.people) || !Array.isArray(s.pendingEvents) || !Array.isArray(s.eventHistory)) return false;
