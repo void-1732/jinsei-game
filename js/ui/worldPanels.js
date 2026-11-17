@@ -1,6 +1,8 @@
 import {eraSummary,eraEconomicEffects} from '../core/eraSystems.js';
 import {checkupGuidance} from '../core/healthSystems.js';
 import {CIVIC_ACTIVITIES,communityEffects} from '../core/civicSystems.js';
+import {REGIONAL_FACTORS} from '../core/livingSystems.js';
+import {spendingPreview} from '../core/householdSpending.js';
 import {rareLifeSummary} from '../core/rareLifeEvents.js';
 /** 第6段階の状態・操作パネル。ゲーム状態はhandlers経由でのみ更新。 */
 const node=(tag,cls='',label='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=label;return n;};
@@ -16,6 +18,9 @@ export function renderWorldPanel(container,screen,game,handlers={}){
  if(health||screen.id==='LIFE-01'){
    line(section,'身体の健康',`${h.physical} / 100`);line(section,'精神の健康',`${h.mental} / 100`);line(section,'体力',`${h.energy} / 100`);
    line(section,'現在の病気',h.illness?.name??'なし');line(section,'診療回数',`${h.medicalVisits}回`);
+   const spending=game.finances?.spendingStyle??'standard';
+   line(section,'生活習慣からの健康負担',`${spending==='saving'?'節約継続：食事・休養への負担あり':spending==='comfort'?'ゆとり重視：精神的負担を軽減':'標準的な生活'}${(game.hardship?.shortageMonths??0)>=2?'／家計困窮による負担あり':''}`);
+   line(section,'健康維持の目安',h.physical<50||h.mental<45?'休養・通院・生活費の見直しを推奨':'運動・食事・休養の習慣を継続');
    if(health){for(const [key,val]of Object.entries(h.habits))line(section,`${key}の習慣`,`${val} / 100`);
      const controls=node('div','phase4-actions');for(const habit of ['運動','休養','食生活'])button(controls,`${habit}を改善`,()=>handlers.onAction?.('habit',{habit}),h.lastActionMonth===`${game.timeline.year}-${game.timeline.month}`);
      button(controls,'病気を治療する（自己負担3,500円）',()=>handlers.onAction?.('treatment',{}),!h.illness);

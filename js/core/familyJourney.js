@@ -3,6 +3,8 @@
  * This is simplified fiction, not a model of fertility, medical care, adoption law or family eligibility.
  */
 import {socialAction,advanceFamily,familyActivity} from './socialSystems.js';
+import {advanceChildEducation,validateChildStudies} from './childEducationProgress.js';
+import {advanceParentWellbeing,validateParentWellbeing} from './parentWellbeing.js';
 const index=date=>date.year*12+date.month-1;
 const ageAt=(date,p)=>date.year-p.birth.year-(date.month<p.birth.month?1:0);
 const clamp=n=>Math.min(100,Math.max(0,Math.round(n)));
@@ -53,6 +55,7 @@ export function validateFamilyProgress(p){
   Array.isArray(p.educationPlans)||Object.entries(p.educationPlans).length>5||
   Object.entries(p.educationPlans).some(([id,plan])=>id.length>35||!['公立中心','私立中心','学習支援'].includes(plan))))return false;
  if(p.lastAppliedMonth!==undefined&&(!Number.isInteger(p.lastAppliedMonth)||p.lastAppliedMonth< -1||p.lastAppliedMonth>26412))return false;
+  if(!validateChildStudies(p.childStudies)||!validateParentWellbeing(p.parentWellbeing))return false;
  if(!Array.isArray(p.history)||p.history.length>24||p.history.some(h=>!h||typeof h.title!=='string'||h.title.length>90||
   !Number.isInteger(h.year)||h.year<2000||h.year>2200||!Number.isInteger(h.month)||h.month<1||h.month>12))return false;
  return true;
@@ -336,7 +339,7 @@ export function advanceFamilyJourney(state,date){
   }
   if(spouse.relationship<40&&now%6===0)out.push({type:'family',title:'夫婦の時間を考える',description:'生活の負担が増えています。話し合いや家計の見直しが関係に役立ちます。'});
  }
- return [...out,...advanceFamily(state,date)];
+ return [...out,...advanceChildEducation(state,date),...advanceParentWellbeing(state,date),...advanceFamily(state,date)];
 }
 export function familyProgressSummary(state){
  const p=state.familyJourney??createFamilyProgress();
