@@ -234,6 +234,7 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
        recovery.append(econEl('summary','','資金不足への対策・生活再建'));
        recovery.append(econEl('p','muted small','支出・住居費・就業状況を確認してください。引越しは既存の住まい画面から行えます。'));
        action(recovery,'生活再建支援を申請（架空制度）',()=>handlers.onAction?.('requestHouseholdRelief',{}),age<18);
+       action(recovery,'住居費を見直す・引越しへ',()=>handlers.onNavigate?.('LIFE-02'));
        section.append(recovery);
      }
      const controls=econEl('div','phase4-actions');
