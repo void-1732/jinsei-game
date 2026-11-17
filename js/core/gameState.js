@@ -1,4 +1,5 @@
 import {calculateInheritance} from './estateSystems.js';
+import {civicAction,advanceCivicMonth,communityEffects} from './civicSystems.js';
 import {isBusinessOperation,businessActionsRemaining} from './businessOperations.js';
 import {actionBudget,turnActionCategory,actionAvailable} from './adultActionBudget.js';
 import {makeMonthlyRoutines,ensureMonthlyRoutines,setMonthlyRoutine,advanceMonthlyRoutines,takeAdultActivity} from './monthlyRoutines.js';
@@ -164,7 +165,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const idx=t.year*12+t.month-1+step;
         const date={year:Math.floor(idx/12),month:idx%12+1};
         const monthAge=yearsOld(date.year,date.month,state.player.birth);
-        if(interactiveChoices)refreshAutomaticBudget(state,date);
+        if(interactiveChoices){for(const item of advanceCivicMonth(state,date))newEvents.push(makeEvent(item.type,item.title,item.description));refreshAutomaticBudget(state,date);}
         const worldDraw=nextRandom(state.random.seed);
         state.random.seed=worldDraw.seed;state.random.draws++;
         const worldEvents=updateWorld(state.world,date,worldDraw.value);
@@ -340,13 +341,14 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'supportRebuilding': result=supportRebuilding(state.finances,payload.companyId,state.timeline);break;
       case 'takeQualificationExam': case 'prepareQualification': result=qualificationAction(state,action,payload);break;
       case 'careerProject': case 'professionalExam': case 'internship': case 'setCareerTarget': case 'careerTraining': case 'setCareerPlan': case 'applyJob': case 'promotionExam': case 'hireEmployee': case 'businessPolicy':
-        result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,marketState:state,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state):0});
+        result=careerAction(state.finances,action,payload,{age:state.timeline.ageYears,education:state.education,date:state.timeline,world:state.world,marketState:state,interviewBonus:interactiveChoices?interviewBonus(state)+consequenceHiringBonus(state)+communityEffects(state).jobBonus:0});
         if(interactiveChoices&&action==='applyJob'&&result.ok)afterJobApplication(state,result.passed);break;
       case 'safetyPrep': result=prepareForSurprise(state,payload.area);break;
       case 'setMonthlyRoutine':result=setMonthlyRoutine(state,payload);break;
       case 'adultActivity':result=takeAdultActivity(state,payload);break;
       case 'setTimePlan': result=setDailySchedule(state,payload.planId);break;
       case 'setSpendingStyle': result=setSpendingStyle(state,payload);break;
+       case 'civicActivity': result=civicAction(state,payload);break;
       case 'applyScholarship': case 'setEducationFunding': case 'repayEducation': case 'prepareInterview': case 'careerCertification': case 'salaryNegotiation': case 'reviewBudget':
         result=opportunityAction(state,action,payload);break;
       case 'interactCoworker': case 'resolveWorkIncident': case 'workHard': case 'helpColleague': case 'talkSupervisor': case 'reviewPerformance': case 'trainStaff': case 'dismissStaff': case 'staffCare':
