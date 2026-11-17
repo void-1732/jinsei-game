@@ -1,5 +1,9 @@
 /** 第4段階：実ゲームデータに接続した人物・学業パネル。DOM生成はテキスト限定。 */
 import {choiceButtons} from './choiceButtons.js';
+import {HOUSEHOLD_ROLES,householdSummary} from '../core/householdExtension.js';
+import {childEducationSummary} from '../core/childEducationProgress.js';
+import {parentSummary} from '../core/parentWellbeing.js';
+import {SCHOOL_THRESHOLDS} from '../core/schoolCompetition.js';
 import {academicAssessment,admissionsForecast,schoolCareerImpact} from '../core/schoolCompetition.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
@@ -39,6 +43,8 @@ export function renderLifePanel(container,screen,game,handlers={}){
       wrap.append(guide);
       if(summary.plan)wrap.append(lifeEl('p','muted small',`家族計画：${summary.plan.mode==='birth'?'妊娠・出産':'養子縁組'}／${summary.plan.stage}。予定まで月単位で経過を見守ります。`));
       if(children.length)wrap.append(lifeEl('p','muted small',`子ども${children.length}人／養育費目安${summary.monthlyCost.toLocaleString('ja-JP')}円・月（家計へ自動反映）`));
+      const parents=people.filter(p=>p.role==='父'||p.role==='母');
+      if(parents.length&&screen.id==='PERSON-01')wrap.append(lifeEl('p','muted small',parents.map(p=>{const x=parentSummary(game,p);return `${p.role}：${x.age}歳／健康${x.health}/100`;}).join(' ・ ')));
       const controls=lifeEl('div','phase4-actions');
       if(!spouse&&!partner){
         const meet=action(controls,'新しい人と知り合う',()=>handlers.onAction?.('meetFriend',{}));
@@ -95,6 +101,19 @@ export function renderLifePanel(container,screen,game,handlers={}){
         update();
       }
       if(spouse){
+        const family=householdSummary(game),role=lifeEl('details','phase4-extra');
+        role.append(lifeEl('summary','','配偶者の仕事・収入と家事分担'));
+        const status={working:'就業中',leave:'育児休業中',unemployed:'失業・離職中'};
+        line(role,'配偶者の就業',status[family.employment]??'就業中');
+        line(role,'先月の家計負担金',`${family.lastContribution.toLocaleString('ja-JP')}円（配偶者個人支出を除く）`);
+        line(role,'家事・育児の方針',family.description);
+        const division=choiceButtons('家事・育児の分担',HOUSEHOLD_ROLES.map(x=>({label:x.label,value:x.id})),family.division);
+        role.append(division.element);
+        action(role,'この分担方針を続ける',()=>handlers.onAction?.('changeHouseholdRole',{division:division.getValue()}));
+        const youngest=children.some(c=>t.year-c.birth.year-(t.month<c.birth.month?1:0)<2);
+        const leave=action(role,'配偶者が育児休業を開始',()=>handlers.onAction?.('startSpouseLeave',{}));
+        leave.disabled=family.employment!=='working'||!youngest;
+        wrap.append(role);
         if(!summary.plan){
           const form=lifeEl('div','phase27-form');
           const name=lifeEl('input','phase4-select');name.placeholder='子どもの名前';name.maxLength=20;name.setAttribute('aria-label','子どもの名前');
@@ -118,6 +137,13 @@ export function renderLifePanel(container,screen,game,handlers={}){
         action(childButtons,'子どもと過ごす',()=>handlers.onAction?.('familyCare',{personId:childChoice.getValue()}));
         action(childButtons,'勉強を手伝う',()=>handlers.onAction?.('familyActivity',{personId:childChoice.getValue(),activity:'勉強を手伝う'}));
         const child=children.find(x=>x.id===childChoice.getValue())??children[0];
+        const childStatus=lifeEl('p','muted small');
+        const updateChildStatus=()=>{
+          const selected=children.find(x=>x.id===childChoice.getValue())??children[0];
+          const record=childEducationSummary(game,selected);
+          childStatus.textContent=`${selected.name}：${record.age}歳・${record.stage}／学力${record.score}/100・出席率${record.attendance}%／進路${record.school}／月額教育費は選択した教育方針を反映`;
+        };
+        childChoice.group.addEventListener('click',updateChildStatus);updateChildStatus();wrap.append(childStatus);
         const education=lifeEl('details','phase4-extra');education.dataset.foldKey='family-education';
         education.append(lifeEl('summary','','子どもの教育方針'));
         const plans=lifeEl('select','phase4-select family-education-select');
@@ -235,6 +261,16 @@ export function renderLifePanel(container,screen,game,handlers={}){
         };
         select.group.addEventListener('click',updateCompetition);updateCompetition();controls.append(competition);
         action(controls,'志望校を設定',()=>handlers.onAction?.('chooseSchool',{stage,school:select.getValue()}));
+      }
+      if(e.stage==='大学'&&e.grade===1){
+        const schools=Object.keys(SCHOOL_THRESHOLDS.大学).filter(x=>x!==e.school);
+        const selection=choiceButtons('再受験する大学・学校',schools,schools[0]);
+        const retry=lifeEl('details','phase4-extra');retry.append(lifeEl('summary','','大学の再受験・転学（1年次・年1回）'),selection.element);
+        const explanation=lifeEl('p','muted small','合否は学力・受験対策・難易度・試験の変動で判定。費用12,000円。不合格なら現在の在籍校を継続します。');
+        retry.append(explanation);
+        const retryButton=action(retry,'選んだ進学先へ再受験',()=>handlers.onAction?.('retryUniversityEntrance',{school:selection.getValue()}));
+        retryButton.disabled=e.entrance?.retryYear===t.year;
+        controls.append(retry);
       }
       if(['中学校','高校'].includes(e.stage))
         action(controls,'受験対策をする（全科目＋2）',()=>handlers.onAction?.('prepareExam',{}));
