@@ -38,7 +38,7 @@ export function availableCenterOptions(state,category){
  if(domain&&state.timeline.ageYears>=18){
   const current=state.monthlyRoutines?.plans?.[domain]??'off';
   for(const plan of MONTHLY_PLANS[domain]){
-   if(current===plan.id)continue;
+   if(current===plan.id&&domain!=='relationships')continue;
    options.push({title:`毎月：${plan.name}${plan.cost?`（${plan.cost.toLocaleString('ja-JP')}円/月）`:''}`,
      hint:plan.description,action:'setMonthlyRoutine',payload:{domain,planId:plan.id}});
   }
