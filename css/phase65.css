@@ -47,3 +47,10 @@
  .action-center-footer{bottom:-10px;padding:9px 2px}
  .action-center-confirm{width:100%}
 }
+
+/* STEP 60: one relevant action category open, six others collapsed. */
+.action-center-category-fold{min-width:0;background:#1f3e57;border:1px solid #4a7898;border-radius:12px;overflow:hidden}
+.action-center-fold-summary{cursor:pointer;padding:11px 12px;font-size:14px;font-weight:800;color:#e5f5ff;min-height:44px;display:list-item}
+.action-center-category-fold[open]>.action-center-fold-summary{border-bottom:1px solid #4a7898}
+.action-center-category-fold>.action-center-category{border:0;border-radius:0;background:transparent;padding:9px 10px 12px}
+.action-center-fold-summary:focus-visible{outline:3px solid #efcf80;outline-offset:-3px}

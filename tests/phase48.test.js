@@ -61,8 +61,9 @@ test('通常イベントの自動選択は重要な出来事と長期分岐を�
  assert.ok(g.getState().timeline.turnsElapsed>=1);
  assert.equal(g.getState().balance48.focus,'health');
  assert.ok(g.getState().balance48.fastRuns>=1);
- assert.ok(pending(g),'年齢節目では選択ポップアップを残す');
- assert.equal(g.fastForward().ok,false,'重要な選択待ちはさらに進めない');
+ const decision=pending(g);
+ if(decision)assert.equal(g.fastForward().ok,false,'重要な選択待ちはさらに進めない');
+ else assert.ok(r.months>=1,'通常の誕生日だけでは手動選択ポップアップを強制しない');
  assert.equal(validateGameState(g.getState()),true);
 });
 

@@ -1,4 +1,5 @@
 import {validateInheritance} from './estateSystems.js';
+import {validateSeniorClear} from './seniorClear.js';
 import {validateHouseholdExtension} from './householdExtension.js';
 import {validateHardship} from './householdHardship.js';
 import {validateCivicProgress} from './civicSystems.js';
@@ -41,6 +42,7 @@ export function validateGameState(s) {
   if(s.opportunity47!==undefined && !validateOpportunityProgress(s.opportunity47))return false;
   if(s.balance48!==undefined && !validateBalanceProgress(s.balance48))return false;
   if(s.lifeGoal49!==undefined && !validateLifeGoalProgress(s.lifeGoal49))return false;
+  if(!validateSeniorClear(s.seniorClear))return false;
   if(s.legacy51!==undefined && !validateConsequenceProgress(s.legacy51))return false;
   if(s.surprise53!==undefined && !validateSurpriseProgress(s.surprise53))return false;
   if(!validateRareLifeProgress(s.rareLife))return false;

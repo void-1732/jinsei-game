@@ -1,4 +1,5 @@
 import {DREAMS,getLifeReview} from '../core/lifeGoals.js';
+import {seniorClearAssessment,SENIOR_CLEAR_AGE} from '../core/seniorClear.js';
 const el=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 const yen=n=>`${Math.round(n).toLocaleString('ja-JP')}円`;
 export function renderLifeGoalPanel(state,onAction){
@@ -43,6 +44,24 @@ export function renderLifeGoalPanel(state,onAction){
  const list=el('ul','goal49-awards-list');
  for(const a of data.achievements)list.append(el('li',a.earned?'earned':'',`${a.earned?'✓':'○'} ${a.title}${a.date?`（${a.date.age}歳）`:''}`));
  details.append(list);box.append(details);
+ if(state.timeline.ageYears>=50 || state.seniorClear){
+   const status=seniorClearAssessment(state);
+   const section=el('div','goal49-senior-clear');
+   const label=state.seniorClear?'総合クリア達成':status.eligible?'60歳からの総合クリア判定':'60歳からの総合クリア';
+   section.append(el('h3','',label));
+   const score=state.seniorClear?.score??status.score;
+   section.append(el('p','goal49-note',state.seniorClear?
+     `${state.seniorClear.age}歳に${score}/100点で達成。人生はそのまま続行できます。`:
+     `現在${status.score}/100点 ／ 目標60点以上・5分野中3分野で10点以上。${status.eligible?'各月の生活が次の評価に反映されます。':`判定開始まであと${Math.max(0,SENIOR_CLEAR_AGE-state.timeline.ageYears)}歳。`}`));
+   const details=el('details','goal49-senior-detail');
+   details.append(el('summary','','仕事・資産・健康・人間関係・夢の評価内訳'));
+   for(const part of (state.seniorClear?.breakdown??status.breakdown)){
+     const row=el('div','goal49-score-row');
+     row.append(el('span','',part.label),el('strong','',`${part.score}/20`));
+     details.append(row);
+   }
+   section.append(details);box.append(section);
+ }
  return box;
 }
 export function renderLifeReview(state,{expanded=false}={}){

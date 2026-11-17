@@ -2,7 +2,7 @@
 export const ACTION_CATEGORIES=Object.freeze(['人生','生活・資産','人物・家族','学業','仕事・経営','健康','社会']);
 const ROUTINE_CATEGORY=Object.freeze({health:'健康',relationships:'人物・家族',learning:'学業'});
 const BY_CATEGORY={
- '人生':['setTimePlan'],
+ '人生':['setTimePlan','configureLifePreset'],
  '生活・資産':['requestHouseholdRelief','setSpendingStyle','setBudget','reviewBudget','repayDebt','buyVehicle','sellVehicle','moveHome','registerHome','buyProperty','sellProperty','setPropertyUse','repayPropertyLoan','setPropertyPayment','clearPropertyArrears','setMortgagePayment','enableAccurateMortgage','requestPensionExemption','setInsuranceClaimCap','setPensionMode','backPayPension','clearMortgageArrears','repayMortgage','setInsurance','setPropertyCoverage','claimInsurance','repairHome','buyInvestment','sellInvestment'],
  '人物・家族':['changeHouseholdRole','startSpouseLeave','socialize','familyBond','courtship','meetFriend','date','discussFuture','cohabit','engage','holdWedding','marry','setChildEducation','haveChild','familyCare','familyActivity'],
  '学業':['retryUniversityEntrance','takeQualificationExam','prepareQualification','chooseFurtherEducation','studentDay','study','skill','prepareExam','chooseSchool','chooseMajor','university','applyScholarship','setEducationFunding','repayEducation'],

@@ -96,7 +96,9 @@ export function renderPlayDashboard(container,state,handlers={}){
     }
     panel.append(values,el('p','',`生活費：予算比${era.livingImpact>=0?'+':''}${era.livingImpact}% ／ 給与：基本給比${era.wageImpact>=0?'+':''}${era.wageImpact}%`));
     panel.append(quickButton('社会・ニュースを詳しく見る',()=>handlers.onNavigate?.('SOCIETY-01')));
-    root.append(panel);
+    const fold=el('details','play-era-fold');
+    fold.append(el('summary','','社会・物価・雇用の状況を見る'),panel);
+    root.append(fold);
   }
   // A compact safety overview: preparation changes future results, without adding a wall of buttons.
   const safety=surpriseSummary(state);
@@ -117,8 +119,8 @@ export function renderPlayDashboard(container,state,handlers={}){
   // One entry point instead of another set of repeated category pickers.
   const budget=actionBudget(state);
   const actions=el('section','play-card play-opportunities');
-  actions.append(el('h3','','今月の自由行動'),
-    el('p','',`残り${budget.remaining}/${budget.limit}回。${budget.pending?'先に重要な出来事を選んでください。':'異なるカテゴリから選べます。'}`));
+  actions.append(el('h3','','必要なときだけ行動する'),
+    el('p','',`残り${budget.remaining}/${budget.limit}回。毎月3回使い切る必要はありません。生活方針や習慣は自動で続きます。`));
   const open=quickButton('今月の行動を一画面で管理',()=>handlers.onOpenActionCenter?.());
   open.classList.add('action-center-dashboard-open');
   actions.append(open);
@@ -181,6 +183,7 @@ export function renderPlayDashboard(container,state,handlers={}){
   const links=el('div','play-shortcut-links');
   links.append(quickButton('学業',()=>handlers.onNavigate?.('EDU-01')),quickButton('仕事',()=>handlers.onNavigate?.('WORK-01')),quickButton('健康',()=>handlers.onNavigate?.('HEALTH-01')));
   shortcuts.append(links);money.append(shortcuts);
-  side.append(focus,skill,money);lower.append(storyCard,side);root.append(lower);
+  side.append(focus,skill,money);lower.append(storyCard,side);
+  const archive=el('details','play-archive-fold');archive.append(el('summary','','人生の記録・技能・家計の詳細を見る'),lower);root.append(archive);
   container.replaceChildren(root);
 }

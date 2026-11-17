@@ -184,6 +184,7 @@ function renderGameStatus(snapshot){
   next.textContent='次のターンへ進む →';
   $('#fast-forward-turn').disabled=!gameInProgress||snapshot.ending?.dead||Boolean(queued)||t.year>=2200;
   $('#fast-forward-focus').value=snapshot.balance48?.focus??'balanced';
+  $('#fast-forward-months').disabled=!gameInProgress||snapshot.ending?.dead||Boolean(queued);
   const fastSummary=snapshot.balance48?.lastSummary;
   $('#fast-forward-feedback').textContent=fastSummary?`${fastSummary.turns}ターン進行・通常選択${fastSummary.auto}件を自動処理。${fastSummary.reason}`:'';
   $('#turn-length').textContent=gameInProgress?(queued?'次のターンのボタンを押して、出来事を選択してください。':`次は${t.ageYears<15?'3か月':'1か月'}後へ進みます`):'人生を開始すると進行できます。';
@@ -313,7 +314,7 @@ $('#start-game').addEventListener('click',()=>{
 $('#advance-turn').addEventListener('click',advanceTurn);
 $('#fast-forward-turn').addEventListener('click',()=>{
   storyResult=null;
-  const result=gameStore.fastForward({focus:$('#fast-forward-focus').value,maxMonths:12});
+  const result=gameStore.fastForward({focus:$('#fast-forward-focus').value,maxMonths:Number($('#fast-forward-months').value)});
   if(!result.ok){dom.systemMessage.textContent=result.reason;return;}
   actionFeedback=`${result.months}か月進行：通常選択${result.auto}件を自動処理。${result.reason}`;
   if(result.important)renderStoryDialog();
