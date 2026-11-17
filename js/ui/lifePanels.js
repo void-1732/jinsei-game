@@ -1,5 +1,6 @@
 /** 第4段階：実ゲームデータに接続した人物・学業パネル。DOM生成はテキスト限定。 */
 import {choiceButtons} from './choiceButtons.js';
+import {academicAssessment,admissionsForecast,schoolCareerImpact} from '../core/schoolCompetition.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
 import {renderQualificationPanel} from './qualificationPanel.js';
@@ -163,6 +164,10 @@ export function renderLifePanel(container,screen,game,handlers={}){
     section.append(lifeEl('h3','','学業・学校'));
     line(section,'在学状況',e.stage==='未就学'?'未就学':e.stage==='卒業'?'学業課程修了':`${e.school} / ${e.grade}年生`);
     line(section,'累計学習時間',`${e.studyHours}時間`);
+    if(['中学校','高校','大学','高専','高専専攻科','大学院'].includes(e.stage)){
+      const assessment=academicAssessment(e);
+      line(section,'学業評価',`評定${assessment.record}/100・出席率${assessment.attendance}%・採用評価への影響${schoolCareerImpact(e).hiringBonus>=0?'+':''}${schoolCareerImpact(e).hiringBonus}点`);
+    }
     line(section,'進路方針',e.universityChoice);
     if(e.degree)line(section,'最終学歴',e.degree);
     if(e.nextProgram&&e.nextProgram!=='就職')line(section,'卒業後の進路',e.nextProgram);
