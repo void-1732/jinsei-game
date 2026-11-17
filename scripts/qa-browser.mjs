@@ -53,6 +53,10 @@ async function runViewport(binary,width){
   await evaluate("document.querySelector('#player-name').value='STEP55ブラウザ確認'");
   await click("document.querySelector('#start-game')");
   await until(async()=>get("document.querySelector('#start-game').disabled===true && document.querySelector('#advance-turn').disabled===false"),'new life started');
+  // STEP 60: periods are explicit and dense secondary dashboard panels stay folded.
+  const fast60=await get("({periods:[...document.querySelectorAll('#fast-forward-months option')].map(x=>Number(x.value)),disabled:document.querySelector('#fast-forward-months')?.disabled,archive:document.querySelector('.play-archive-fold')?.open,era:document.querySelector('.play-era-fold')?.open,overflow:document.documentElement.scrollWidth>innerWidth+3})");
+  if(JSON.stringify(fast60.periods)!=='[1,3,6,12]'||fast60.disabled||fast60.archive!==false||fast60.era!==false||fast60.overflow)
+    throw Error('Fast-life responsive dashboard controls failed '+JSON.stringify(fast60));
   // Persistent action center is available from the header without navigation.
   await click("document.querySelector('#open-action-center')");
   await until(async()=>get("document.querySelector('#action-center-dialog')?.open && document.querySelectorAll('#action-center-content .action-center-category').length===7"),'action center opened');
