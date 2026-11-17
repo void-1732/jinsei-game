@@ -1,6 +1,7 @@
 /** Compact dashboard activity picker. The store validates all actions independently. */
 import {choiceButtons} from './choiceButtons.js';
 import {ONE_OFF_ACTIVITIES,routineContactCandidates} from '../core/monthlyRoutines.js';
+import {CIVIC_ACTIVITIES} from '../core/civicSystems.js';
 import {actionBudget,turnActionCategory,categoryActionAvailable} from '../core/adultActionBudget.js';
 const E=(tag,cls='',text='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;};
 const option=(title,action,payload)=>({title,action,payload});
@@ -21,6 +22,7 @@ export function turnActivityOptions(state){
   }
   if(state.health.illness)options.unshift(option('病気の治療を受ける','treatment',{}));
   if(age>=18&&!state.finances.career.job)options.push(option('仕事を探す','jobSearch',{}));
+  for(const a of CIVIC_ACTIVITIES){if(age>=a.age&&(a.id!=='vote'||state.timeline.year%4===0))options.push(option(a.name,'civicActivity',{id:a.id}));}
   if(age>=18)for(const a of ONE_OFF_ACTIVITIES){
     if(a.id==='friends-outing'||a.id==='family-dinner'){
       for(const p of routineContactCandidates(state,a.id==='friends-outing'?'meet':'family'))
