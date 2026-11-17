@@ -61,7 +61,7 @@ export function setMonthlyRoutine(state,{domain,planId,personId}={}){
  const plans=MONTHLY_PLANS[domain],selected=plans?.find(p=>p.id===planId);
  if(!selected)return {ok:false,reason:'継続プランが不正です。'};
  const targetNeeded=domain==='relationships'&&planId!=='off';
- const target=targetNeeded?routineContactCandidates(state,planId).find(p=>p.id===personId):null;
+ const target=targetNeeded?routineContactCandidates(state,planId).find(p=>p.id===(personId??routineContactCandidates(state,planId)[0]?.id)):null;
  if(targetNeeded&&!target)return {ok:false,reason:'交流相手（父母・配偶者・子ども、または友人）を選択してください。'};
  const routine=ensureMonthlyRoutines(state);
  if(routine.plans[domain]===planId&&(!targetNeeded||routine.relationshipsTargetId===personId))return {ok:false,reason:'すでに同じ相手・継続プランが設定されています。'};
@@ -111,8 +111,8 @@ export function takeAdultActivity(state,{id,personId}={}){
  const f=state.finances,h=state.health,e=state.education;
  if(f.cash<action.cost)return {ok:false,reason:`${action.cost.toLocaleString('ja-JP')}円の現金が必要です。`};
  let person;
- if(id==='family-dinner')person=routineContactCandidates(state,'family').find(p=>p.id===personId);
- if(id==='friends-outing')person=routineContactCandidates(state,'meet').find(p=>p.id===personId);
+ if(id==='family-dinner')person=routineContactCandidates(state,'family').find(p=>p.id===(personId??routineContactCandidates(state,'family')[0]?.id));
+ if(id==='friends-outing')person=routineContactCandidates(state,'meet').find(p=>p.id===(personId??routineContactCandidates(state,'meet')[0]?.id));
  if((id==='family-dinner'||id==='friends-outing')&&!person)return {ok:false,reason:'交流する相手を指定してください。'};
  f.cash-=action.cost;f.totals.expenses+=action.cost;
  f.ledger.push({year:state.timeline.year,month:state.timeline.month,kind:'支出',label:action.name,amount:-action.cost});
