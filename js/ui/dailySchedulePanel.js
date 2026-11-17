@@ -1,6 +1,7 @@
 /** STEP 54: one compact control for an entire recurring life rhythm. */
 import {TIME_PLANS,SCHEDULE_FIELDS,SCHEDULE_LABELS,getTimePlan} from '../core/dailySchedule.js';
 import {categoryActionAvailable} from '../core/adultActionBudget.js';
+import {LIFE_PRESETS,lifePresetSummary} from '../core/lifePreset.js';
 const el=(tag,cls='',text='')=>{const x=document.createElement(tag);if(cls)x.className=cls;x.textContent=text;return x;};
 export function renderDailySchedulePanel(state,onAction){
   if(!state?.initialized)return null;
@@ -39,6 +40,24 @@ export function renderDailySchedulePanel(state,onAction){
     select.addEventListener('change',update);update();
     button.addEventListener('click',()=>onAction?.('setTimePlan',{planId:select.value}));
     form.append(label,button);body.append(form,hint);
+    // Adult recurring routines are chosen once. The existing monthly executor
+    // still charges their costs, applies fatigue and allows missed payments.
+    if(state.timeline.ageYears>=18){
+      const current=lifePresetSummary(state);
+      const preset=el('details','daily54-preset');
+      preset.append(el('summary','','健康・学習も一度に継続設定'));
+      preset.append(el('p','daily54-note',`現在の継続習慣：月${current.monthlyCost.toLocaleString('ja-JP')}円。方針変更は「人生」の行動枠1回のみ。`));
+      const selectPlan=el('select','daily54-select');selectPlan.setAttribute('aria-label','生活・習慣の一括設定');
+      for(const p of LIFE_PRESETS){const op=el('option','',`${p.name}：${p.note}`);op.value=p.id;selectPlan.append(op);}
+      selectPlan.value=current.current?.id??'balanced';
+      const apply=el('button','button button-secondary','この生活方針を継続する');
+      apply.type='button';
+      const refresh=()=>{apply.disabled=pending||used||current.current?.id===selectPlan.value;};
+      selectPlan.addEventListener('change',refresh);refresh();
+      apply.addEventListener('click',()=>onAction?.('configureLifePreset',{presetId:selectPlan.value}));
+      preset.append(selectPlan,apply);
+      body.append(preset);
+    }
     if(pending||used)body.append(el('p','daily54-note',pending?'現在の出来事を選択すると変更できます。':'「人生」カテゴリの行動は今月使えません。次のターンで変更できます。'));
   }
   if(progress?.lastEffect)body.append(el('p','daily54-last',`${progress.lastEffect.year}年${progress.lastEffect.month}月：${progress.lastEffect.summary}`));
