@@ -1,5 +1,6 @@
 /** 第4段階：実ゲームデータに接続した人物・学業パネル。DOM生成はテキスト限定。 */
 import {choiceButtons} from './choiceButtons.js';
+import {academicAssessment,admissionsForecast,schoolCareerImpact} from '../core/schoolCompetition.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
 import {renderQualificationPanel} from './qualificationPanel.js';
@@ -146,11 +147,11 @@ export function renderLifePanel(container,screen,game,handlers={}){
       section.append(wrap);
       if(screen.id==='PERSON-01'){
         const bonds=lifeEl('details','phase4-extra');bonds.dataset.foldKey='family-bond';
-        bonds.append(lifeEl('summary','','会話・贈り物・旅行'));
+        bonds.append(lifeEl('summary','','会話・贈り物・旅行・家族行事・関係修復'));
         const others=people.filter(p=>p.role!=='本人');
         if(others.length){
           const person=choiceButtons('相手',others.map(p=>({value:p.id,label:p.name})),others[0].id);
-          const activity=choiceButtons('交流方法',['会話','贈り物','旅行'],'会話');
+          const activity=choiceButtons('交流方法',['会話','贈り物','旅行','家族行事','関係を修復'],'会話');
           bonds.append(person.element,activity.element);
           action(bonds,'交流する',()=>handlers.onAction?.('familyBond',{personId:person.getValue(),activity:activity.getValue()}));
         }
@@ -163,6 +164,10 @@ export function renderLifePanel(container,screen,game,handlers={}){
     section.append(lifeEl('h3','','学業・学校'));
     line(section,'在学状況',e.stage==='未就学'?'未就学':e.stage==='卒業'?'学業課程修了':`${e.school} / ${e.grade}年生`);
     line(section,'累計学習時間',`${e.studyHours}時間`);
+    if(['中学校','高校','大学','高専','高専専攻科','大学院'].includes(e.stage)){
+      const assessment=academicAssessment(e);
+      line(section,'学業評価',`評定${assessment.record}/100・出席率${assessment.attendance}%・採用評価への影響${schoolCareerImpact(e).hiringBonus>=0?'+':''}${schoolCareerImpact(e).hiringBonus}点`);
+    }
     line(section,'進路方針',e.universityChoice);
     if(e.degree)line(section,'最終学歴',e.degree);
     if(e.nextProgram&&e.nextProgram!=='就職')line(section,'卒業後の進路',e.nextProgram);
@@ -221,11 +226,14 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const schools=stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校','高等専門学校']:['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校','医学部','歯学部'];
         const select=choiceButtons('志望校を選ぶ',schools,e.schoolPreference?.[stage]??'自動');
         controls.append(select.element);
-        if(stage==='大学'){
-          const preview=lifeEl('p','muted small');
-          const update=()=>{const school=select.getValue();const p=programFor(school==='自動'?'地域大学':school);preview.textContent=`参考：${p.type}・${p.years}年間 ／ 学費 月${p.tuition.toLocaleString('ja-JP')}円（ゲーム内基本額）`;};
-          select.group.addEventListener('click',update);update();controls.append(preview);
-        }
+        const competition=lifeEl('p','muted small');
+        const updateCompetition=()=>{
+          const choice=select.getValue();
+          if(choice==='自動'){competition.textContent='自動進学：現在の成績と進路方針から進学先を決定します。';return;}
+          const f=admissionsForecast(e,stage,choice);
+          competition.textContent=`学校別の進学判定：${f.competition}（評価${f.entranceScore}／必要${f.threshold}・目安${f.chance}%）／${stage==='大学'?programFor(choice).type+'・'+programFor(choice).years+'年間／':''}学費 月${f.tuition.toLocaleString('ja-JP')}円。出席率${f.attendance}%・受験準備${f.preparation}点を反映。`;
+        };
+        select.group.addEventListener('click',updateCompetition);updateCompetition();controls.append(competition);
         action(controls,'志望校を設定',()=>handlers.onAction?.('chooseSchool',{stage,school:select.getValue()}));
       }
       if(['中学校','高校'].includes(e.stage))

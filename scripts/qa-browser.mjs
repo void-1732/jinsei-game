@@ -111,13 +111,11 @@ async function runViewport(binary,width){
   // Button-first selection: navigation changes the displayed tool without executing actions.
   await click("document.querySelector('#category-dock button:nth-child(4)')");
   await until(async()=>get("document.querySelector('#page-title')?.textContent==='学校・学習'"),'academic category opened');
-  const studyNavigation=await get("({legacyTabs:document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab').length,pickers:document.querySelectorAll('.topic-detail-picker select').length,details:document.querySelectorAll('.topic-detail-picker select option').length,overflow:document.documentElement.scrollWidth>innerWidth+3})");
-  if(studyNavigation.legacyTabs!==0||studyNavigation.pickers!==1||studyNavigation.details!==3||studyNavigation.overflow)
-    throw Error('Academic topics were not consolidated '+JSON.stringify(studyNavigation));
-  await evaluate("(()=>{const picker=document.querySelector('.topic-detail-picker select');picker.value='EDU-03';picker.dispatchEvent(new Event('change',{bubbles:true}));return true})()");
-  await until(async()=>get("document.querySelector('.phase4-choice-actions .choice-button-group')?.children.length>=4"),'legacy study tool retained in detail selector');
-  const academic=await get("({groupCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group').length,subjectCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0]?.children.length,hourCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1]?.children.length,selected:document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length,picker:document.querySelector('.topic-detail-picker select')?.value,overflow:document.documentElement.scrollWidth>innerWidth+3})");
-  if(academic.groupCount!==2||academic.subjectCount<4||academic.hourCount!==4||academic.selected!==2||academic.picker!=='EDU-03'||academic.overflow)
+  const studyNavigation=await get("({legacyTabs:document.querySelectorAll('#topic-strip .topic-screen-tabs .screen-tab').length,pickers:document.querySelectorAll('.topic-detail-picker select').length,groupCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group').length,overflow:document.documentElement.scrollWidth>innerWidth+3})");
+  if(studyNavigation.legacyTabs!==0||studyNavigation.pickers!==0||studyNavigation.groupCount!==2||studyNavigation.overflow)
+    throw Error('Academic content is duplicated or actionable study controls are missing '+JSON.stringify(studyNavigation));
+  const academic=await get("({groupCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group').length,subjectCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0]?.children.length,hourCount:document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1]?.children.length,selected:document.querySelectorAll('.phase4-choice-actions .choice-button[aria-pressed=true]').length,overflow:document.documentElement.scrollWidth>innerWidth+3})");
+  if(academic.groupCount!==2||academic.subjectCount<4||academic.hourCount!==4||academic.selected!==2||academic.overflow)
     throw Error('Academic legacy controls were not retained '+JSON.stringify(academic));
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[0].children[1]");
   await click("document.querySelectorAll('.phase4-choice-actions .choice-button-group')[1].children[2]");

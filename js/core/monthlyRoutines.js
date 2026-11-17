@@ -13,7 +13,7 @@ export const MONTHLY_PLANS=Object.freeze({
  ]),
  relationships:Object.freeze([
   {id:'off',name:'設定しない',cost:0,description:'自動的な交流を停止'},
-  {id:'call',name:'家族に連絡する',cost:1000,description:'家族との関係を少しずつ深める'},
+  {id:'call',name:'指定した家族に連絡する',cost:1000,description:'父母・配偶者・子どもから一人を指定して連絡する'},
   {id:'meet',name:'友人と月1回会う',cost:6000,description:'友人とのつながりを継続'},
   {id:'family',name:'家族で食事する',cost:9000,description:'家族との時間・こころを育てる'}
  ]),
@@ -38,25 +38,36 @@ export const ONE_OFF_ACTIVITIES=Object.freeze([
 ]);
 const clamp=n=>Math.max(0,Math.min(100,Math.round(n)));
 const monthIndex=date=>date.year*12+date.month-1;
-export const makeMonthlyRoutines=()=>({plans:{health:'off',relationships:'off',learning:'off'},lastMonthIndex:-1,monthsApplied:0,totalSpent:0,lastResults:[]});
-export function ensureMonthlyRoutines(state){state.monthlyRoutines??=makeMonthlyRoutines();return state.monthlyRoutines;}
+export const makeMonthlyRoutines=()=>({plans:{health:'off',relationships:'off',learning:'off'},lastMonthIndex:-1,monthsApplied:0,totalSpent:0,lastResults:[],relationshipsTargetId:null});
+export function ensureMonthlyRoutines(state){state.monthlyRoutines??=makeMonthlyRoutines();state.monthlyRoutines.relationshipsTargetId??=null;return state.monthlyRoutines;}
 export function validateMonthlyRoutines(s){
  if(!s||typeof s!=='object'||Array.isArray(s)||!s.plans||typeof s.plans!=='object')return false;
  if(Object.keys(s.plans).length!==3)return false;
+  if(s.relationshipsTargetId!==undefined&&s.relationshipsTargetId!==null&&(typeof s.relationshipsTargetId!=='string'||s.relationshipsTargetId.length>50))return false;
  for(const [key,options]of Object.entries(MONTHLY_PLANS))if(!options.some(o=>o.id===s.plans[key]))return false;
  if(!Number.isInteger(s.lastMonthIndex)||s.lastMonthIndex< -1||s.lastMonthIndex>26412)return false;
  if(!Number.isSafeInteger(s.monthsApplied)||s.monthsApplied<0||s.monthsApplied>4000)return false;
  if(!Number.isSafeInteger(s.totalSpent)||s.totalSpent<0||s.totalSpent>1000000000)return false;
  return Array.isArray(s.lastResults)&&s.lastResults.length<=3&&s.lastResults.every(r=>typeof r==='string'&&r.length<=140);
 }
-export function setMonthlyRoutine(state,{domain,planId}={}){
+const allowedFamilyRoles=new Set(['父','母','配偶者','子']);
+export function routineContactCandidates(state,planId){
+ if(planId==='call'||planId==='family')return (state.people??[]).filter(p=>allowedFamilyRoles.has(p.role));
+ if(planId==='meet')return (state.people??[]).filter(p=>p.role==='友人'||p.role==='交際相手');
+ return [];
+}
+export function setMonthlyRoutine(state,{domain,planId,personId}={}){
  if(state.timeline.ageYears<18)return {ok:false,reason:'継続習慣の設定は18歳から利用できます。'};
  const plans=MONTHLY_PLANS[domain],selected=plans?.find(p=>p.id===planId);
  if(!selected)return {ok:false,reason:'継続プランが不正です。'};
+ const targetNeeded=domain==='relationships'&&planId!=='off';
+ const target=targetNeeded?routineContactCandidates(state,planId).find(p=>p.id===(personId??routineContactCandidates(state,planId)[0]?.id)):null;
+ if(targetNeeded&&!target)return {ok:false,reason:'交流相手（父母・配偶者・子ども、または友人）を選択してください。'};
  const routine=ensureMonthlyRoutines(state);
- if(routine.plans[domain]===planId)return {ok:false,reason:'すでに同じ継続プランが設定されています。'};
+ if(routine.plans[domain]===planId&&(!targetNeeded||routine.relationshipsTargetId===personId))return {ok:false,reason:'すでに同じ相手・継続プランが設定されています。'};
  routine.plans[domain]=planId;
- return {ok:true,message:`${MONTHLY_DOMAIN_LABELS[domain]}：${selected.name}を設定しました。毎月${selected.cost.toLocaleString('ja-JP')}円（支払可能な月のみ）が適用されます。`};
+ if(domain==='relationships')routine.relationshipsTargetId=target?.id??null;
+ return {ok:true,message:`${MONTHLY_DOMAIN_LABELS[domain]}：${selected.name}${target?'（'+target.role+'：'+target.name+'）':''}を設定しました。毎月${selected.cost.toLocaleString('ja-JP')}円（支払可能な月のみ）が適用されます。`};
 }
 const familyTarget=state=>state.people.find(p=>p.role==='配偶者')??state.people.find(p=>p.role==='子')??state.people.find(p=>p.role==='母'||p.role==='父');
 const friendTarget=state=>state.people.find(p=>p.role==='友人'||p.role==='交際相手');
@@ -67,11 +78,11 @@ export function advanceMonthlyRoutines(state,date,age){
  for(const [domain,planId] of Object.entries(s.plans)){
   const plan=MONTHLY_PLANS[domain]?.find(p=>p.id===planId);
   if(!plan||plan.id==='off')continue;
-  const target=domain==='relationships'?(planId==='meet'?friendTarget(state):familyTarget(state)):null;
-  if(domain==='relationships'&&!target){results.push(`${plan.name}：対象者がいないため保留`);continue;}
+  const target=domain==='relationships'?routineContactCandidates(state,planId).find(p=>p.id===s.relationshipsTargetId):null;
+  if(domain==='relationships'&&!target){results.push(`${plan.name}：対象者を設定・確認してください（今月は保留）`);continue;}
   if(f.cash<plan.cost){results.push(`${plan.name}：資金不足で今月は保留`);continue;}
   f.cash-=plan.cost;f.totals.expenses+=plan.cost;s.totalSpent=Math.min(1000000000,s.totalSpent+plan.cost);
-  f.ledger.push({year:date.year,month:date.month,kind:'支出',label:`継続習慣：${plan.name}`,amount:-plan.cost});
+  f.ledger.push({year:date.year,month:date.month,kind:'支出',label:`継続習慣：${plan.name}${target?'（'+target.role+'：'+target.name+'）':''}`,amount:-plan.cost});
   if(f.ledger.length>600)f.ledger.shift();
   if(domain==='health'){
     if(planId==='walks'){h.physical=clamp(h.physical+1);h.energy=clamp(h.energy+1);}
@@ -88,21 +99,21 @@ export function advanceMonthlyRoutines(state,date,age){
     else if(planId!=='language'||!('英語' in (e.scores??{})))
       e.skills[skill]=balancedGrowth(state,`skill:${skill}`,e.skills[skill]??0,1);
   }
-  results.push(`${plan.name}：${plan.cost.toLocaleString('ja-JP')}円・継続`);
+  results.push(`${plan.name}${target?'（'+target.role+'：'+target.name+'）':''}：${plan.cost.toLocaleString('ja-JP')}円・継続`);
  }
  s.lastMonthIndex=index;s.monthsApplied++;s.lastResults=results;
  return {applied:true,results};
 }
-export function takeAdultActivity(state,{id}={}){
+export function takeAdultActivity(state,{id,personId}={}){
  if(state.timeline.ageYears<18)return {ok:false,reason:'この活動は18歳から利用できます。'};
  const action=ONE_OFF_ACTIVITIES.find(a=>a.id===id);
  if(!action)return {ok:false,reason:'活動内容が不正です。'};
  const f=state.finances,h=state.health,e=state.education;
  if(f.cash<action.cost)return {ok:false,reason:`${action.cost.toLocaleString('ja-JP')}円の現金が必要です。`};
  let person;
- if(id==='family-dinner')person=familyTarget(state);
- if(id==='friends-outing')person=friendTarget(state);
- if((id==='family-dinner'||id==='friends-outing')&&!person)return {ok:false,reason:'交流できる相手がいません。'};
+ if(id==='family-dinner')person=routineContactCandidates(state,'family').find(p=>p.id===(personId??routineContactCandidates(state,'family')[0]?.id));
+ if(id==='friends-outing')person=routineContactCandidates(state,'meet').find(p=>p.id===(personId??routineContactCandidates(state,'meet')[0]?.id));
+ if((id==='family-dinner'||id==='friends-outing')&&!person)return {ok:false,reason:'交流する相手を指定してください。'};
  f.cash-=action.cost;f.totals.expenses+=action.cost;
  f.ledger.push({year:state.timeline.year,month:state.timeline.month,kind:'支出',label:action.name,amount:-action.cost});
  if(f.ledger.length>600)f.ledger.shift();

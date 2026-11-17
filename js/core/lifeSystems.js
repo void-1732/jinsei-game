@@ -1,4 +1,5 @@
 import {evaluateSchool} from './socialSystems.js';
+import {academicAssessment,SCHOOL_THRESHOLDS} from './schoolCompetition.js';
 import {assignProgram,chooseMajor as selectMajor,graduateProgram} from './educationPaths.js';
 /** 人物・学業の独立したドメイン規則。全データはシリアライズ可能。 */
 const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
@@ -91,7 +92,7 @@ export function advanceEducation(education,previous,next,turn){
     const thresholds=phase==='高校'?{'進学校':75,'県立高校':55,'地域高校':0,'工業高校':48,'商業高校':45,'通信制高校':0,'高等専門学校':60}:
       {'難関大学':80,'総合大学':60,'地域大学':0,'国公立大学':72,'私立大学':55,'短期大学':38,'専門学校':35,'医学部':82,'歯学部':78};
     const preparationBonus=Math.min(8,Math.max(0,(education.examPreparation??0)*2));
-    const passed=preference==='自動'||result.average+preparationBonus>=(thresholds[preference]??100);
+    const passed=preference==='自動'||academicAssessment(education).entranceScore>=(thresholds[preference]??100);
     school=passed&&preference!=='自動'?preference:result.school;
     if(enteringSecondary){
       education.highSchoolTrack=school==='高等専門学校'?'高専':school;

@@ -1,5 +1,6 @@
 import {REGIONAL_FACTORS} from './livingSystems.js';
 import {jobQualificationInfo,hiringProbability,hiringRoll,getQualification,qualificationAbilityBarrier} from './qualificationSystems.js';
+import {schoolCareerImpact} from './schoolCompetition.js';
 import {employmentQualificationBonus,canApplyUniversityRole} from './educationPaths.js';
 import {getCompany} from './companySystems.js';
 import {jobMarketAdjustment} from './worldSystems.js';
@@ -52,7 +53,7 @@ export function employmentScore(education,posting,experience=0){
  const course=CAREER_TRAINING.find(item=>item.id===posting.id);
  const trained=course?Number(education?.skills?.[course.skill]??0):0;
  const certified=course && (education?.qualifications??[]).includes(`${course.name}技能認定（ゲーム内）`);
- return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id)+Math.min(8,trained*.12)+(certified?4:0)+schoolRecommendationBonus(education,posting)+jobQualificationInfo(education,posting.id).bonus)));
+ return Math.max(0,Math.min(100,Math.round(average*.45+related*.40+skill*.1+Math.min(experience,60)*.2+employmentQualificationBonus(education,posting.id)+Math.min(8,trained*.12)+(certified?4:0)+schoolRecommendationBonus(education,posting)+schoolCareerImpact(education).hiringBonus+jobQualificationInfo(education,posting.id).bonus)));
 }
 /** Read-only explanation of the next training session's real hiring effect. */
 export function careerTrainingPreview(education,postingId,experience=0){

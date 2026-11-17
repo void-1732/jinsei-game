@@ -14,6 +14,16 @@ const el=(tag,klass='',text='')=>{const e=document.createElement(tag);if(klass)e
 // UI-only state; reopening the page defaults to expanded unless explicitly collapsed.
 const expandedByTopic=new Map();
 const selectedByTopic=new Map();
+// Keep distinct workspaces only; duplicate legacy snapshots remain addressable by direct screen ID.
+const meaningfulScreens={
+ '家族・親族':['PERSON-01'],
+ '友人・恋愛':['PERSON-04'],
+ '学校・学習':['EDU-01'],
+ '社会と地域':['SOCIETY-01'],
+ '経済・ニュース':['SOCIETY-05','SOCIETY-06'],
+ '体調・治療':['HEALTH-01'],
+ '心と生活習慣':['HEALTH-05'],
+};
 
 function actionBox(state,category,onAction){
   const actions=categoryActivities(state,category);
@@ -102,16 +112,17 @@ export function renderTopicPage(container,screen,state,handlers={}){
   }
   const details=el('details','topic-detail');
   const topicKey=topic.screenIds[0];
-  const selectedDetail=topic.screenIds.includes(selectedByTopic.get(topicKey))?selectedByTopic.get(topicKey):screen.id;
+  const meaningful=meaningfulScreens[topic.title]??topic.screenIds;
+  const selectedDetail=meaningful.includes(selectedByTopic.get(topicKey))?selectedByTopic.get(topicKey):meaningful.includes(screen.id)?screen.id:meaningful[0];
   details.open=expandedByTopic.get(topicKey)??true;
-  details.append(el('summary','','詳細・個別操作を見る（クリックで閉じる／開く）'));
+  details.append(el('summary','','詳細・個別操作を見る'));
   const body=el('div','topic-detail-content');
   // Legacy screen IDs remain addressable by bookmarks and saves, but no longer
   // occupy a second row of navigation tabs. Choose one detail in-place.
-  if(topic.screenIds.length>1){
-    const picker=el('label','topic-detail-picker','表示する詳細');
+  if(meaningful.length>1){
+    const picker=el('label','topic-detail-picker','操作・情報を切り替える');
     const select=el('select','topic-detail-select');
-    for(const id of topic.screenIds){
+    for(const id of meaningful){
       const target=findScreen(id);
       const option=el('option','',target?.title??id);
       option.value=id;

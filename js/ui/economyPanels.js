@@ -1,3 +1,4 @@
+import {SPENDING_STYLES,spendingPreview} from '../core/householdSpending.js';
 import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
 import {CAREER_SECTORS,EXTENDED_JOB_POSTINGS,marketListings,careerEligibility} from '../core/careerMarketplace.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures,CAREER_PLANS,careerStage} from '../core/careerSystems.js';
@@ -211,10 +212,21 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
   }
   if(['LIFE-03','LIFE-04','LIFE-08'].includes(screen.id)){
     section.append(econEl('h3','','家計・資産状況'));
-    line(section,'個人家計と事業会計は別管理',b.active?'事業売上は個人収入へ直接加算されません':'現在は事業なし');line(section,'毎月の生活費設定',yen(f.monthlyBudget));line(section,'これまでの収入',yen(f.totals.income));line(section,'これまでの支出',yen(f.totals.expenses));line(section,'税金・社会保険相当累計',yen(f.totals.tax));
+    line(section,'個人家計と事業会計は別管理',b.active?'事業売上は個人収入へ直接加算されません':'現在は事業なし');line(section,'毎月の基本生活費（自動計算）',yen(spendingPreview(game).adjusted));line(section,'これまでの収入',yen(f.totals.income));line(section,'これまでの支出',yen(f.totals.expenses));line(section,'税金・社会保険相当累計',yen(f.totals.tax));
   }
   if(screen.id==='LIFE-03'){
-    const controls=econEl('div','phase4-actions');const value=input(controls,f.monthlyBudget,'毎月の生活費（円）');action(controls,'生活費を設定',()=>handlers.onAction?.('setBudget',{amount:Number(value.value)}));section.append(controls);
+    const preview=spendingPreview(game);
+     line(section,'自動計算の条件',`${preview.age}歳／${preview.region}／${game.finances.living?.housing??'実家'}`);
+     line(section,'地域・家計方針適用後',yen(preview.adjusted));
+     section.append(econEl('p','muted small',preview.note));
+     const controls=econEl('div','phase4-actions');
+     controls.append(econEl('h3','','お金の使い方（毎月継続）'));
+     const spending=choiceButtons('家計方針',SPENDING_STYLES.map(x=>({label:x.name,value:x.id})),preview.style.id);
+     const hint=econEl('p','muted small',preview.style.note);
+     spending.group.addEventListener('click',()=>{hint.textContent=SPENDING_STYLES.find(x=>x.id===spending.getValue())?.note??'';});
+     controls.append(spending.element,hint);
+     action(controls,'この使い方を続ける',()=>handlers.onAction?.('setSpendingStyle',{styleId:spending.getValue()}),game.timeline.ageYears<18);
+     section.append(controls);
   }
   if(screen.id==='LIFE-05'){
     section.append(econEl('h3','','商品を選んで投資'));
