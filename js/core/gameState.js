@@ -287,7 +287,13 @@ export function createGameStore({interactiveChoices=false} = {}) {
       const advanced=advanceTurn();
       if(!advanced.ok){reason=advanced.reason;break;}
       turns++;months+=advanced.months;
-      if(state.ending.dead||hasImportantTurnEvent(advanced.events)){
+      // Ordinary yearly birthdays are still recorded, but do not interrupt
+      // fast progress. Age transitions at 6/12/15/18/20/30/40/50/60/65+
+      // remain review points, as do all actual consequential events.
+      const milestoneAges=new Set([6,12,15,18,20,30,40,50,60,65,70,80,90,100]);
+      const consequential=advanced.events.filter(event=>
+        event.type!=='birthday'||milestoneAges.has(state.timeline.ageYears));
+      if(state.ending.dead||hasImportantTurnEvent(consequential)){
         reason=state.ending.dead?'人生が終了しました':'重要な出来事が発生しました';
         break;
       }
