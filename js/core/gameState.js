@@ -1,4 +1,6 @@
 import {calculateInheritance} from './estateSystems.js';
+import {seniorClearAssessment,recordSeniorClear} from './seniorClear.js';
+import {configureLifePreset} from './lifePreset.js';
 import {advanceHouseholdMonth,changeHouseholdRole,setSpouseLeave} from './householdExtension.js';
 import {advanceHardship,requestHouseholdRelief} from './householdHardship.js';
 import {retryUniversityEntrance} from './examRetake.js';
@@ -249,6 +251,19 @@ export function createGameStore({interactiveChoices=false} = {}) {
     if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
     if(interactiveChoices){
       observeLifeGoals(state,{events:newEvents});
+      // A 60+ milestone is not the end of life. Freeze the first qualifying
+      // assessment in an optional v7 field and preserve the ongoing simulation.
+      if(!state.ending.dead){
+        const result=recordSeniorClear(state);
+        if(result){
+          const notice=makeEvent('senior-clear','人生の一区切り・総合クリア',
+            `${result.age}歳で人生の総合評価${result.score}/100点を達成。これからも人生を続けられます。`);
+          newEvents.push(notice);
+          state.pendingEvents.push(notice);
+          state.eventHistory.push(notice);
+          if(state.eventHistory.length>1200)state.eventHistory.splice(0,state.eventHistory.length-1200);
+        }
+      }
       if(state.ending.dead)finalizeLifeGoals(state);
     }
     emit();
@@ -351,6 +366,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'setMonthlyRoutine':result=setMonthlyRoutine(state,payload);break;
       case 'adultActivity':result=takeAdultActivity(state,payload);break;
       case 'setTimePlan': result=setDailySchedule(state,payload.planId);break;
+      case 'configureLifePreset': result=configureLifePreset(state,payload);break;
       case 'setSpendingStyle': result=setSpendingStyle(state,payload);break;
       case 'changeHouseholdRole': result=changeHouseholdRole(state,payload);break;
       case 'startSpouseLeave': result=setSpouseLeave(state);break;
