@@ -11,7 +11,7 @@ function adult(){
  const game=createGameStore({interactiveChoices:true});
  assert.equal(game.startNewGame().ok,true);
  const s=structuredClone(game.getState());
- s.pendingEvents=[];s.timeline={year:2028,month:5,ageYears:28,turnsElapsed:101,monthsElapsed:340};
+ s.pendingEvents=[];s.timeline={year:2026,month:5,ageYears:26,turnsElapsed:101,monthsElapsed:316};
  s.turnActions={turn:101,used:0,lastAction:null,categories:[]};s.finances.cash=600000;
  assert.equal(game.loadState(s).ok,true);
  return game;
