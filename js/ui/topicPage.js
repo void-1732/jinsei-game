@@ -115,7 +115,7 @@ export function renderTopicPage(container,screen,state,handlers={}){
   const meaningful=meaningfulScreens[topic.title]??topic.screenIds;
   const selectedDetail=meaningful.includes(selectedByTopic.get(topicKey))?selectedByTopic.get(topicKey):meaningful.includes(screen.id)?screen.id:meaningful[0];
   details.open=expandedByTopic.get(topicKey)??true;
-  details.append(el('summary','','操作と状況を見る'));
+  details.append(el('summary','','詳細・個別操作を見る'));
   const body=el('div','topic-detail-content');
   // Legacy screen IDs remain addressable by bookmarks and saves, but no longer
   // occupy a second row of navigation tabs. Choose one detail in-place.
