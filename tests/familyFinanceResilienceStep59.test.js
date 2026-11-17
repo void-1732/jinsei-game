@@ -36,7 +36,7 @@ test('Q1 配偶者家計負担は一か月一回で保存され、育休と家�
 });
 test('Q2 子どもの成績と教育方針・進学は年齢別、同月二重処理しない',()=>{
  const s=family(),child=s.people.find(p=>p.role==='子');child.birth.year=2011;child.birth.month=1;
- s.familyJourney.educationPlans[child.id]='学習支援';s.timeline.month=3;
+ s.familyJourney.educationPlans[child.id]='学習支援';
  const event=advanceChildEducation(s,{year:2026,month:4});
  assert.equal(event.length,1);
  assert.equal(advanceChildEducation(s,{year:2026,month:4}).length,0);
