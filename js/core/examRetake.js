@@ -11,7 +11,7 @@ export function examOdds(education,stage,school){
  const f=admissionsForecast(education,stage,school);
  if(!f.ok)return f;
  // A comfortably strong candidate passes; a weak one can rarely surprise.
- const chance=f.margin<=-3?0:Math.max(5,Math.min(100,Math.round(50+(f.entranceScore-f.threshold)*4)));
+ const chance=f.margin<=-3?0:f.margin<0?Math.max(5,15+f.margin*5):Math.min(100,Math.round(50+f.margin*4));
  return {...f,chance};
 }
 export function takeEntranceDecision(education,stage,school,date,seed=0,attempt=1){
