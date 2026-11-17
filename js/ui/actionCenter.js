@@ -5,6 +5,7 @@
 import {ACTION_CATEGORIES,actionBudget,categoryActionAvailable,turnActionCategory} from '../core/adultActionBudget.js';
 import {categoryActivities,categoryLanding} from './topicGroups.js';
 import {TIME_PLANS} from '../core/dailySchedule.js';
+import {CIVIC_ACTIVITIES} from '../core/civicSystems.js';
 import {MONTHLY_PLANS,routineContactCandidates} from '../core/monthlyRoutines.js';
 
 const el=(tag,cls='',text='')=>{
@@ -28,6 +29,7 @@ const identity=option=>option.action+':'+JSON.stringify(option.payload??{});
 export function availableCenterOptions(state,category){
  if(!state?.initialized||!ACTION_CATEGORIES.includes(category))return [];
  const options=categoryActivities(state,category);
+ if(category==='社会')for(const a of CIVIC_ACTIVITIES){if(state.timeline.ageYears>=a.age&&(a.id!=='vote'||state.timeline.year%4===0))options.push({title:a.name,hint:`地域の信頼が${a.gain}点上昇・費用${a.cost}円`,action:'civicActivity',payload:{id:a.id}});}
  if(category==='人生'&&state.timeline.ageYears>=6){
   for(const plan of TIME_PLANS){
    if(plan.id===state.daily54?.planId)continue;
