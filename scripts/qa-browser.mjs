@@ -55,7 +55,7 @@ async function runViewport(binary,width){
   await until(async()=>get("document.querySelector('#start-game').disabled===true && document.querySelector('#advance-turn').disabled===false"),'new life started');
   // STEP 60: periods are explicit and dense secondary dashboard panels stay folded.
   const fast60=await get("({periods:[...document.querySelectorAll('#fast-forward-months option')].map(x=>Number(x.value)),disabled:document.querySelector('#fast-forward-months')?.disabled,archive:document.querySelector('.play-archive-fold')?.open,era:document.querySelector('.play-era-fold')?.open,overflow:document.documentElement.scrollWidth>innerWidth+3})");
-  if(JSON.stringify(fast60.periods)!=='[1,3,6,12]'||fast60.disabled||fast60.archive!==false||fast60.era!==false||fast60.overflow)
+  if(JSON.stringify(fast60.periods)!=='[1,3,6,12]'||fast60.disabled!==true||fast60.archive!==false||fast60.era!==false||fast60.overflow)
     throw Error('Fast-life responsive dashboard controls failed '+JSON.stringify(fast60));
   // Persistent action center is available from the header without navigation.
   await click("document.querySelector('#open-action-center')");
@@ -70,6 +70,9 @@ async function runViewport(binary,width){
    if(!modalAccessible)throw Error('Dialog heading focus / inline error status missing');
   await click("document.querySelector('#story-content .story-choices button')");
   await until(async()=>get("!document.querySelector('#story-dialog').open && document.querySelector('#choice-feedback').textContent.length>15"),'popup completed');
+  const fastAfterChoice=await get("({period:document.querySelector('#fast-forward-months')?.value,disabled:document.querySelector('#fast-forward-months')?.disabled,forwardDisabled:document.querySelector('#fast-forward-turn')?.disabled})");
+  if(fastAfterChoice.disabled||fastAfterChoice.forwardDisabled||fastAfterChoice.period!=='6')
+    throw Error('Fast-forward controls did not unlock after resolving the mandatory choice '+JSON.stringify(fastAfterChoice));
    const summaryVisible=await get("!!document.querySelector('.play-turn-recap') && document.activeElement?.id==='choice-feedback'");
    if(!summaryVisible)throw Error('Current-turn result card or accessible focus missing');
    const clearable=await get("!!document.querySelector('#pending-event-list .hub-clear-notices')");
