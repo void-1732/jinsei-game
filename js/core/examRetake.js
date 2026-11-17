@@ -30,7 +30,7 @@ export function retryUniversityEntrance(state,{school}={}){
  state.finances.cash-=cost;state.finances.totals.expenses+=cost;
  state.finances.ledger.push({year:t.year,month:t.month,kind:'支出',label:'大学再受験費用',amount:-cost});
  if(state.finances.ledger.length>600)state.finances.ledger.shift();
- e.entrance={...e.entrance,retryYear:t.year,retrySchool:school,retryPassed:result.passed};
+ e.entrance={...e.entrance,initialStatus:e.entrance?.initialStatus??e.entrance?.status??'未実施',status:result.passed?'再受験合格':'再受験不合格',retryYear:t.year,retrySchool:school,retryPassed:result.passed,...(result.passed?{destination:school}:{})};
  if(result.passed){
   e.school=school;assignProgram(e,school,t.month>=4?t.year:t.year-1);
   // preserve first-year grade and reset time served to a full course.
