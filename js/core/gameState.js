@@ -1,4 +1,7 @@
 import {calculateInheritance} from './estateSystems.js';
+import {advanceHouseholdMonth,changeHouseholdRole,setSpouseLeave} from './householdExtension.js';
+import {advanceHardship,requestHouseholdRelief} from './householdHardship.js';
+import {retryUniversityEntrance} from './examRetake.js';
 import {civicAction,advanceCivicMonth,communityEffects} from './civicSystems.js';
 import {isBusinessOperation,businessActionsRemaining} from './businessOperations.js';
 import {actionBudget,turnActionCategory,actionAvailable} from './adultActionBudget.js';
@@ -180,8 +183,9 @@ export function createGameStore({interactiveChoices=false} = {}) {
         for(const item of healthEvents)newEvents.push(makeEvent(item.type,item.title,item.description));
         const prior={year:date.month===1?date.year-1:date.year,month:date.month===1?12:date.month-1};
         const homeDiscount=interactiveChoices?monthlyHouseholdDiscount(state,date,monthAge):0;
+        if(interactiveChoices){for(const event of advanceHouseholdMonth(state,date))newEvents.push(makeEvent(event.type,event.title,event.description));}
         const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world,{livingDiscount:homeDiscount});
-        if(interactiveChoices)applySpendingHealthImpact(state,date);
+        if(interactiveChoices){applySpendingHealthImpact(state,date);for(const item of advanceHardship(state,date))newEvents.push(makeEvent(item.type,item.title,item.description));}
         if(interactiveChoices)advanceDailySchedule(state,date,monthAge,homeDiscount);
         if(interactiveChoices)advanceMonthlyRoutines(state,date,monthAge);
         if(interactiveChoices)advanceOpportunityMonth(state,date);
@@ -348,6 +352,10 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'adultActivity':result=takeAdultActivity(state,payload);break;
       case 'setTimePlan': result=setDailySchedule(state,payload.planId);break;
       case 'setSpendingStyle': result=setSpendingStyle(state,payload);break;
+      case 'changeHouseholdRole': result=changeHouseholdRole(state,payload);break;
+      case 'startSpouseLeave': result=setSpouseLeave(state);break;
+      case 'requestHouseholdRelief': result=requestHouseholdRelief(state);break;
+      case 'retryUniversityEntrance': result=retryUniversityEntrance(state,payload);break;
        case 'civicActivity': result=civicAction(state,payload);break;
       case 'applyScholarship': case 'setEducationFunding': case 'repayEducation': case 'prepareInterview': case 'careerCertification': case 'salaryNegotiation': case 'reviewBudget':
         result=opportunityAction(state,action,payload);break;
