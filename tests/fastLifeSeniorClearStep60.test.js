@@ -84,6 +84,27 @@ test('まとめて進むの1・3・6・12か月、重要イベント停止と60�
  assert.equal(LIFE_PRESETS.length,4);
  assert.equal(SENIOR_CLEAR_AGE,60);assert.equal(SENIOR_CLEAR_SCORE,60);
 });
+test('59歳12月から60歳到達時に総合クリアを通知し高速進行が停止する',()=>{
+ const g=adult(),s=structuredClone(g.getState());
+ s.timeline={year:2059,month:12,ageYears:59,turnsElapsed:600,monthsElapsed:719};
+ s.turnActions={turn:600,used:0,lastAction:null,categories:[]};
+ s.finances.cash=12000000;
+ s.finances.career.job='事務職';s.finances.career.experience=156;
+ s.health.physical=90;s.health.mental=90;s.health.energy=90;
+ for(const p of s.people)if(p.role!=='本人')p.relationship=90;
+ assert.equal(validateGameState(s),true);
+ assert.equal(g.loadState(s).ok,true);
+ const result=g.fastForward({focus:'balanced',maxMonths:6});
+ assert.equal(result.ok,true);
+ assert.equal(result.months,1);
+ assert.equal(result.reason,'重要な出来事が発生しました');
+ const current=g.getState();
+ assert.equal(current.ending.dead,false);
+ assert.equal(current.seniorClear.age,60);
+ assert.equal(current.pendingEvents.some(x=>x.type==='senior-clear'),true);
+ const noRepeat=recordSeniorClear(structuredClone(current));
+ assert.equal(noRepeat,null);
+});
 test('旧v7セーブに総合クリアフィールドがなくても読み込み・復元可能',()=>{
  const s=structuredClone(adult().getState());delete s.seniorClear;
  assert.equal(validateGameState(s),true);
