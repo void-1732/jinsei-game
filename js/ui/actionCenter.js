@@ -127,7 +127,13 @@ export function renderActionCenter(content,state,handlers={}){
   link.type='button';
   link.addEventListener('click',()=>handlers.onNavigate?.(categoryLanding(category)));
   card.append(link);
-  grid.append(card);
+  const fold=el('details','action-center-category-fold');
+  const label=budget.pending?'選択待ち':used?'今月は済':budget.remaining===0?'上限到達':allowed?'行動可':'利用不可';
+  const heading=el('summary','action-center-fold-summary',`${category}　｜　${label}`);
+  fold.append(heading,card);
+  const priority=state.timeline.ageYears<18?'学業':state.health?.illness?'健康':!state.finances?.career?.job?'仕事・経営':'生活・資産';
+  fold.open=category===priority&&allowed;
+  grid.append(fold);
  }
  content.append(grid);
  const footer=el('div','action-center-footer');
