@@ -114,7 +114,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const youngest=children.some(c=>t.year-c.birth.year-(t.month<c.birth.month?1:0)<2);
         const leave=action(role,'配偶者が育児休業を開始',()=>handlers.onAction?.('startSpouseLeave',{}));
         leave.disabled=family.employment!=='working'||!youngest;
-        wrap.append(role);
+        section.append(role);
         if(!summary.plan){
           const form=lifeEl('div','phase27-form');
           const name=lifeEl('input','phase4-select');name.placeholder='子どもの名前';name.maxLength=20;name.setAttribute('aria-label','子どもの名前');
