@@ -1,5 +1,6 @@
 import {eraSummary,eraEconomicEffects} from '../core/eraSystems.js';
 import {checkupGuidance} from '../core/healthSystems.js';
+import {CIVIC_ACTIVITIES,communityEffects} from '../core/civicSystems.js';
 import {rareLifeSummary} from '../core/rareLifeEvents.js';
 /** 第6段階の状態・操作パネル。ゲーム状態はhandlers経由でのみ更新。 */
 const node=(tag,cls='',label='')=>{const n=document.createElement(tag);n.className=cls;n.textContent=label;return n;};
