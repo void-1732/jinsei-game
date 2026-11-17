@@ -4,16 +4,18 @@ const clamp=n=>Math.min(100,Math.max(0,Math.round(n)));
 export function validateHardship(data){
  if(data===undefined)return true;
  return data&&typeof data==='object'&&!Array.isArray(data)&&['shortageMonths','reliefMonths','lastMonth','lastReliefMonth'].every(k=>Number.isInteger(data[k])&&data[k]>=-1&&data[k]<=26412)&&
- data.shortageMonths>=0&&data.reliefMonths>=0&&['安定','注意','困窮','再建中'].includes(data.status);
+ data.shortageMonths>=0&&data.reliefMonths>=0&&(data.arrearsMonths===undefined||Number.isInteger(data.arrearsMonths)&&data.arrearsMonths>=0&&data.arrearsMonths<=1200)&&['安定','注意','困窮','再建中'].includes(data.status);
 }
-export function hardshipSummary(state){return state.hardship??{shortageMonths:0,reliefMonths:0,lastMonth:-1,lastReliefMonth:-1,status:'安定'};}
+export function hardshipSummary(state){return state.hardship??{shortageMonths:0,reliefMonths:0,lastMonth:-1,lastReliefMonth:-1,status:'安定',arrearsMonths:0};}
 export function advanceHardship(state,date){
  const h=state.hardship??={shortageMonths:0,reliefMonths:0,lastMonth:-1,lastReliefMonth:-1,status:'安定'};
  const i=idx(date);if(h.lastMonth>=i)return [];
- h.lastMonth=i;
+ h.lastMonth=i;h.arrearsMonths??=0;
  const f=state.finances,base=f.monthlyBudget??0;
  const shortage=state.timeline.ageYears>=18&&f.cash<Math.max(15000,base*.4)&&f.debt>Math.max(10000,base);
  h.shortageMonths=shortage?Math.min(1200,h.shortageMonths+1):Math.max(0,h.shortageMonths-1);
+ const rentRisk=shortage&&state.finances.living?.housing==='賃貸';
+ h.arrearsMonths=rentRisk?Math.min(1200,h.arrearsMonths+1):Math.max(0,h.arrearsMonths-1);
  h.status=h.shortageMonths>=3?'困窮':h.shortageMonths>=1?'注意':h.reliefMonths>0?'再建中':'安定';
  if(h.shortageMonths>=3&&i%2===0)state.health.mental=clamp(state.health.mental-1);
  if(h.shortageMonths===3)return [{type:'finance',title:'家計が困窮しています',description:'支払いに不足が続いています。就業・家計方針・住居・生活再建支援を検討してください。'}];
