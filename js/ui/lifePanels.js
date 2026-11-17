@@ -4,7 +4,8 @@ import {HOUSEHOLD_ROLES,householdSummary} from '../core/householdExtension.js';
 import {childEducationSummary} from '../core/childEducationProgress.js';
 import {parentSummary} from '../core/parentWellbeing.js';
 import {SCHOOL_THRESHOLDS} from '../core/schoolCompetition.js';
-import {academicAssessment,admissionsForecast,schoolCareerImpact} from '../core/schoolCompetition.js';
+import {academicAssessment,schoolCareerImpact} from '../core/schoolCompetition.js';
+import {examOdds} from '../core/examRetake.js';
 import {STUDY_MAJORS,programFor,majorFor} from '../core/educationPaths.js';
 import {CAREER_TRAINING,careerTrainingPreview} from '../core/careerSystems.js';
 import {renderQualificationPanel} from './qualificationPanel.js';
@@ -256,7 +257,7 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const updateCompetition=()=>{
           const choice=select.getValue();
           if(choice==='自動'){competition.textContent='自動進学：現在の成績と進路方針から進学先を決定します。';return;}
-          const f=admissionsForecast(e,stage,choice);
+          const f=examOdds(e,stage,choice);
           competition.textContent=`学校別の進学判定：${f.competition}（評価${f.entranceScore}／必要${f.threshold}・目安${f.chance}%）／${stage==='大学'?programFor(choice).type+'・'+programFor(choice).years+'年間／':''}学費 月${f.tuition.toLocaleString('ja-JP')}円。出席率${f.attendance}%・受験準備${f.preparation}点を反映。`;
         };
         select.group.addEventListener('click',updateCompetition);updateCompetition();controls.append(competition);
