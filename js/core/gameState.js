@@ -2,6 +2,7 @@ import {calculateInheritance} from './estateSystems.js';
 import {isBusinessOperation,businessActionsRemaining} from './businessOperations.js';
 import {actionBudget,turnActionCategory,actionAvailable} from './adultActionBudget.js';
 import {makeMonthlyRoutines,ensureMonthlyRoutines,setMonthlyRoutine,advanceMonthlyRoutines,takeAdultActivity} from './monthlyRoutines.js';
+import {refreshAutomaticBudget,applySpendingHealthImpact,setSpendingStyle} from './householdSpending.js';
 import {createDailySchedule,ensureDailySchedule,setDailySchedule,monthlyHouseholdDiscount,advanceDailySchedule} from './dailySchedule.js';
 import {createLifeGoalProgress,ensureLifeGoalProgress,observeLifeGoals,chooseLifeDream,finalizeLifeGoals} from './lifeGoals.js';
 import {createLivingData, ensureLiving, ensureMortgage, livingAction, getHousingEquity} from './livingSystems.js';
@@ -163,6 +164,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const idx=t.year*12+t.month-1+step;
         const date={year:Math.floor(idx/12),month:idx%12+1};
         const monthAge=yearsOld(date.year,date.month,state.player.birth);
+        if(interactiveChoices)refreshAutomaticBudget(state,date);
         const worldDraw=nextRandom(state.random.seed);
         state.random.seed=worldDraw.seed;state.random.draws++;
         const worldEvents=updateWorld(state.world,date,worldDraw.value);
@@ -178,6 +180,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
         const prior={year:date.month===1?date.year-1:date.year,month:date.month===1?12:date.month-1};
         const homeDiscount=interactiveChoices?monthlyHouseholdDiscount(state,date,monthAge):0;
         const financeEvents=advanceEconomy(state.finances,prior,1,state.player.birth,state.world,{livingDiscount:homeDiscount});
+        if(interactiveChoices)applySpendingHealthImpact(state,date);
         if(interactiveChoices)advanceDailySchedule(state,date,monthAge,homeDiscount);
         if(interactiveChoices)advanceMonthlyRoutines(state,date,monthAge);
         if(interactiveChoices)advanceOpportunityMonth(state,date);
@@ -343,6 +346,7 @@ export function createGameStore({interactiveChoices=false} = {}) {
       case 'setMonthlyRoutine':result=setMonthlyRoutine(state,payload);break;
       case 'adultActivity':result=takeAdultActivity(state,payload);break;
       case 'setTimePlan': result=setDailySchedule(state,payload.planId);break;
+      case 'setSpendingStyle': result=setSpendingStyle(state,payload);break;
       case 'applyScholarship': case 'setEducationFunding': case 'repayEducation': case 'prepareInterview': case 'careerCertification': case 'salaryNegotiation': case 'reviewBudget':
         result=opportunityAction(state,action,payload);break;
       case 'interactCoworker': case 'resolveWorkIncident': case 'workHard': case 'helpColleague': case 'talkSupervisor': case 'reviewPerformance': case 'trainStaff': case 'dismissStaff': case 'staffCare':
