@@ -46,7 +46,7 @@ export function renderDailySchedulePanel(state,onAction){
       const current=lifePresetSummary(state);
       const preset=el('details','daily54-preset');
       preset.append(el('summary','','健康・学習も一度に継続設定'));
-      preset.append(el('p','daily54-note',`現在の継続習慣：月${current.monthlyCost.toLocaleString('ja-JP')}円。方針変更は「人生」の行動枠1回のみ。`));
+      preset.append(el('p','daily54-note',`現在の健康・学び習慣：月${current.monthlyCost.toLocaleString('ja-JP')}円（家族との交流費用は別）。方針変更は「人生」の行動枠1回のみ。`));
       const selectPlan=el('select','daily54-select');selectPlan.setAttribute('aria-label','生活・習慣の一括設定');
       for(const p of LIFE_PRESETS){const op=el('option','',`${p.name}：${p.note}`);op.value=p.id;selectPlan.append(op);}
       selectPlan.value=current.current?.id??'balanced';
