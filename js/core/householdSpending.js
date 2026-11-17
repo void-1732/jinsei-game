@@ -1,5 +1,6 @@
 /** Fictional automatic household spending model. Existing saves retain monthlyBudget for compatibility. */
 import {REGIONAL_FACTORS} from './livingSystems.js';
+import {communityEffects} from './civicSystems.js';
 export const SPENDING_STYLES=Object.freeze([
  {id:'standard',name:'標準',factor:1,note:'必要な支出を確保。健康への追加ペナルティなし'},
  {id:'saving',name:'節約',factor:0.82,note:'生活費を18%削減。継続すると食生活・休養に負担が生じる'},
@@ -27,7 +28,7 @@ export function spendingPreview(state,date=state?.timeline){
  const region=state?.finances?.living?.region??'東京・東京23区';
  const regionFactor=REGIONAL_FACTORS[region]?.living??1;
  const style=styleFor(state);
- const adjusted=Math.max(0,Math.round(base*style.factor*regionFactor));
+ const adjusted=Math.max(0,Math.round(base*style.factor*regionFactor*communityEffects(state).livingFactor));
  return {age,base,region,regionFactor,style,adjusted,
   housingCost:state?.finances?.living?.monthlyHousingCost??0,
   note:age<18?'18歳未満の基本生活費は保護者負担。育児費は保護者側に計上します。':'子どもの養育・教育費、同棲費、家賃・ローン等は既存の別会計で加算します。'};
@@ -43,7 +44,7 @@ export function setSpendingStyle(state,{styleId}={}){
 }
 export function refreshAutomaticBudget(state,date){
  if(!state?.initialized||!state.finances)return 0;
- const monthly=Math.round(baseHouseholdBudget(state,date)*styleFor(state).factor);
+ const monthly=Math.round(baseHouseholdBudget(state,date)*styleFor(state).factor*communityEffects(state).livingFactor);
  state.finances.monthlyBudget=monthly;
  return monthly;
 }
