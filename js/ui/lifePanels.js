@@ -146,11 +146,11 @@ export function renderLifePanel(container,screen,game,handlers={}){
       section.append(wrap);
       if(screen.id==='PERSON-01'){
         const bonds=lifeEl('details','phase4-extra');bonds.dataset.foldKey='family-bond';
-        bonds.append(lifeEl('summary','','会話・贈り物・旅行'));
+        bonds.append(lifeEl('summary','','会話・贈り物・旅行・家族行事・関係修復'));
         const others=people.filter(p=>p.role!=='本人');
         if(others.length){
           const person=choiceButtons('相手',others.map(p=>({value:p.id,label:p.name})),others[0].id);
-          const activity=choiceButtons('交流方法',['会話','贈り物','旅行'],'会話');
+          const activity=choiceButtons('交流方法',['会話','贈り物','旅行','家族行事','関係を修復'],'会話');
           bonds.append(person.element,activity.element);
           action(bonds,'交流する',()=>handlers.onAction?.('familyBond',{personId:person.getValue(),activity:activity.getValue()}));
         }
