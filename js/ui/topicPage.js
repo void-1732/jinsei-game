@@ -18,7 +18,7 @@ const selectedByTopic=new Map();
 const meaningfulScreens={
  '家族・親族':['PERSON-01'],
  '友人・恋愛':['PERSON-04'],
- '学校・学習':['EDU-01','EDU-02'],
+ '学校・学習':['EDU-01'],
  '社会と地域':['SOCIETY-01'],
  '経済・ニュース':['SOCIETY-05','SOCIETY-06'],
  '体調・治療':['HEALTH-01'],
