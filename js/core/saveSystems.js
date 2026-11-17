@@ -1,4 +1,5 @@
 import {validateInheritance} from './estateSystems.js';
+import {validateCivicProgress} from './civicSystems.js';
 import {validateBusinessTurn} from './businessOperations.js';
 import {validateTurnActionBudget} from './adultActionBudget.js';
 import {validateMonthlyRoutines} from './monthlyRoutines.js';
@@ -71,6 +72,7 @@ export function validateGameState(s) {
     if(!['retail','cafe','tutor','delivery','remote','design'].includes(j.jobId)||!Number.isSafeInteger(j.hours)||j.hours<0||j.hours>240||!Number.isSafeInteger(j.hourlyWage)||j.hourlyWage<0||j.hourlyWage>50000)return false;
   }
   if(s.world.era52!==undefined&&!validateEraProgress(s.world.era52))return false;
+   if(!validateCivicProgress(s.world.civicProgress))return false;
   if(s.world.employmentSupport!==undefined){
     const x=s.world.employmentSupport;
     if(!x||!Number.isSafeInteger(x.lastIndex)||x.lastIndex< -1||x.lastIndex>26412||!Number.isSafeInteger(x.sessions)||x.sessions<0||x.sessions>10000)return false;
