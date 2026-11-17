@@ -7,9 +7,12 @@ export function socialAction(state,action,payload={}){
   const partner=people.find(p=>p.id===payload.personId && p.role!=='本人');
   if(action==='familyBond'){
     if(!partner||!['父','母','子','配偶者','友人','交際相手'].includes(partner.role))return {ok:false,reason:'交流する人物を選んでください。'};
-    const options={会話:{gain:4,cost:0},贈り物:{gain:8,cost:2000},旅行:{gain:12,cost:12000}};
+    const options={会話:{gain:4,cost:0},贈り物:{gain:8,cost:2000},旅行:{gain:12,cost:12000},
+       家族行事:{gain:9,cost:15000},'関係を修復':{gain:7,cost:1200}};
     const choice=options[payload.activity];
     if(!choice)return {ok:false,reason:'交流方法を選んでください。'};
+    if(payload.activity==='家族行事'&&!['父','母','子','配偶者'].includes(partner.role))return {ok:false,reason:'家族行事は家族を指定してください。'};
+    if(payload.activity==='関係を修復'&&partner.relationship>=75)return {ok:false,reason:'現在の関係は良好です。通常の交流を選んでください。'};
     if(choice.cost && state.finances.cash<choice.cost)return {ok:false,reason:'交流に必要な資金が不足しています。'};
     if(choice.cost){
       state.finances.cash-=choice.cost;state.finances.totals.expenses+=choice.cost;
@@ -17,6 +20,8 @@ export function socialAction(state,action,payload={}){
       if(state.finances.ledger.length>600)state.finances.ledger.shift();
     }
     partner.relationship=socialClamp(partner.relationship+choice.gain);
+    if(payload.activity==='家族行事')state.health.mental=socialClamp(state.health.mental+2);
+    if(payload.activity==='関係を修復')state.health.mental=socialClamp(state.health.mental+1);
     return {ok:true,message:`${partner.name}と${payload.activity}を楽しみました。親密度 ${partner.relationship}`,relationship:partner.relationship};
   }
   if(action==='courtship'){
