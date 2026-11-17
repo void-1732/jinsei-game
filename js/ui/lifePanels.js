@@ -226,6 +226,14 @@ export function renderLifePanel(container,screen,game,handlers={}){
         const schools=stage==='高校'?['自動','進学校','県立高校','地域高校','工業高校','商業高校','通信制高校','高等専門学校']:['自動','難関大学','総合大学','地域大学','国公立大学','私立大学','短期大学','専門学校','医学部','歯学部'];
         const select=choiceButtons('志望校を選ぶ',schools,e.schoolPreference?.[stage]??'自動');
         controls.append(select.element);
+        const competition=lifeEl('p','muted small');
+        const updateCompetition=()=>{
+          const choice=select.getValue();
+          if(choice==='自動'){competition.textContent='自動進学：現在の成績と進路方針から進学先を決定します。';return;}
+          const f=admissionsForecast(e,stage,choice);
+          competition.textContent=`学校別の進学判定：${f.competition}（評価${f.entranceScore}／必要${f.threshold}・目安${f.chance}%）／学費 月${f.tuition.toLocaleString('ja-JP')}円。今の出席率${f.attendance}%・受験準備${f.preparation}点を反映。`;
+        };
+        select.group.addEventListener('click',updateCompetition);updateCompetition();controls.append(competition);
         if(stage==='大学'){
           const preview=lifeEl('p','muted small');
           const update=()=>{const school=select.getValue();const p=programFor(school==='自動'?'地域大学':school);preview.textContent=`参考：${p.type}・${p.years}年間 ／ 学費 月${p.tuition.toLocaleString('ja-JP')}円（ゲーム内基本額）`;};
