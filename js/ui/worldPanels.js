@@ -46,17 +46,17 @@ export function renderWorldPanel(container,screen,game,handlers={}){
      const companies=game.finances?.companyMarket??[];
      if(companies.length){
        line(section,'企業6社の求人枠合計',`${companies.reduce((sum,c)=>sum+(c.status==='営業停止'?0:c.openings),0)}枠`);
-       section.append(node('h3','','企業別の求人状況'));
-       for(const c of companies)line(section,c.name,`${c.status==='営業停止'?0:c.openings}枠 ／ 業績 ${c.performance}点 ／ ${c.status}`);
+       const firms=node('details','phase4-extra');firms.append(node('summary','','企業別の求人状況'));
+       for(const c of companies)line(firms,c.name,`${c.status==='営業停止'?0:c.openings}枠 ／ 業績 ${c.performance}点 ／ ${c.status}`);
      }
      const support=w.employmentSupport??{sessions:0,lastIndex:-1};
      line(section,'職業相談の利用回数',`${support.sessions}回`);
      const age=game.timeline.ageYears,career=game.finances?.career;
      const now=game.timeline.year*12+game.timeline.month-1;
      button(section,'失業者向けの職業相談を受ける',()=>handlers.onAction?.('employmentSupport',{}),age<18||Boolean(career?.job)||(career?.searchEffort??0)>=3||now-support.lastIndex<3);
-     section.append(node('h3','','ゲーム内ニュース'));
-     if(!w.news.length)section.append(node('p','muted','ニュースはまだありません。時間を進めると追加されます。'));
-     for(const item of w.news.slice(0,10)){const x=node('div','phase6-news');x.append(node('strong','',`${item.year}年${item.month}月　${item.title}`),node('p','muted small',item.description));section.append(x);}
+     const news=node('details','phase4-extra');news.append(node('summary','',`ゲーム内ニュース（${Math.min(10,w.news.length)}件）`));
+     if(!w.news.length)news.append(node('p','muted','ニュースはまだありません。時間を進めると追加されます。'));
+     for(const item of w.news.slice(0,10)){const x=node('div','phase6-news');x.append(node('strong','',`${item.year}年${item.month}月　${item.title}`),node('p','muted small',item.description));news.append(x);}section.append(news);
    }
  }
  if(events){
