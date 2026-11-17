@@ -59,7 +59,7 @@ export function chooseRoutineOption(event,state,focus='balanced'){
  return best;
 }
 export function hasImportantTurnEvent(events){
- const serious=new Set(['birthday','education','job-loss','death','illness','health-warning','promotion','new-stage','entrance','graduation','retirement','family']);
+ const serious=new Set(['birthday','education','job-loss','death','illness','health-warning','promotion','new-stage','entrance','graduation','retirement','family','senior-clear']);
   return events.some(e=>e?.surprise53||e?.branch||e?.consequence||serious.has(e?.type)||e?.type==='choice'&&!e.catalogKey);
 }
 
