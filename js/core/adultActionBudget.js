@@ -8,7 +8,7 @@ const BY_CATEGORY={
  '学業':['takeQualificationExam','prepareQualification','chooseFurtherEducation','studentDay','study','skill','prepareExam','chooseSchool','chooseMajor','university','applyScholarship','setEducationFunding','repayEducation'],
  '仕事・経営':['setCareerTarget','internship','professionalExam','careerProject','employmentSupport','supportRebuilding','careerTraining','setCareerPlan','applyJob','promotionExam','prepareInterview','careerCertification','salaryNegotiation','interactCoworker','resolveWorkIncident','workHard','helpColleague','talkSupervisor','reviewPerformance','findJob','resign','sideJob','startBusiness','closeBusiness','jobSearch'],
  '健康':['habit','treatment','checkup'],
- '社会':[],
+ '社会':['civicActivity'],
 };
 const ACTION_MAP=new Map(Object.entries(BY_CATEGORY).flatMap(([cat,names])=>names.map(n=>[n,cat])));
 export const turnActionCategory=(action,payload={})=>{
