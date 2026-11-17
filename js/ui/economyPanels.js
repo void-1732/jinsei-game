@@ -1,4 +1,7 @@
 import {SPENDING_STYLES,spendingPreview} from '../core/householdSpending.js';
+import {householdSummary} from '../core/householdExtension.js';
+import {hardshipSummary} from '../core/householdHardship.js';
+import {REGIONAL_FACTORS} from '../core/livingSystems.js';
 import {getCompany,ensureCompanyMarket} from '../core/companySystems.js';
 import {CAREER_SECTORS,EXTENDED_JOB_POSTINGS,marketListings,careerEligibility} from '../core/careerMarketplace.js';
 import {JOB_POSTINGS,employmentScore,businessMonthlyFigures,CAREER_PLANS,careerStage} from '../core/careerSystems.js';
@@ -219,6 +222,19 @@ export function renderEconomyPanel(container,screen,game,handlers={}){
      line(section,'自動計算の条件',`${preview.age}歳／${preview.region}／${game.finances.living?.housing??'実家'}`);
      line(section,'地域・家計方針適用後',yen(preview.adjusted));
      section.append(econEl('p','muted small',preview.note));
+     const factors=REGIONAL_FACTORS[preview.region]??{living:1,jobs:1};
+     line(section,'地域の暮らしと就職',`生活費係数${Math.round(factors.living*100)}%・求人倍率係数${Math.round(factors.jobs*100)}%（ゲーム内）`);
+     const spouse=householdSummary(game);
+     if(spouse.spouse)line(section,'配偶者の家計負担金',`${spouse.lastContribution.toLocaleString('ja-JP')}円／月・${spouse.description}`);
+     const hardship=hardshipSummary(game);
+     line(section,'家計再建の状態',`${hardship.status}（資金不足の継続${hardship.shortageMonths}か月）`);
+     if(hardship.status!=='安定'){
+       const recovery=econEl('details','phase4-extra');
+       recovery.append(econEl('summary','','資金不足への対策・生活再建'));
+       recovery.append(econEl('p','muted small','支出・住居費・就業状況を確認してください。引越しは既存の住まい画面から行えます。'));
+       action(recovery,'生活再建支援を申請（架空制度）',()=>handlers.onAction?.('requestHouseholdRelief',{}),age<18);
+       section.append(recovery);
+     }
      const controls=econEl('div','phase4-actions');
      controls.append(econEl('h3','','お金の使い方（毎月継続）'));
      const spending=choiceButtons('家計方針',SPENDING_STYLES.map(x=>({label:x.name,value:x.id})),preview.style.id);
